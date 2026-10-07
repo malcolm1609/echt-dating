@@ -36,7 +36,7 @@ export default function MatchScreen() {
             match={match}
             demo={backend.demo}
             send={(t) => matchStore.send(id, t)}
-            proposeDate={(p, w) => matchStore.proposeDate(id, p, w)}
+            proposeDate={(i, p, w) => matchStore.proposeDate(id, i, p, w)}
             markDatePast={() => matchStore.markDatePast(id)}
             answerAfterDate={(a) => matchStore.answerAfterDate(id, a)}
             endKindly={(t) => matchStore.endKindly(id, t)}

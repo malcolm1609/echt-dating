@@ -5,8 +5,10 @@ import type { Gender } from '../domain/admission';
 import type { MusicLink } from '../domain/music.ts';
 import { GoalId, ProfileContent, PromptAnswer, promptText } from '../domain/profileContent.ts';
 import { maskPhone } from '../domain/phone.ts';
+import { Preferences, preferencesSummary } from '../domain/preferences.ts';
 import { Button, Field, s } from './kit';
 import { ProfileContentForm } from './ProfileContentForm';
+import { PreferencesForm } from './PreferencesForm';
 import { ProfileDetails } from './ProfileDetails';
 import { colors, font } from './theme';
 
@@ -24,6 +26,7 @@ export interface MyProfile {
   prompts: PromptAnswer[];
   interests: string[];
   music?: MusicLink;
+  preferences: Preferences;
 }
 
 const SEEKING: Record<Gender, string> = { f: 'Frauen', m: 'Männer' };
@@ -32,13 +35,16 @@ interface Props {
   profile: MyProfile;
   onSaveBio: (bio: string) => Promise<void>;
   onSaveContent: (content: ProfileContent) => Promise<void>;
+  onSavePreferences: (p: Preferences) => Promise<void>;
   onTogglePause: () => Promise<void>;
 }
 
-export function ProfileView({ profile, onSaveBio, onSaveContent, onTogglePause }: Props) {
+export function ProfileView({ profile, onSaveBio, onSaveContent, onSavePreferences, onTogglePause }: Props) {
   const [saved, setSaved] = useState(profile.bio);
   const [content, setContent] = useState<ProfileContent>({ prompts: profile.prompts, goal: profile.goal, interests: profile.interests, music: profile.music });
   const [editing, setEditing] = useState(false);
+  const [prefs, setPrefs] = useState(profile.preferences);
+  const [editingPrefs, setEditingPrefs] = useState(false);
   const [bio, setBio] = useState(profile.bio);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -104,8 +110,16 @@ export function ProfileView({ profile, onSaveBio, onSaveContent, onTogglePause }
         <Button title="Fragen, Ziel, Interessen und Song ändern" icon="edit-3" variant="ghost" onPress={() => setEditing(true)} />
       )}
 
-      <Section title="Du suchst">
-        <Text style={font.body}>{profile.seeking.map((g) => SEEKING[g]).join(' und ')} im Umkreis von 25 km</Text>
+      <Section title="Wen ich sehen möchte">
+        <Text style={font.body}>{`${profile.seeking.map((g) => SEEKING[g]).join(' und ')}, ${preferencesSummary(prefs)}`}</Text>
+        {editingPrefs ? (
+          <>
+            <PreferencesForm initial={prefs} busy={busy} onSubmit={(p) => run(async () => { await onSavePreferences(p); setPrefs(p); setEditingPrefs(false); })} />
+            <Button title="Abbrechen" variant="ghost" onPress={() => setEditingPrefs(false)} />
+          </>
+        ) : (
+          <Button title="Alter und Entfernung ändern" icon="sliders" variant="ghost" onPress={() => setEditingPrefs(true)} />
+        )}
       </Section>
 
       <Section title="Bestätigt">

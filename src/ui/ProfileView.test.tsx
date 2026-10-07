@@ -9,10 +9,11 @@ const me: MyProfile = { displayName: 'Anna', age: 28, bio: 'Läuft gern am Kanal
     { promptId: 'werte-1', answer: 'Wenn wir zusammen schweigen können.' },
   ],
   interests: ['Kochen', 'Lesen'],
+  preferences: { ageMin: 22, ageMax: 36, maxDistanceKm: 30 },
 };
 
 const setup = (over: Partial<Parameters<typeof ProfileView>[0]> = {}) => {
-  const props = { profile: me, onSaveBio: jest.fn().mockResolvedValue(undefined), onSaveContent: jest.fn().mockResolvedValue(undefined), onTogglePause: jest.fn().mockResolvedValue(undefined), ...over };
+  const props = { profile: me, onSaveBio: jest.fn().mockResolvedValue(undefined), onSaveContent: jest.fn().mockResolvedValue(undefined), onSavePreferences: jest.fn().mockResolvedValue(undefined), onTogglePause: jest.fn().mockResolvedValue(undefined), ...over };
   render(<ProfileView {...props} />);
   return props;
 };
@@ -65,5 +66,15 @@ describe('ProfileView', () => {
     await act(async () => {});
     expect(onSaveContent).toHaveBeenCalledWith({ prompts: me.prompts, interests: me.interests, goal: 'freundschaft' });
     expect(screen.getByText('Sucht: Erstmal Freundschaft')).toBeTruthy();
+  });
+
+  it('shows and changes who you want to see', async () => {
+    const { onSavePreferences } = setup();
+    expect(screen.getByText('Männer, 22 bis 36 Jahre, bis 30 km')).toBeTruthy();
+    fireEvent.press(screen.getByText('Alter und Entfernung ändern'));
+    fireEvent.press(screen.getByLabelText('Bis 20 km'));
+    await act(async () => fireEvent.press(screen.getByText('Wünsche speichern')));
+    expect(onSavePreferences).toHaveBeenCalledWith({ ageMin: 22, ageMax: 36, maxDistanceKm: 20 });
+    expect(screen.getByText('Männer, 22 bis 36 Jahre, bis 20 km')).toBeTruthy();
   });
 });

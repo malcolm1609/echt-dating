@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text } from 'react-native';
-import { PROMPTS } from '../../src/domain/profileContent.ts';
+import { GoalId, PROMPTS, sharedInterests } from '../../src/domain/profileContent.ts';
 import { backend } from '../../src/lib/backend';
 import { matchStore } from '../../src/lib/matches';
 import { Button, Screen } from '../../src/ui/kit';
@@ -12,13 +12,13 @@ export default function Today() {
   const [data, setData] = useState<{ picks: Pick[]; used: number }>();
   const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [myInterests, setMyInterests] = useState<string[]>([]);
+  const [me, setMe] = useState<{ interests: string[]; goal?: GoalId }>({ interests: [] });
 
   const load = useCallback(() => {
     setFailed(false);
     backend.touchActivity().catch(() => {});
     backend.isPaused().then(setPaused, () => {});
-    backend.myProfile().then((me) => setMyInterests(me.interests), () => {});
+    backend.myProfile().then(setMe, () => {});
     backend.todaysPicks().then(setData, () => setFailed(true));
   }, []);
   useFocusEffect(load);
@@ -38,11 +38,12 @@ export default function Today() {
         <TodayDeck
           picks={data.picks}
           usedBefore={data.used}
-          myInterests={myInterests}
+          myInterests={me.interests}
+          myGoal={me.goal}
           onDecide={async (id, decision) => {
             const result = await backend.decide(id, decision);
             const pick = data.picks.find((p) => p.id === id);
-            if (result.matched && pick) matchStore.add({ id: pick.id, name: pick.displayName, age: pick.age, opener: openerFor(pick) });
+            if (result.matched && pick) matchStore.add({ id: pick.id, name: pick.displayName, age: pick.age, opener: openerFor(pick), shared: sharedInterests(me.interests, pick.interests ?? []) });
             return result;
           }}
           onOpenMatch={(pick) => router.push(`/match/${pick.id}`)}

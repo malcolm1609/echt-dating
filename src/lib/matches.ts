@@ -3,7 +3,7 @@ import { Answers, answerKey, DateAnswer, QUESTION_ROUNDS } from '../domain/conve
 import type { ShownPrompt } from '../ui/ProfileDetails';
 
 export interface Message { id: string; from: 'me' | 'them'; text: string; at: Date }
-export interface DateProposal { place: string; when: string; accepted: boolean; past: boolean }
+export interface DateProposal { idea?: string; place: string; when: string; accepted: boolean; past: boolean }
 
 export interface Match {
   id: string;
@@ -11,6 +11,8 @@ export interface Match {
   age: number;
   /** Profilantwort der anderen Person, mit der die Fragenrunde beginnt. */
   opener?: ShownPrompt;
+  /** Gemeinsame Interessen, daraus kommen die Date-Ideen. */
+  shared?: string[];
   answers: Answers;
   messages: Message[];
   date?: DateProposal;
@@ -22,10 +24,10 @@ export interface MatchStore {
   list(): Match[];
   get(id: string): Match | undefined;
   subscribe(listener: () => void): () => void;
-  add(person: { id: string; name: string; age: number; opener?: ShownPrompt }): void;
+  add(person: { id: string; name: string; age: number; opener?: ShownPrompt; shared?: string[] }): void;
   answer(id: string, key: string, text: string): void;
   send(id: string, text: string): void;
-  proposeDate(id: string, place: string, when: string): void;
+  proposeDate(id: string, idea: string, place: string, when: string): void;
   markDatePast(id: string): void;
   answerAfterDate(id: string, answer: DateAnswer): void;
   endKindly(id: string, text: string): void;
@@ -93,8 +95,8 @@ export function createDemoStore(delayMs = 1200): MatchStore {
       const replied = get(id)?.messages.some((m) => m.from === 'them');
       if (!replied) later(() => update(id, (m) => ({ ...m, messages: [...m.messages, msg('them', 'Haha, genau so! Erzähl mir mehr 🙂')] })));
     },
-    proposeDate(id, place, when) {
-      update(id, (m) => ({ ...m, date: { place, when, accepted: false, past: false } }));
+    proposeDate(id, idea, place, when) {
+      update(id, (m) => ({ ...m, date: { idea, place, when, accepted: false, past: false } }));
       later(() => update(id, (m) => ({ ...m, date: m.date && { ...m.date, accepted: true }, messages: [...m.messages, msg('them', `${when} passt mir super. Bis dann!`)] })));
     },
     markDatePast(id) {

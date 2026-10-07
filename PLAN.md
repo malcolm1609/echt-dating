@@ -52,7 +52,13 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Hinweis, wenn die andere Person seit 2+ Tagen auf Antwort wartet
    - Date-Vorschlag mit Partner-Café und Uhrzeit, „Freundlich beenden“ mit fertiger, ehrlicher Nachricht
 8. **Check nach dem Date** ✅ Prototyp: Wiedersehen nur bei beidseitigem Ja sichtbar, ein einseitiges Nein bleibt verborgen
-9. **Navigation**: Tabs Heute, Matches, Profil (Profil pausieren)
+9. **Vorschläge und Filter** ✅ (`src/domain/preferences.ts`, `src/domain/ranking.ts`, Migration `20261008000000_preferences.sql`)
+   - Harte Filter nur Alter (Start: eigenes Alter ± 8) und Entfernung (5/10/20/30 km), beidseitig; einstellbar im Profil unter „Wen ich sehen möchte“
+   - Reihenfolge nach festen Punkten: gleiches Ziel, gemeinsame Interessen, in den letzten 2 Tagen aktiv; kein lernendes Modell, keine Like-Zahlen
+   - Ein Platz für jemanden, der mich schon geliked hat (bleibt verborgen), einer für die diese Woche am seltensten Gezeigten; wer heute 12-mal bewertet wurde, pausiert bis morgen
+   - Unter jedem Vorschlag ein Satz, warum er passt; Date-Ideen aus gemeinsamen Interessen (`src/domain/dateIdeas.ts`)
+   - Grundlage: Recherche „Algorithmus und Filter für Echt“ (Projektdateien)
+10. **Navigation**: Tabs Heute, Matches, Profil (Profil pausieren)
 
 Matches, Fragenrunde, Chat und Date laufen bisher nur im Demo-Modus (`src/lib/matches.ts`, im Speicher, die andere Seite antwortet automatisch).
 Noch offen: Tabellen und Zugriffsregeln dafür in Supabase und die echte Anbindung.
