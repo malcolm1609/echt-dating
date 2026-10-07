@@ -17,7 +17,7 @@ export default function Status() {
       {!state && <Text style={font.small}>Lädt …</Text>}
       {state?.status === 'pending_verification' && (
         <>
-          <Text style={font.title}>Wir prüfen gerade</Text>
+          <Text style={font.display}>Wir prüfen gerade<Text style={{ color: colors.accent }}>.</Text></Text>
           <Text style={font.body}>Sobald dein Ausweis und dein Selfie geprüft sind, siehst du hier, wie es weitergeht.</Text>
           <Button title="Aktualisieren" variant="ghost" onPress={load} />
         </>
@@ -31,7 +31,7 @@ export default function Status() {
       )}
       {state?.status === 'admitted' && (
         <>
-          <Text style={font.title}>Du bist dabei 🎉</Text>
+          <Text style={font.display}>Du bist dabei<Text style={{ color: colors.accent }}>.</Text></Text>
           <Text style={font.body}>Du bekommst jeden Tag bis zu 6 Vorschläge.</Text>
           <View style={{ flex: 1 }} />
           <Button title="Zu deinen Vorschlägen" onPress={() => router.replace('/heute')} />
@@ -39,7 +39,7 @@ export default function Status() {
       )}
       {state?.status === 'rejected' && (
         <>
-          <Text style={font.title}>Das hat leider nicht geklappt</Text>
+          <Text style={font.display}>Das hat leider nicht geklappt<Text style={{ color: colors.accent }}>.</Text></Text>
           <Text style={font.body}>Wir konnten deine Identität nicht bestätigen oder du bist noch keine 18. Schreib uns, wenn du denkst, dass das ein Fehler ist.</Text>
         </>
       )}
@@ -51,10 +51,13 @@ function Waitlist({ position, ratio }: Extract<MyStatus, { status: 'waitlisted' 
   const total = ratio ? ratio.f + ratio.m : 0;
   return (
     <>
-      <Text style={font.small}>DU BIST VERIFIZIERT</Text>
-      <Text style={font.title}>Warteliste</Text>
+      <Text style={[font.label, { color: colors.hint }]}>Du bist verifiziert</Text>
+      <Text style={font.display}>Fast da<Text style={{ color: colors.accent }}>.</Text></Text>
       {position !== null && (
-        <Text style={[font.display, { fontSize: 72, color: colors.accent }]}>#{position}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
+          <Text style={[font.display, { fontSize: 96, lineHeight: 96, color: colors.accent }]}>{position}</Text>
+          <Text style={font.small}>{'Platz auf der\nWarteliste'}</Text>
+        </View>
       )}
       <Text style={font.body}>
         Wir lassen nur so viele Menschen in deinen Umkreis, dass das Verhältnis fair bleibt und alle aktiv sind. Sobald jemand inaktiv wird, rückst du nach.

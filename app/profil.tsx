@@ -1,35 +1,25 @@
-import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, Text } from 'react-native';
-import { backend } from '../src/lib/backend';
-import { Screen, s } from '../src/ui/kit';
+import { ScrollView, Text, View } from 'react-native';
+import { signupDraft } from '../src/lib/signupDraft';
+import { Screen, StepHeader } from '../src/ui/kit';
 import { CompleteProfile, ProfileForm } from '../src/ui/ProfileForm';
-import { font } from '../src/ui/theme';
+import { colors, font } from '../src/ui/theme';
 
 export default function Profile() {
-  const [error, setError] = useState<string>();
-
-  const save = async (profile: CompleteProfile) => {
-    setError(undefined);
-    const { granted } = await Location.requestForegroundPermissionsAsync();
-    if (!granted) return setError('Wir brauchen deinen ungefähren Standort, um dir Menschen in deiner Nähe zu zeigen.');
-    const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    try {
-      await backend.saveProfile(profile, { lat: coords.latitude, lng: coords.longitude });
-      router.replace('/verifizieren');
-    } catch {
-      setError('Speichern hat nicht geklappt. Bitte versuch es noch einmal.');
-    }
+  const next = (profile: CompleteProfile) => {
+    signupDraft.set(profile);
+    router.push('/standort');
   };
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={{ gap: 20 }} keyboardShouldPersistTaps="handled">
-        <Text style={font.title}>Über dich</Text>
-        <Text style={font.small}>Dein Geburtsdatum wird später mit deinem Ausweis abgeglichen. Andere sehen nur dein Alter.</Text>
-        <ProfileForm onSubmit={save} />
-        {error && <Text style={s.error}>{error}</Text>}
+      <StepHeader step={2} total={4} name="Über dich" />
+      <ScrollView contentContainerStyle={{ gap: 28, paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
+        <View style={{ gap: 12 }}>
+          <Text style={font.display}>Erzähl kurz<Text style={{ color: colors.accent }}>.</Text></Text>
+          <Text style={font.small}>Dein Geburtsdatum gleichen wir später mit dem Ausweis ab. Andere sehen nur dein Alter.</Text>
+        </View>
+        <ProfileForm onSubmit={next} />
       </ScrollView>
     </Screen>
   );

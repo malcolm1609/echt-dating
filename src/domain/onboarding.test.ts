@@ -21,7 +21,7 @@ describe('validateProfileDraft', () => {
   it('reports every missing or invalid field', () => {
     expect(validateProfileDraft({ displayName: ' ', birthdate: '12.04.1998', gender: undefined, seeking: [] }, today)).toEqual({
       displayName: 'Bitte gib deinen Vornamen an.',
-      birthdate: 'Bitte im Format JJJJ-MM-TT angeben.',
+      birthdate: 'Bitte gib ein gültiges Datum an, z. B. 12.04.1998.',
       gender: 'Bitte wähle dein Geschlecht.',
       seeking: 'Bitte wähle, wen du kennenlernen möchtest.',
     });
@@ -29,7 +29,7 @@ describe('validateProfileDraft', () => {
 
   it('rejects people under 18 and impossible dates', () => {
     expect(validateProfileDraft({ ...ok, birthdate: '2010-01-01' }, today).birthdate).toBe('Du musst mindestens 18 Jahre alt sein.');
-    expect(validateProfileDraft({ ...ok, birthdate: '1998-02-31' }, today).birthdate).toBe('Bitte im Format JJJJ-MM-TT angeben.');
+    expect(validateProfileDraft({ ...ok, birthdate: '1998-02-31' }, today).birthdate).toBe('Bitte gib ein gültiges Datum an, z. B. 12.04.1998.');
   });
 });
 

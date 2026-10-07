@@ -27,7 +27,8 @@ describe('ProfileForm', () => {
     const onSubmit = jest.fn();
     render(<ProfileForm today={today} onSubmit={onSubmit} />);
     fireEvent.changeText(screen.getByLabelText('Vorname'), 'Anna');
-    fireEvent.changeText(screen.getByLabelText('Geburtsdatum'), '1998-04-12');
+    fireEvent.changeText(screen.getByLabelText('Geburtsdatum'), '12041998');
+    expect(screen.getByDisplayValue('12.04.1998')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Ich bin Frau'));
     fireEvent.press(screen.getByLabelText('Ich suche Männer'));
     fireEvent.press(screen.getByText('Weiter'));
@@ -38,7 +39,7 @@ describe('ProfileForm', () => {
     const onSubmit = jest.fn();
     render(<ProfileForm today={today} onSubmit={onSubmit} />);
     fireEvent.changeText(screen.getByLabelText('Vorname'), 'Kim');
-    fireEvent.changeText(screen.getByLabelText('Geburtsdatum'), '1995-01-01');
+    fireEvent.changeText(screen.getByLabelText('Geburtsdatum'), '01.01.1995');
     fireEvent.press(screen.getByLabelText('Ich bin Mann'));
     fireEvent.press(screen.getByLabelText('Ich suche Frauen'));
     fireEvent.press(screen.getByLabelText('Ich suche Männer'));

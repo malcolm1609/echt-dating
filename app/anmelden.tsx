@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { backend } from '../src/lib/backend';
-import { Button, Field, Screen } from '../src/ui/kit';
-import { font } from '../src/ui/theme';
+import { Button, Field, Screen, StepHeader } from '../src/ui/kit';
+import { colors, font } from '../src/ui/theme';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -26,15 +26,21 @@ export default function SignIn() {
 
   return (
     <Screen>
-      <Text style={font.title}>{sent ? 'Code eingeben' : 'Deine E-Mail'}</Text>
-      <Text style={font.small}>{sent ? `Wir haben dir einen Code an ${email} geschickt.` : 'Wir schicken dir einen Code, kein Passwort nötig.'}</Text>
+      <StepHeader step={1} total={4} name="E-Mail" />
+      <View style={{ gap: 12 }}>
+        <Text style={font.display}>{sent ? 'Schau in\ndein Postfach' : 'Wie erreichen\nwir dich'}<Text style={{ color: colors.accent }}>{sent ? '.' : '?'}</Text></Text>
+        <Text style={font.body}>{sent ? `Der 6-stellige Code ist an ${email} unterwegs.` : 'Du bekommst einen Code per Mail. Kein Passwort, das du dir merken musst.'}</Text>
+      </View>
       {sent ? (
         <Field label="Code" value={code} onChangeText={setCode} keyboardType="number-pad" autoComplete="one-time-code" error={error} />
       ) : (
         <Field label="E-Mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" error={error} />
       )}
+      <View style={{ flex: 1 }} />
+      {sent && <Button title="Andere E-Mail" variant="ghost" onPress={() => { setSent(false); setCode(''); setError(undefined); }} />}
       <Button
         title={sent ? 'Bestätigen' : 'Code senden'}
+        busy={busy}
         disabled={busy || (sent ? code.length < 6 : !email.includes('@'))}
         onPress={() =>
           run(async () => {

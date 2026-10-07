@@ -33,7 +33,7 @@ export default function Me() {
 
   return (
     <Screen>
-      <Text style={font.title}>Dein Profil</Text>
+      <Text style={font.display}>Du<Text style={{ color: colors.accent }}>.</Text></Text>
       {paused !== undefined && (
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: paused ? colors.muted : '#7BE0A6' }} />

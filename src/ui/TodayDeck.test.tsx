@@ -26,7 +26,7 @@ describe('TodayDeck', () => {
     const onDecide = jest.fn().mockResolvedValue({ matched: true });
     render(<TodayDeck picks={picks} usedBefore={0} onDecide={onDecide} />);
     fireEvent.press(screen.getByText('Gefällt mir'));
-    expect(await screen.findByText('Ihr mögt euch beide')).toBeTruthy();
+    expect(await screen.findByText(/Ihr mögt euch beide/)).toBeTruthy();
     fireEvent.press(screen.getByText('Später schreiben'));
     expect(await screen.findByText('Kai, 28')).toBeTruthy();
   });
@@ -36,7 +36,7 @@ describe('TodayDeck', () => {
     render(<TodayDeck picks={picks.slice(0, 1)} usedBefore={5} onDecide={onDecide} />);
     expect(screen.getByLabelText('6 von 6 Vorschlägen')).toBeTruthy();
     fireEvent.press(screen.getByText('Weiter'));
-    expect(await screen.findByText('Das war’s für heute')).toBeTruthy();
+    expect(await screen.findByText(/Das war’s für heute/)).toBeTruthy();
   });
 
   it('starts at the first suggestion again when the list is reloaded', async () => {

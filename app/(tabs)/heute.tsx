@@ -5,7 +5,7 @@ import { backend } from '../../src/lib/backend';
 import { matchStore } from '../../src/lib/matches';
 import { Button, Screen } from '../../src/ui/kit';
 import { Pick, TodayDeck } from '../../src/ui/TodayDeck';
-import { font } from '../../src/ui/theme';
+import { colors, font } from '../../src/ui/theme';
 
 export default function Today() {
   const [data, setData] = useState<{ picks: Pick[]; used: number }>();
@@ -22,7 +22,7 @@ export default function Today() {
 
   return (
     <Screen>
-      <Text style={font.title}>Heute</Text>
+      <Text style={font.display}>Heute<Text style={{ color: colors.accent }}>.</Text></Text>
       {failed && (
         <>
           <Text style={font.body}>Deine Vorschläge konnten nicht geladen werden.</Text>
