@@ -8,12 +8,12 @@ import { colors, font } from '../src/ui/theme';
 export default function Profile() {
   const next = (profile: CompleteProfile) => {
     signupDraft.set(profile);
-    router.push('/standort');
+    router.push('/fragen');
   };
 
   return (
     <Screen>
-      <StepHeader step={3} total={5} name="Über dich" />
+      <StepHeader step={3} total={6} name="Über dich" />
       <ScrollView contentContainerStyle={{ gap: 28, paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
         <View style={{ gap: 12 }}>
           <Text style={font.display}>Erzähl kurz<Text style={{ color: colors.accent }}>.</Text></Text>

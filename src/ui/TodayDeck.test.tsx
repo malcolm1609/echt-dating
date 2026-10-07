@@ -3,7 +3,8 @@ import { TodayDeck, Pick } from './TodayDeck';
 
 const picks: Pick[] = [
   { id: 'a', displayName: 'Ben', age: 30, bio: 'Kocht gern.', distanceKm: 3 },
-  { id: 'b', displayName: 'Kai', age: 28, bio: '', distanceKm: 12 },
+  { id: 'b', displayName: 'Kai', age: 28, bio: '', distanceKm: 12, goal: 'fest', interests: ['Kochen', 'Kino'],
+    prompts: [{ question: 'Ein Ort in meiner Stadt, den ich dir zeigen würde …', answer: 'Das Kino am Hermannplatz.' }] },
 ];
 
 describe('TodayDeck', () => {
@@ -56,5 +57,14 @@ describe('TodayDeck', () => {
     fireEvent.press(screen.getByText('Gefällt mir'));
     await waitFor(() => expect(screen.getByText('Das hat nicht geklappt. Bitte versuch es noch einmal.')).toBeTruthy());
     expect(screen.getByText('Ben, 30')).toBeTruthy();
+  });
+
+  it('shows answers, goal and shared interests of the person', async () => {
+    const onDecide = jest.fn().mockResolvedValue({ matched: false });
+    render(<TodayDeck picks={picks} usedBefore={0} myInterests={['Kino']} onDecide={onDecide} />);
+    fireEvent.press(screen.getByText('Weiter'));
+    expect(await screen.findByText('Das Kino am Hermannplatz.')).toBeTruthy();
+    expect(screen.getByText('Sucht: Feste Beziehung')).toBeTruthy();
+    expect(screen.getByLabelText('Kino, gemeinsam')).toBeTruthy();
   });
 });

@@ -18,4 +18,13 @@ describe('QuestionRound', () => {
     rerender(<QuestionRound name="Elif" answers={{ '0-0': { mine: 'Lange frühstücken', theirs: 'Ausschlafen' } }} onAnswer={onAnswer} />);
     expect(screen.getByText(/Ausschlafen/)).toBeTruthy();
   });
+
+  it('opens with a reaction to one of their profile answers instead of a generic question', () => {
+    const opener = { question: 'Ein Ort in meiner Stadt, den ich dir zeigen würde …', answer: 'Der Flohmarkt am Mauerpark.' };
+    render(<QuestionRound name="Elif" opener={opener} answers={{}} onAnswer={jest.fn()} />);
+    expect(screen.getByText('Zum Einstieg')).toBeTruthy();
+    expect(screen.getByText('„Der Flohmarkt am Mauerpark.“')).toBeTruthy();
+    expect(screen.getByText('Was fällt dir zu Elifs Antwort ein?')).toBeTruthy();
+    expect(screen.queryByText('Wie sähe für dich ein perfekter Tag aus?')).toBeNull();
+  });
 });

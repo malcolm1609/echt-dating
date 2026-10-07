@@ -1,11 +1,15 @@
+import type { ProfileContent } from '../domain/profileContent.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
 
-// Das Profil wartet zwischen „Über dich“ und „Standort“ im Speicher, gespeichert wird es erst mit Standort.
-let draft: CompleteProfile | null = null;
+// Profil und Fragen warten im Speicher, gespeichert wird alles zusammen mit dem Standort.
+let draft: { profile: CompleteProfile; content?: ProfileContent } | null = null;
 
 export const signupDraft = {
-  set: (p: CompleteProfile) => {
-    draft = p;
+  set: (profile: CompleteProfile) => {
+    draft = { profile, content: draft?.content };
+  },
+  setContent: (content: ProfileContent) => {
+    if (draft) draft = { ...draft, content };
   },
   get: () => draft,
   clear: () => {
