@@ -39,6 +39,10 @@ export default function Me() {
             profile={profile}
             onSaveBio={backend.saveBio}
             onSaveContent={backend.saveContent}
+            onSavePreferences={async (p) => {
+              await backend.savePreferences(p);
+              setProfile({ ...profile, preferences: p });
+            }}
             onTogglePause={async () => {
               await backend.setPaused(!profile.paused);
               setProfile({ ...profile, paused: !profile.paused });

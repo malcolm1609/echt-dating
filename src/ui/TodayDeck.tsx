@@ -3,6 +3,7 @@ import { Animated, ScrollView, Text, useWindowDimensions, View } from 'react-nat
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import type { MusicLink } from '../domain/music.ts';
 import type { GoalId } from '../domain/profileContent.ts';
+import { pickReason } from '../domain/ranking.ts';
 import type { ShownPrompt } from './ProfileDetails';
 import { Button, s } from './kit';
 import { useEntrance, usePulse } from './motion';
@@ -29,9 +30,10 @@ interface Props {
   onDecide: (id: string, decision: Decision) => Promise<{ matched: boolean }>;
   onOpenMatch?: (pick: Pick) => void;
   myInterests?: string[];
+  myGoal?: GoalId;
 }
 
-export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests }: Props) {
+export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests = [], myGoal }: Props) {
   const [index, setIndex] = useState(0);
   // Neu geladene Vorschläge enthalten nur noch offene Personen: dann wieder vorne anfangen.
   const [shownPicks, setShownPicks] = useState(picks);
@@ -86,6 +88,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   }
 
   const position = usedBefore + index + 1;
+  const reason = pickReason({ goal: myGoal, interests: myInterests }, { goal: current.goal, interests: current.interests ?? [] });
   return (
     <View style={{ flex: 1, gap: 20 }}>
       <View accessibilityLabel={`${position} von ${DAILY_LIMIT} Vorschlägen`} style={{ flexDirection: 'row', gap: 6 }}>
@@ -95,6 +98,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
       </View>
       <Animated.View style={[{ flex: 1 }, enterCard]}>
         <ScrollView key={current.id} contentContainerStyle={{ paddingBottom: 8 }} showsVerticalScrollIndicator={false}>
+          {reason && <Text style={[font.small, { color: colors.hint, marginBottom: 12 }]}>{reason}</Text>}
           <ProfileDetails
             name={current.displayName}
             age={current.age}

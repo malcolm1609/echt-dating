@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { afterDateOutcome, DateAnswer, waitingDays } from '../domain/conversation.ts';
+import { dateIdeas } from '../domain/dateIdeas.ts';
 import type { Match } from '../lib/matches';
 import { Button, Chip, s } from './kit';
 import { colors, font } from './theme';
@@ -12,7 +13,7 @@ interface Props {
   match: Match;
   now?: Date;
   send: (text: string) => void;
-  proposeDate: (place: string, when: string) => void;
+  proposeDate: (idea: string, place: string, when: string) => void;
   markDatePast: () => void;
   answerAfterDate: (a: DateAnswer) => void;
   endKindly: (text: string) => void;
@@ -22,6 +23,8 @@ interface Props {
 export function Chat({ match, now = new Date(), send, proposeDate, markDatePast, answerAfterDate, endKindly, demo }: Props) {
   const [draft, setDraft] = useState('');
   const [panel, setPanel] = useState<'none' | 'date' | 'end'>('none');
+  const ideas = dateIdeas(match.shared ?? []);
+  const [idea, setIdea] = useState(ideas[0]);
   const [place, setPlace] = useState(PARTNER_CAFES[0]);
   const [when, setWhen] = useState(TIMES[0]);
   const goodbye = `Hey ${match.name}, danke für die schönen Gespräche. Ich merke, dass es für mich nicht ganz passt, und wollte dir das ehrlich sagen. Alles Gute für dich!`;
@@ -40,7 +43,7 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
       {match.date && (
         <View style={s.hint}>
           <Text style={s.label}>Date</Text>
-          <Text style={font.body}>{`${match.date.when} · ${match.date.place}`}</Text>
+          <Text style={font.body}>{[match.date.idea, match.date.when, `Treffpunkt ${match.date.place}`].filter(Boolean).join(' · ')}</Text>
           <Text style={font.small}>{match.date.accepted ? (match.date.past ? 'Vorbei' : 'Zugesagt') : `Wartet auf ${match.name}`}</Text>
           {demo && match.date.accepted && !match.date.past && <Button title="Demo: Date ist vorbei" variant="ghost" onPress={markDatePast} />}
         </View>
@@ -90,7 +93,11 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
           {!match.date && panel !== 'date' && <Button title="Date vorschlagen" variant="ghost" onPress={() => setPanel('date')} />}
           {panel === 'date' && (
             <View style={{ gap: 12 }}>
-              <Text style={s.label}>Ort (Partner-Cafés)</Text>
+              <Text style={s.label}>{match.shared?.length ? 'Ideen aus euren Gemeinsamkeiten' : 'Ideen'}</Text>
+              <View style={{ flexWrap: 'wrap', flexDirection: 'row', gap: 8 }}>
+                {ideas.map((i) => <Chip key={i} role="radio" label={i} a11y={i} selected={idea === i} onPress={() => setIdea(i)} />)}
+              </View>
+              <Text style={s.label}>Treffpunkt (Partner-Cafés)</Text>
               <View style={{ flexWrap: 'wrap', flexDirection: 'row', gap: 8 }}>
                 {PARTNER_CAFES.map((c) => <Chip key={c} label={c} a11y={c} selected={place === c} onPress={() => setPlace(c)} />)}
               </View>
@@ -98,7 +105,8 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
               <View style={{ flexWrap: 'wrap', flexDirection: 'row', gap: 8 }}>
                 {TIMES.map((t) => <Chip key={t} label={t} a11y={t} selected={when === t} onPress={() => setWhen(t)} />)}
               </View>
-              <Button title="Vorschlag senden" onPress={() => { proposeDate(place, when); setPanel('none'); }} />
+              <Text style={font.small}>Fürs erste Treffen: ein öffentlicher Ort und ein eigener Heimweg.</Text>
+              <Button title="Vorschlag senden" onPress={() => { proposeDate(idea, place, when); setPanel('none'); }} />
             </View>
           )}
           {panel !== 'end' && <Button title="Freundlich beenden" variant="ghost" onPress={() => setPanel('end')} />}

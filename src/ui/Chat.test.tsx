@@ -23,12 +23,20 @@ describe('Chat', () => {
     expect(a.endKindly).toHaveBeenCalledWith(expect.stringContaining('danke für die schönen Gespräche'));
   });
 
-  it('proposes a date at a partner café', () => {
+  it('proposes a date with an idea from shared interests, meeting at a partner café', () => {
     const a = actions();
-    render(<Chat match={base} now={now} {...a} />);
+    render(<Chat match={{ ...base, shared: ['Flohmärkte'] }} now={now} {...a} />);
     fireEvent.press(screen.getByText('Date vorschlagen'));
+    expect(screen.getByText('Ideen aus euren Gemeinsamkeiten')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Über den Flohmarkt schlendern'));
     fireEvent.press(screen.getByText('Vorschlag senden'));
-    expect(a.proposeDate).toHaveBeenCalledWith(expect.any(String), expect.any(String));
+    expect(a.proposeDate).toHaveBeenCalledWith('Über den Flohmarkt schlendern', expect.any(String), expect.any(String));
+  });
+
+  it('suggests easy classics when nothing is shared', () => {
+    render(<Chat match={base} now={now} {...actions()} />);
+    fireEvent.press(screen.getByText('Date vorschlagen'));
+    expect(screen.getByLabelText('Kaffee trinken')).toBeTruthy();
   });
 
   it('asks after the date and keeps a one-sided no private', () => {

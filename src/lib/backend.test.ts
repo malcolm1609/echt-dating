@@ -68,4 +68,20 @@ describe('demoBackend', () => {
       expect(p.goal).toBeDefined();
     }
   });
+
+  it('starts with wide wishes and hides who is farther away than wanted', async () => {
+    const b = demoBackend(0);
+    const { preferences } = await b.myProfile();
+    expect(preferences.maxDistanceKm).toBe(30);
+    expect(preferences.ageMax - preferences.ageMin).toBe(16);
+    await b.savePreferences({ ...preferences, maxDistanceKm: 5 });
+    const { picks } = await b.todaysPicks();
+    expect(picks.every((p) => p.distanceKm <= 5)).toBe(true);
+    expect((await b.myProfile()).preferences.maxDistanceKm).toBe(5);
+  });
+
+  it('puts the same goal and shared interests first', async () => {
+    const { picks } = await demoBackend(0).todaysPicks();
+    expect(picks.map((p) => p.displayName)).toEqual(['Jonas', 'Elif', 'Sam']);
+  });
 });

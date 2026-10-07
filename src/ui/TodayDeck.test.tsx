@@ -67,4 +67,9 @@ describe('TodayDeck', () => {
     expect(screen.getByText('Sucht: Feste Beziehung')).toBeTruthy();
     expect(screen.getByLabelText('Kino, gemeinsam')).toBeTruthy();
   });
+
+  it('says in one line why this person was suggested', () => {
+    render(<TodayDeck picks={[picks[1]]} usedBefore={0} onDecide={jest.fn()} myGoal="fest" myInterests={['Kino']} />);
+    expect(screen.getByText('Ihr sucht beide eine feste Beziehung und mögt Kino.')).toBeTruthy();
+  });
 });

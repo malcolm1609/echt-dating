@@ -1,7 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { ageOn } from '../domain/onboarding.ts';
-import { ProfileContent, promptText } from '../domain/profileContent.ts';
+import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
+import { defaultPreferences, fitsEachOther, Preferences } from '../domain/preferences.ts';
+import { goalFit, ProfileContent, promptText, sharedInterests } from '../domain/profileContent.ts';
+import { rankPicks } from '../domain/ranking.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
 import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
@@ -23,6 +26,8 @@ export interface Backend {
   saveBio(bio: string): Promise<void>;
   /** Fragen mit Antworten, Beziehungsziel und Interessen. */
   saveContent(content: ProfileContent): Promise<void>;
+  /** Alter und Entfernung: gelten beidseitig. */
+  savePreferences(p: Preferences): Promise<void>;
   saveProfile(profile: CompleteProfile, location: Location, content: ProfileContent): Promise<void>;
   /** Liefert die Adresse der Ausweis- und Selfie-Prüfung beim Anbieter. */
   startVerification(): Promise<{ url: string | null }>;
@@ -71,11 +76,12 @@ function supabaseBackend(url: string, key: string): Backend {
     async myProfile() {
       const { data } = await db.auth.getUser();
       if (!data.user) throw new Error('Nicht angemeldet');
-      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused, goal, prompts, interests, music').eq('id', data.user.id).single())!;
+      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused, goal, prompts, interests, music, age_min, age_max, max_distance_km').eq('id', data.user.id).single())!;
       const phone = data.user.phone ? `+${data.user.phone.replace(/^\+/, '')}` : null;
       return {
         displayName: p.display_name, age: ageOn(p.birthdate, new Date()), bio: p.bio, gender: p.gender, seeking: p.seeking, phone, paused: p.paused,
         goal: p.goal ?? undefined, interests: p.interests, music: p.music ?? undefined, prompts: p.prompts.map((x: any) => ({ promptId: x.prompt_id, answer: x.answer })),
+        preferences: { ageMin: p.age_min, ageMax: p.age_max, maxDistanceKm: p.max_distance_km },
       };
     },
     async saveBio(bio) {
@@ -84,10 +90,14 @@ function supabaseBackend(url: string, key: string): Backend {
     async saveContent(c) {
       ok(await db.from('profiles').update(contentColumns(c)).eq('id', await uid()));
     },
+    async savePreferences(p) {
+      ok(await db.from('profiles').update(preferenceColumns(p)).eq('id', await uid()));
+    },
     async saveProfile(p, { lat, lng }, content) {
       const id = await uid();
       const editable = { display_name: p.displayName, seeking: p.seeking, lat, lng, ...contentColumns(content) };
-      const { error } = await db.from('profiles').insert({ id, ...editable, birthdate: p.birthdate, gender: p.gender });
+      const prefs = preferenceColumns(defaultPreferences(ageOn(p.birthdate, new Date())));
+      const { error } = await db.from('profiles').insert({ id, ...editable, ...prefs, birthdate: p.birthdate, gender: p.gender });
       // Profil existiert schon: Geburtsdatum und Geschlecht sind nach dem Anlegen gesperrt.
       if (error?.code === '23505') ok(await db.from('profiles').update(editable).eq('id', id));
       else if (error) throw error;
@@ -137,6 +147,8 @@ const contentColumns = (c: ProfileContent) => ({
   prompts: c.prompts.map((p) => ({ prompt_id: p.promptId, answer: p.answer })),
 });
 
+const preferenceColumns = (p: Preferences) => ({ age_min: p.ageMin, age_max: p.ageMax, max_distance_km: p.maxDistanceKm });
+
 const shown = (...pairs: [string, string][]) => pairs.map(([id, answer]) => ({ question: promptText(id)!, answer }));
 
 const DEMO_PICKS: Pick[] = [
@@ -170,6 +182,8 @@ const DEMO_PICKS: Pick[] = [
   },
 ];
 
+const DEMO_FAN = 'demo-2';
+
 /** Ohne Supabase-Zugangsdaten: klickbarer Ablauf mit Beispieldaten. */
 export function demoBackend(delayMs = 300): Backend {
   let verified = false;
@@ -187,7 +201,18 @@ export function demoBackend(delayMs = 300): Backend {
     goal: 'fest',
     interests: ['Kochen', 'Lesen', 'Radfahren'],
   };
+  let preferences = defaultPreferences(ageOn(profile.birthdate, new Date()));
   const wait = () => new Promise<void>((r) => setTimeout(r, delayMs));
+  // Wie todays_picks(): beidseitige Filter, dann Punkte. Elif hat Anna im Demo schon geliked.
+  const ranked = () => {
+    const me = { age: ageOn(profile.birthdate, new Date()), prefs: preferences };
+    const open = DEMO_PICKS.filter((p) => !decided.includes(p.id) && fitsEachOther(me, { age: p.age, prefs: defaultPreferences(p.age) }, p.distanceKm));
+    const candidates = open.map((p, i) => ({
+      ...p, goalFit: goalFit(content.goal, p.goal), shared: sharedInterests(content.interests, p.interests ?? []).length,
+      activeRecently: true, likedMe: p.id === DEMO_FAN, shownThisWeek: i, shownToday: 0,
+    }));
+    return rankPicks(candidates, DAILY_LIMIT - decided.length, new Date().toDateString());
+  };
   return {
     demo: true,
     sendCode: wait,
@@ -201,14 +226,19 @@ export function demoBackend(delayMs = 300): Backend {
       await wait();
       profile = p;
       content = c;
+      preferences = defaultPreferences(ageOn(p.birthdate, new Date()));
     },
     async saveContent(c) {
       await wait();
       content = c;
     },
+    async savePreferences(p) {
+      await wait();
+      preferences = p;
+    },
     async myProfile() {
       await wait();
-      return { displayName: profile.displayName, age: ageOn(profile.birthdate, new Date()), bio, gender: profile.gender, seeking: profile.seeking, phone, paused, ...content };
+      return { displayName: profile.displayName, age: ageOn(profile.birthdate, new Date()), bio, gender: profile.gender, seeking: profile.seeking, phone, paused, preferences, ...content };
     },
     async saveBio(b) {
       await wait();
@@ -226,12 +256,12 @@ export function demoBackend(delayMs = 300): Backend {
     async todaysPicks() {
       await wait();
       if (paused) return { picks: [], used: decided.length };
-      return { picks: DEMO_PICKS.filter((p) => !decided.includes(p.id)), used: decided.length };
+      return { picks: ranked(), used: decided.length };
     },
     async decide(id, decision) {
       await wait();
       if (!decided.includes(id)) decided = [...decided, id];
-      return { matched: decision === 'like' && id === 'demo-2' };
+      return { matched: decision === 'like' && id === DEMO_FAN };
     },
     async isPaused() {
       return paused;
