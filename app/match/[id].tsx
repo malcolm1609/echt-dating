@@ -42,7 +42,7 @@ export default function MatchScreen() {
             endKindly={(t) => matchStore.endKindly(id, t)}
           />
         ) : (
-          <QuestionRound name={match.name} answers={match.answers} onAnswer={(k, t) => matchStore.answer(id, k, t)} />
+          <QuestionRound name={match.name} opener={match.opener} answers={match.answers} onAnswer={(k, t) => matchStore.answer(id, k, t)} />
         )}
       </ScrollView>
     </Screen>

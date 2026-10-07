@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { ageOn } from '../domain/onboarding.ts';
+import { ProfileContent, promptText } from '../domain/profileContent.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
 import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
@@ -20,7 +21,9 @@ export interface Backend {
   verifyPhoneCode(phone: string, code: string): Promise<void>;
   myProfile(): Promise<MyProfile>;
   saveBio(bio: string): Promise<void>;
-  saveProfile(profile: CompleteProfile, location: Location): Promise<void>;
+  /** Fragen mit Antworten, Beziehungsziel und Interessen. */
+  saveContent(content: ProfileContent): Promise<void>;
+  saveProfile(profile: CompleteProfile, location: Location, content: ProfileContent): Promise<void>;
   /** Liefert die Adresse der Ausweis- und Selfie-Prüfung beim Anbieter. */
   startVerification(): Promise<{ url: string | null }>;
   myStatus(): Promise<MyStatus>;
@@ -68,16 +71,22 @@ function supabaseBackend(url: string, key: string): Backend {
     async myProfile() {
       const { data } = await db.auth.getUser();
       if (!data.user) throw new Error('Nicht angemeldet');
-      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused').eq('id', data.user.id).single())!;
+      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused, goal, prompts, interests').eq('id', data.user.id).single())!;
       const phone = data.user.phone ? `+${data.user.phone.replace(/^\+/, '')}` : null;
-      return { displayName: p.display_name, age: ageOn(p.birthdate, new Date()), bio: p.bio, gender: p.gender, seeking: p.seeking, phone, paused: p.paused };
+      return {
+        displayName: p.display_name, age: ageOn(p.birthdate, new Date()), bio: p.bio, gender: p.gender, seeking: p.seeking, phone, paused: p.paused,
+        goal: p.goal ?? undefined, interests: p.interests, prompts: p.prompts.map((x: any) => ({ promptId: x.prompt_id, answer: x.answer })),
+      };
     },
     async saveBio(bio) {
       ok(await db.from('profiles').update({ bio }).eq('id', await uid()));
     },
-    async saveProfile(p, { lat, lng }) {
+    async saveContent(c) {
+      ok(await db.from('profiles').update(contentColumns(c)).eq('id', await uid()));
+    },
+    async saveProfile(p, { lat, lng }, content) {
       const id = await uid();
-      const editable = { display_name: p.displayName, seeking: p.seeking, lat, lng };
+      const editable = { display_name: p.displayName, seeking: p.seeking, lat, lng, ...contentColumns(content) };
       const { error } = await db.from('profiles').insert({ id, ...editable, birthdate: p.birthdate, gender: p.gender });
       // Profil existiert schon: Geburtsdatum und Geschlecht sind nach dem Anlegen gesperrt.
       if (error?.code === '23505') ok(await db.from('profiles').update(editable).eq('id', id));
@@ -98,7 +107,10 @@ function supabaseBackend(url: string, key: string): Backend {
     },
     async todaysPicks() {
       const [rows, today] = await Promise.all([db.rpc('todays_picks'), db.from('my_picks_today').select('used').single()]);
-      const picks = (ok(rows) ?? []).map((r: any) => ({ id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km }));
+      const picks = (ok(rows) ?? []).map((r: any) => ({
+        id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km, goal: r.goal ?? undefined, interests: r.interests,
+        prompts: r.prompts.map((x: any) => ({ question: promptText(x.prompt_id) ?? '', answer: x.answer })),
+      }));
       return { picks, used: ok(today)?.used ?? 0 };
     },
     async isPaused() {
@@ -118,10 +130,42 @@ function supabaseBackend(url: string, key: string): Backend {
   };
 }
 
+const contentColumns = (c: ProfileContent) => ({
+  goal: c.goal ?? null,
+  interests: c.interests,
+  prompts: c.prompts.map((p) => ({ prompt_id: p.promptId, answer: p.answer })),
+});
+
+const shown = (...pairs: [string, string][]) => pairs.map(([id, answer]) => ({ question: promptText(id)!, answer }));
+
 const DEMO_PICKS: Pick[] = [
-  { id: 'demo-1', displayName: 'Jonas', age: 31, bio: 'Baut Fahrräder, kocht lieber als er bestellt.', distanceKm: 4 },
-  { id: 'demo-2', displayName: 'Elif', age: 28, bio: 'Sonntags auf dem Flohmarkt, unter der Woche im Labor.', distanceKm: 7 },
-  { id: 'demo-3', displayName: 'Sam', age: 33, bio: 'Sucht jemanden für lange Spaziergänge und kurze Nachrichten.', distanceKm: 2 },
+  {
+    id: 'demo-1', displayName: 'Jonas', age: 31, bio: 'Baut Fahrräder, kocht lieber als er bestellt.', distanceKm: 4, goal: 'fest',
+    interests: ['Radfahren', 'Kochen', 'Brettspiele'],
+    prompts: shown(
+      ['alltag-4', 'Gerade Shakshuka, seit ich in Tel Aviv war. Mit viel zu viel Koriander.'],
+      ['anknuepfen-4', 'Laufräder einspeichen. Mein drittes Rad ist fast fertig.'],
+      ['werte-6', 'Ich repariere Dinge. Dein Fahrrad zum Beispiel.'],
+    ),
+  },
+  {
+    id: 'demo-2', displayName: 'Elif', age: 28, bio: 'Sonntags auf dem Flohmarkt, unter der Woche im Labor.', distanceKm: 7, goal: 'ernst',
+    interests: ['Flohmärkte', 'Wissenschaft', 'Kochen', 'Konzerte'],
+    prompts: shown(
+      ['anknuepfen-1', 'Der Flohmarkt am Mauerpark, sonntags um neun, bevor alle kommen.'],
+      ['alltag-8', 'Warum Hefe beim Backen eigentlich tut, was sie tut.'],
+      ['werte-1', 'Wenn wir zusammen schweigen können und es nicht komisch ist.'],
+    ),
+  },
+  {
+    id: 'demo-3', displayName: 'Sam', age: 33, bio: 'Sucht jemanden für lange Spaziergänge und kurze Nachrichten.', distanceKm: 2, goal: 'offen',
+    interests: ['Wandern', 'Podcasts', 'Fotografie'],
+    prompts: shown(
+      ['alltag-1', 'Bäcker um die Ecke, dann raus an den Schlachtensee, egal bei welchem Wetter.'],
+      ['anknuepfen-2', 'Der Podcast „Hotel Matze“. Die Folge mit der Hebamme.'],
+      ['werte-8', 'Über Ordnung. Früher fand ich sie spießig, heute beruhigt sie mich.'],
+    ),
+  },
 ];
 
 /** Ohne Supabase-Zugangsdaten: klickbarer Ablauf mit Beispieldaten. */
@@ -132,6 +176,15 @@ export function demoBackend(delayMs = 300): Backend {
   let phone: string | null = null;
   let profile: CompleteProfile = { displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] };
   let bio = 'Läuft gern am Kanal, liest lieber Papier als Bildschirm.';
+  let content: ProfileContent = {
+    prompts: [
+      { promptId: 'alltag-1', answer: 'Lange frühstücken, dann mit dem Rad raus an den Müggelsee.' },
+      { promptId: 'anknuepfen-2', answer: '„Normal People“ von Sally Rooney. Danach brauchte ich einen Spaziergang.' },
+      { promptId: 'werte-2', answer: 'Wir uns Dinge sagen, bevor sie groß werden.' },
+    ],
+    goal: 'fest',
+    interests: ['Kochen', 'Lesen', 'Radfahren'],
+  };
   const wait = () => new Promise<void>((r) => setTimeout(r, delayMs));
   return {
     demo: true,
@@ -142,13 +195,18 @@ export function demoBackend(delayMs = 300): Backend {
       await wait();
       phone = p;
     },
-    async saveProfile(p) {
+    async saveProfile(p, _location, c) {
       await wait();
       profile = p;
+      content = c;
+    },
+    async saveContent(c) {
+      await wait();
+      content = c;
     },
     async myProfile() {
       await wait();
-      return { displayName: profile.displayName, age: ageOn(profile.birthdate, new Date()), bio, gender: profile.gender, seeking: profile.seeking, phone, paused };
+      return { displayName: profile.displayName, age: ageOn(profile.birthdate, new Date()), bio, gender: profile.gender, seeking: profile.seeking, phone, paused, ...content };
     },
     async saveBio(b) {
       await wait();

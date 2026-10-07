@@ -16,18 +16,20 @@ const device = {
 };
 
 export default function Standort() {
-  const profile = signupDraft.get();
+  const draft = signupDraft.get();
   // Nach Neuladen ist das Profil aus dem Speicher weg: dann zurück zu „Über dich“.
-  if (!profile) return <Redirect href="/profil" />;
+  if (!draft) return <Redirect href="/profil" />;
+  if (!draft.content) return <Redirect href="/fragen" />;
+  const { profile, content } = draft;
 
   return (
     <Screen>
-      <StepHeader step={4} total={5} name="Standort" />
+      <StepHeader step={5} total={6} name="Standort" />
       <LocationStep
         onLocate={() => locate(device)}
         onOpenSettings={() => Linking.openSettings()}
         onDone={async (coords) => {
-          await backend.saveProfile(profile, coords);
+          await backend.saveProfile(profile, coords, content);
           signupDraft.clear();
           router.replace('/verifizieren');
         }}

@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { Answers, answerKey, QUESTION_ROUNDS, roundState, theirAnswerFor } from '../domain/conversation.ts';
 import { Button, s } from './kit';
+import type { ShownPrompt } from './ProfileDetails';
 import { colors, font } from './theme';
 
 interface Props {
   name: string;
+  opener?: ShownPrompt;
   answers: Answers;
   onAnswer: (key: string, text: string) => void;
 }
 
-export function QuestionRound({ name, answers, onAnswer }: Props) {
+export function QuestionRound({ name, opener, answers, onAnswer }: Props) {
   return (
     <View style={{ gap: 28 }}>
       <Text style={font.small}>
@@ -24,7 +26,16 @@ export function QuestionRound({ name, answers, onAnswer }: Props) {
             {state === 'locked' ? (
               <Text style={font.small}>{`Wird frei, wenn ihr beide Runde ${r} beantwortet habt.`}</Text>
             ) : (
-              round.questions.map((q, qi) => <Question key={q} name={name} question={q} pair={answers[answerKey(r, qi)]} onAnswer={(t) => onAnswer(answerKey(r, qi), t)} />)
+              round.questions.map((q, qi) => (
+                <Question
+                  key={q}
+                  name={name}
+                  question={r === 0 && qi === 0 && opener ? `Was fällt dir zu ${name}s Antwort ein?` : q}
+                  opener={r === 0 && qi === 0 ? opener : undefined}
+                  pair={answers[answerKey(r, qi)]}
+                  onAnswer={(t) => onAnswer(answerKey(r, qi), t)}
+                />
+              ))
             )}
           </View>
         );
@@ -33,11 +44,18 @@ export function QuestionRound({ name, answers, onAnswer }: Props) {
   );
 }
 
-function Question({ name, question, pair, onAnswer }: { name: string; question: string; pair?: Answers[string]; onAnswer: (t: string) => void }) {
+function Question({ name, question, opener, pair, onAnswer }: { name: string; question: string; opener?: ShownPrompt; pair?: Answers[string]; onAnswer: (t: string) => void }) {
   const [draft, setDraft] = useState('');
   const theirs = theirAnswerFor(pair);
   return (
     <View style={{ backgroundColor: colors.surface, borderRadius: 18, padding: 16, gap: 10 }}>
+      {opener && (
+        <View style={{ gap: 6, borderLeftWidth: 3, borderLeftColor: colors.accent, paddingLeft: 12 }}>
+          <Text style={[font.label, { color: colors.accent }]}>Zum Einstieg</Text>
+          <Text style={font.small}>{opener.question}</Text>
+          <Text style={[font.body, { fontStyle: 'italic' }]}>{`„${opener.answer}“`}</Text>
+        </View>
+      )}
       <Text style={[font.body, { fontWeight: '700' }]}>{question}</Text>
       {pair?.mine ? (
         <Text style={font.body}>

@@ -1,6 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { ReactNode, useState } from 'react';
-import { Platform, Pressable, PressableStateCallbackType, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { Platform, Pressable, PressableStateCallbackType, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, font, motion } from './theme';
 
@@ -45,11 +45,11 @@ export function Button({ title, onPress, disabled, busy, variant = 'primary', ic
   );
 }
 
-export function Field({ label, error, style, ...props }: TextInputProps & { label: string; error?: string }) {
+export function Field({ label, labelStyle, error, style, ...props }: TextInputProps & { label: string; labelStyle?: TextStyle; error?: string }) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={s.field}>
-      <Text style={[font.label, focused && { color: colors.hint }]}>{label}</Text>
+      <Text style={[font.label, labelStyle, focused && { color: colors.hint }]}>{label}</Text>
       <TextInput
         accessibilityLabel={label}
         placeholderTextColor={colors.muted}
@@ -108,5 +108,6 @@ export const s = StyleSheet.create({
   chip: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 18 },
   chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
   chipText: { color: colors.text, fontWeight: '600', fontSize: 15 },
+  option: { minHeight: 52, justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.surface },
   hint: { backgroundColor: colors.surface, borderLeftWidth: 3, borderLeftColor: colors.hint, borderRadius: 10, padding: 14 },
 });

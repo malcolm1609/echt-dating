@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { Answers, answerKey, DateAnswer, QUESTION_ROUNDS } from '../domain/conversation.ts';
+import type { ShownPrompt } from '../ui/ProfileDetails';
 
 export interface Message { id: string; from: 'me' | 'them'; text: string; at: Date }
 export interface DateProposal { place: string; when: string; accepted: boolean; past: boolean }
@@ -8,6 +9,8 @@ export interface Match {
   id: string;
   name: string;
   age: number;
+  /** Profilantwort der anderen Person, mit der die Fragenrunde beginnt. */
+  opener?: ShownPrompt;
   answers: Answers;
   messages: Message[];
   date?: DateProposal;
@@ -19,7 +22,7 @@ export interface MatchStore {
   list(): Match[];
   get(id: string): Match | undefined;
   subscribe(listener: () => void): () => void;
-  add(person: { id: string; name: string; age: number }): void;
+  add(person: { id: string; name: string; age: number; opener?: ShownPrompt }): void;
   answer(id: string, key: string, text: string): void;
   send(id: string, text: string): void;
   proposeDate(id: string, place: string, when: string): void;
@@ -38,6 +41,8 @@ const DEMO_THEIR_ANSWERS = [
   ['Für meine Schwester.', 'Nein sagen, ohne mich zu rechtfertigen.'],
   ['Jemand, bei dem ich nichts erklären muss.', 'Der Sommer, in dem ich schwimmen gelernt habe.'],
 ];
+
+const DEMO_OPENER_REPLY = 'Ich habe deine Antworten gelesen und hatte sofort Fragen. Die erste: Wie bist du darauf gekommen?';
 
 /** Klickbarer Prototyp: alles im Speicher, die andere Seite antwortet automatisch. */
 export function createDemoStore(delayMs = 1200): MatchStore {
@@ -80,7 +85,8 @@ export function createDemoStore(delayMs = 1200): MatchStore {
     answer(id, key, text) {
       update(id, (m) => ({ ...m, answers: { ...m.answers, [key]: { ...m.answers[key], mine: text } } }));
       const [r, q] = key.split('-').map(Number);
-      later(() => update(id, (m) => ({ ...m, answers: { ...m.answers, [key]: { ...m.answers[key], theirs: DEMO_THEIR_ANSWERS[r][q] } } })));
+      const theirs = key === answerKey(0, 0) && get(id)?.opener ? DEMO_OPENER_REPLY : DEMO_THEIR_ANSWERS[r][q];
+      later(() => update(id, (m) => ({ ...m, answers: { ...m.answers, [key]: { ...m.answers[key], theirs } } })));
     },
     send(id, text) {
       update(id, (m) => ({ ...m, messages: [...m.messages, msg('me', text)] }));

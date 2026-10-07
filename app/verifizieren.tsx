@@ -28,7 +28,7 @@ export default function Verify() {
 
   return (
     <Screen>
-      <StepHeader step={5} total={5} name="Ausweis" />
+      <StepHeader step={6} total={6} name="Ausweis" />
       <Text style={font.display}>Zeig, dass{'\n'}du echt bist<Text style={{ color: colors.accent }}>.</Text></Text>
       <View style={{ gap: 16 }}>
         {STEPS.map((step, i) => (
