@@ -5,4 +5,4 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f tests/supabase_stub.sql
 for f in migrations/*.sql; do psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f "$f"; done
-psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f tests/schema.test.sql
+for f in tests/*.test.sql; do psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f "$f"; done

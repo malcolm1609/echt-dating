@@ -39,7 +39,12 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - `verification-webhook`: prüft die HMAC-Signatur (X-Signature-V2, Fallback X-Signature, max. 5 Min. alt), speichert nur das Ergebnis, setzt Status, Gebiet und Geburtsdatum laut Ausweis
    - Entscheidet nur einmal pro Profil, doppelte Webhooks ändern nichts
    - Noch offen: Didit-Konto + Workflow (Ausweis, Liveness, Face Match) anlegen und Secrets in Supabase setzen
-5. „Heute“-Screen mit Tagesvorschlägen
+5. **„Heute“-Screen** ✅ (`app/heute.tsx`, `src/ui/TodayDeck.tsx`, Funktion `todays_picks()`)
+   - Ein Profil pro Screen, nur „Gefällt mir“ oder „Weiter“, Fortschritt als 6 Striche
+   - Feste Reihenfolge pro Person und Tag: Neu laden bringt keine neuen Vorschläge
+   - Gegenseitiges Like zeigt sofort den Match-Moment, danach ruhiges Tagesende
+   - Öffnen der App zählt als Aktivität (`touch_activity`)
+   - Noch offen: Profilfotos (bisher Initiale als Platzhalter)
 6. Match + Fragenrunde in 3 Stufen
 7. Chat, Date-Vorschlag, „Freundlich beenden“
 8. Check nach dem Date

@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { backend, MyStatus } from '../src/lib/backend';
@@ -23,10 +23,18 @@ export default function Status() {
         </>
       )}
       {state?.status === 'waitlisted' && <Waitlist {...state} />}
+      {state?.status === 'waitlisted' && backend.demo && (
+        <>
+          <View style={{ flex: 1 }} />
+          <Button title="Demo: Vorschläge ansehen" variant="ghost" onPress={() => router.push('/heute')} />
+        </>
+      )}
       {state?.status === 'admitted' && (
         <>
           <Text style={font.title}>Du bist dabei 🎉</Text>
-          <Text style={font.body}>Ab morgen bekommst du jeden Tag bis zu 6 Vorschläge.</Text>
+          <Text style={font.body}>Du bekommst jeden Tag bis zu 6 Vorschläge.</Text>
+          <View style={{ flex: 1 }} />
+          <Button title="Zu deinen Vorschlägen" onPress={() => router.replace('/heute')} />
         </>
       )}
       {state?.status === 'rejected' && (
