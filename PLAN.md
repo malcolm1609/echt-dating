@@ -24,7 +24,12 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Zulassung: Verifikation, Mindestalter 18, Kapazität, Geschlechterverhältnis ≤ 60 % pro Umkreis (unter 50 Personen wird jeder zugelassen)
    - Aktivität: nach 3 Tagen Erinnerung, nach 7 Tagen aus Vorschlägen, nach 14 Tagen pausiert (Platz wird frei), ab 3 offenen Spam-Meldungen gesperrt
    - Tagesvorschläge: max. 6, nur aktive und noch nicht gesehene Profile
-2. Supabase-Projekt + Datenmodell (profiles, areas, waitlist, likes, matches, reports) mit RLS
+2. **Datenmodell mit Zugriffsregeln** ✅ (`supabase/migrations`, Tests in `supabase/tests`)
+   - Andere sehen nur `public_profiles` (Alter, Entfernung in km, kein Geburtsdatum oder Standort)
+   - Status (Zulassung) ist nicht selbst änderbar, Prüfergebnisse sind für Nutzer unsichtbar
+   - Likes nur an sichtbare Profile, max. 6 pro Tag, gegenseitiges Like erzeugt automatisch ein Match
+   - Umkreis per Haversine statt PostGIS (reicht fürs MVP, kein Extension-Zwang)
+   - Noch offen: echtes Supabase-Projekt in EU-Region anlegen
 3. Anmeldung + Verifikation (Anbieter-SDK, Webhook → Zulassungsentscheidung)
 4. Warteliste-Screen (Platz, Wartezeit, Verhältnis im Umkreis)
 5. „Heute“-Screen mit Tagesvorschlägen
