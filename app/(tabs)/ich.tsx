@@ -38,6 +38,7 @@ export default function Me() {
             key={profile.displayName}
             profile={profile}
             onSaveBio={backend.saveBio}
+            onSaveContent={backend.saveContent}
             onTogglePause={async () => {
               await backend.setPaused(!profile.paused);
               setProfile({ ...profile, paused: !profile.paused });

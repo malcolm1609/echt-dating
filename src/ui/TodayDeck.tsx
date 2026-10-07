@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Animated, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
+import type { GoalId } from '../domain/profileContent.ts';
+import type { ShownPrompt } from './ProfileDetails';
 import { Button, s } from './kit';
 import { useEntrance, usePulse } from './motion';
-import { ProfileCard } from './ProfileCard';
+import { ProfileDetails } from './ProfileDetails';
 import { colors, font } from './theme';
 
 export interface Pick {
@@ -12,6 +14,9 @@ export interface Pick {
   age: number;
   bio: string;
   distanceKm: number;
+  goal?: GoalId;
+  prompts?: ShownPrompt[];
+  interests?: string[];
 }
 
 export type Decision = 'like' | 'pass';
@@ -21,9 +26,10 @@ interface Props {
   usedBefore: number;
   onDecide: (id: string, decision: Decision) => Promise<{ matched: boolean }>;
   onOpenMatch?: (pick: Pick) => void;
+  myInterests?: string[];
 }
 
-export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch }: Props) {
+export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests }: Props) {
   const [index, setIndex] = useState(0);
   // Neu geladene Vorschläge enthalten nur noch offene Personen: dann wieder vorne anfangen.
   const [shownPicks, setShownPicks] = useState(picks);
@@ -86,7 +92,18 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch }: Props) {
         ))}
       </View>
       <Animated.View style={[{ flex: 1 }, enterCard]}>
-        <ProfileCard name={current.displayName} age={current.age} bio={current.bio} eyebrow={`${current.distanceKm} km entfernt`} style={{ flex: 1 }} />
+        <ScrollView key={current.id} contentContainerStyle={{ paddingBottom: 8 }} showsVerticalScrollIndicator={false}>
+          <ProfileDetails
+            name={current.displayName}
+            age={current.age}
+            bio={current.bio}
+            eyebrow={`${current.distanceKm} km entfernt`}
+            goal={current.goal}
+            prompts={current.prompts ?? []}
+            interests={current.interests ?? []}
+            myInterests={myInterests}
+          />
+        </ScrollView>
       </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}
       <View style={{ flexDirection: 'row', gap: 12 }}>

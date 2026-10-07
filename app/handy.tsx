@@ -8,7 +8,7 @@ import { font } from '../src/ui/theme';
 export default function Handy() {
   return (
     <Screen>
-      <StepHeader step={2} total={5} name="Handynummer" />
+      <StepHeader step={2} total={6} name="Handynummer" />
       {backend.demo && (
         <View style={s.hint}>
           <Text style={font.small}>Demo: Es wird keine SMS verschickt, jeder 6-stellige Code passt.</Text>

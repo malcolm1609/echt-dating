@@ -1,6 +1,17 @@
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
 import { demoBackend } from './backend';
+import type { ProfileContent } from '../domain/profileContent.ts';
+
+const content: ProfileContent = {
+  prompts: [
+    { promptId: 'alltag-1', answer: 'Ausschlafen, Markt, abends Freunde.' },
+    { promptId: 'anknuepfen-1', answer: 'Der Kiosk an der Admiralbrücke.' },
+    { promptId: 'werte-1', answer: 'Wenn wir zusammen schweigen können.' },
+  ],
+  goal: 'fest',
+  interests: ['Kochen'],
+};
 
 describe('demoBackend', () => {
   it('remembers decisions, so reloading brings no new suggestions', async () => {
@@ -34,10 +45,26 @@ describe('demoBackend', () => {
     const b = demoBackend(0);
     await b.sendPhoneCode('+4915123456789');
     await b.verifyPhoneCode('+4915123456789', '123456');
-    await b.saveProfile({ displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] }, { lat: 52.5, lng: 13.4 });
+    await b.saveProfile({ displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] }, { lat: 52.5, lng: 13.4 }, content);
     await b.saveBio('Backt Brot.');
     const me = await b.myProfile();
     expect(me).toMatchObject({ displayName: 'Anna', bio: 'Backt Brot.', phone: '+4915123456789', seeking: ['m'], paused: false });
     expect(me.age).toBeGreaterThanOrEqual(28);
+  });
+
+  it('keeps the profile questions, goal and interests and lets people change them', async () => {
+    const b = demoBackend(0);
+    await b.saveProfile({ displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] }, { lat: 52.5, lng: 13.4 }, content);
+    expect(await b.myProfile()).toMatchObject({ goal: 'fest', interests: ['Kochen'], prompts: content.prompts });
+    await b.saveContent({ ...content, goal: 'offen' });
+    expect((await b.myProfile()).goal).toBe('offen');
+  });
+
+  it('shows suggestions with their answers, goal and interests', async () => {
+    const { picks } = await demoBackend(0).todaysPicks();
+    for (const p of picks) {
+      expect(p.prompts).toHaveLength(3);
+      expect(p.goal).toBeDefined();
+    }
   });
 });
