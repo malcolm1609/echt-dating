@@ -16,17 +16,7 @@ insert into profiles (id, display_name, birthdate, gender, seeking, area_id, lat
   ('00000000-0000-0000-0000-00000000000c', 'Carl', '1995-01-01', 'm', '{f}', 1, 52.51, 13.41, 'admitted', now() - interval '10 days'),
   ('00000000-0000-0000-0000-00000000000d', 'Dora', '1999-01-01', 'f', '{m}', 1, 52.53, 13.39, 'waitlisted', now());
 
-create function pg_temp.as_user(uid text) returns void language plpgsql as $$
-begin
-  perform set_config('request.jwt.claim.sub', uid, true);
-  execute 'set local role authenticated';
-end $$;
-
-create function pg_temp.assert(ok boolean, msg text) returns void language plpgsql as $$
-begin
-  if not coalesce(ok, false) then raise exception 'FAILED: %', msg; end if;
-  raise notice 'ok - %', msg;
-end $$;
+\ir helpers.sql
 
 -- Sichtbarkeit
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
