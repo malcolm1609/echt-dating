@@ -1,4 +1,4 @@
-import { decideAdmission, Admission, CheckResult, Gender } from './admission';
+import { decideAdmission, Admission, CheckResult, Gender } from './admission.ts';
 
 export interface Area {
   id: number;

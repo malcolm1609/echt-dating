@@ -1,0 +1,5 @@
+project_id = "echt-dating"
+
+# Didit ruft den Webhook ohne Supabase-Login auf; geschützt ist er über die HMAC-Signatur.
+[functions.verification-webhook]
+verify_jwt = false
