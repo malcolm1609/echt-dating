@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 import { GoalId, PROMPTS, sharedInterests } from '../../src/domain/profileContent.ts';
 import { backend } from '../../src/lib/backend';
 import { matchStore } from '../../src/lib/matches';
+import { ActiveNearby } from '../../src/ui/ActiveNearby';
 import { Button, Screen } from '../../src/ui/kit';
 import { Pick, TodayDeck } from '../../src/ui/TodayDeck';
 import { colors, font } from '../../src/ui/theme';
@@ -12,6 +13,7 @@ export default function Today() {
   const [data, setData] = useState<{ picks: Pick[]; used: number }>();
   const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [nearby, setNearby] = useState<number | null>();
   const [me, setMe] = useState<{ interests: string[]; goal?: GoalId }>({ interests: [] });
 
   const load = useCallback(() => {
@@ -20,12 +22,14 @@ export default function Today() {
     backend.isPaused().then(setPaused, () => {});
     backend.myProfile().then(setMe, () => {});
     backend.todaysPicks().then(setData, () => setFailed(true));
+    backend.activeNearby().then(setNearby, () => {});
   }, []);
   useFocusEffect(load);
 
   return (
     <Screen>
       <Text style={font.display}>Heute<Text style={{ color: colors.accent }}>.</Text></Text>
+      <ActiveNearby bucket={nearby} />
       {failed && (
         <>
           <Text style={font.body}>Deine Vorschläge konnten nicht geladen werden.</Text>

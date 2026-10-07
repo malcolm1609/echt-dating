@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { ageOn } from '../domain/onboarding.ts';
+import { activeNearbyBucket } from '../domain/activeNearby.ts';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import { defaultPreferences, fitsEachOther, Preferences } from '../domain/preferences.ts';
 import { goalFit, ProfileContent, promptText, sharedInterests } from '../domain/profileContent.ts';
@@ -35,6 +36,8 @@ export interface Backend {
   /** Hält das Profil sichtbar; nach 7 Tagen ohne Aufruf verschwindet es aus den Vorschlägen. */
   touchActivity(): Promise<void>;
   todaysPicks(): Promise<{ picks: Pick[]; used: number }>;
+  /** Heute aktiv im Umkreis, schon abgerundet; null unter der Mindestzahl. */
+  activeNearby(): Promise<number | null>;
   decide(id: string, decision: Decision): Promise<{ matched: boolean }>;
   /** Pausiert: keine Vorschläge, und man wird niemandem gezeigt. */
   isPaused(): Promise<boolean>;
@@ -122,6 +125,9 @@ function supabaseBackend(url: string, key: string): Backend {
         prompts: r.prompts.map((x: any) => ({ question: promptText(x.prompt_id) ?? '', answer: x.answer })),
       }));
       return { picks, used: ok(today)?.used ?? 0 };
+    },
+    async activeNearby() {
+      return ok(await db.rpc('active_nearby')) ?? null;
     },
     async isPaused() {
       return ok(await db.from('profiles').select('paused').eq('id', await uid()).single())!.paused;
@@ -257,6 +263,9 @@ export function demoBackend(delayMs = 300): Backend {
       await wait();
       if (paused) return { picks: [], used: decided.length };
       return { picks: ranked(), used: decided.length };
+    },
+    async activeNearby() {
+      return activeNearbyBucket(143);
     },
     async decide(id, decision) {
       await wait();

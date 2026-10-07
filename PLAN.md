@@ -58,7 +58,8 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Ein Platz für jemanden, der mich schon geliked hat (bleibt verborgen), einer für die diese Woche am seltensten Gezeigten; wer heute 12-mal bewertet wurde, pausiert bis morgen
    - Unter jedem Vorschlag ein Satz, warum er passt; Date-Ideen aus gemeinsamen Interessen (`src/domain/dateIdeas.ts`)
    - Grundlage: Recherche „Algorithmus und Filter für Echt“ (Projektdateien)
-10. **Navigation**: Tabs Heute, Matches, Profil (Profil pausieren)
+10. **„In deiner Nähe sind heute aktiv“** ✅ (`src/domain/activeNearby.ts`, Funktion `active_nearby()`): auf Heute und der Warteliste, erst ab 51 Personen, von der Datenbank schon abgerundet (50er, 100er, 1000er), kein Live-Zähler
+11. **Navigation**: Tabs Heute, Matches, Profil (Profil pausieren)
 
 Matches, Fragenrunde, Chat und Date laufen bisher nur im Demo-Modus (`src/lib/matches.ts`, im Speicher, die andere Seite antwortet automatisch).
 Noch offen: Tabellen und Zugriffsregeln dafür in Supabase und die echte Anbindung.
