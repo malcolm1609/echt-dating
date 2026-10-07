@@ -26,7 +26,7 @@ export default function Status() {
       {state?.status === 'waitlisted' && backend.demo && (
         <>
           <View style={{ flex: 1 }} />
-          <Button title="Demo: Vorschläge ansehen" variant="ghost" onPress={() => router.push('/heute')} />
+          <Button title="Demo: Vorschläge ansehen" variant="ghost" onPress={() => router.replace('/heute')} />
         </>
       )}
       {state?.status === 'admitted' && (

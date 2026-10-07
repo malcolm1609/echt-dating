@@ -18,9 +18,10 @@ interface Props {
   picks: Pick[];
   usedBefore: number;
   onDecide: (id: string, decision: Decision) => Promise<{ matched: boolean }>;
+  onOpenMatch?: (pick: Pick) => void;
 }
 
-export function TodayDeck({ picks, usedBefore, onDecide }: Props) {
+export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch }: Props) {
   const [index, setIndex] = useState(0);
   const [match, setMatch] = useState<Pick | null>(null);
   const [busy, setBusy] = useState(false);
@@ -48,6 +49,7 @@ export function TodayDeck({ picks, usedBefore, onDecide }: Props) {
         <Text style={font.display}>Ihr mögt euch beide</Text>
         <Text style={font.body}>Du und {match.displayName} startet mit einer kurzen Fragenrunde statt mit Smalltalk.</Text>
         <View style={{ flex: 1 }} />
+        {onOpenMatch && <Button title="Zur Fragenrunde" onPress={() => { setMatch(null); onOpenMatch(match); }} />}
         <Button title="Später schreiben" variant="ghost" onPress={() => setMatch(null)} />
       </View>
     );
