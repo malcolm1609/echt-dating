@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 import { ProfileDetails } from './ProfileDetails';
 
 const person = {
@@ -21,5 +22,14 @@ describe('ProfileDetails', () => {
     expect(screen.getByText('1 Gemeinsamkeit')).toBeTruthy();
     expect(screen.getByLabelText('Kochen, gemeinsam')).toBeTruthy();
     expect(screen.getByLabelText('Wissenschaft')).toBeTruthy();
+  });
+
+  it('shows the favourite song and opens it in the music app', () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const music = { provider: 'spotify' as const, kind: 'track' as const, url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody' };
+    render(<ProfileDetails {...person} music={music} />);
+    expect(screen.getByText('Bohemian Rhapsody')).toBeTruthy();
+    fireEvent.press(screen.getByText('In Spotify öffnen'));
+    expect(open).toHaveBeenCalledWith(music.url);
   });
 });

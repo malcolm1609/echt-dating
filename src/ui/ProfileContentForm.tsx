@@ -4,7 +4,10 @@ import {
   answerHint, GOALS, GoalId, INTEREST_MAX, INTERESTS, PROMPT_CATEGORIES, PROMPT_MAX, PromptAnswer, PromptCategory, PROMPTS,
   ProfileContent, ProfileContentErrors, validateProfileContent,
 } from '../domain/profileContent.ts';
+import type { MusicLink } from '../domain/music.ts';
+import { lookupMusicTitle } from '../lib/musicTitle';
 import { Button, Chip, Field, s } from './kit';
+import { MusicField } from './MusicField';
 import { colors, font } from './theme';
 
 interface Props {
@@ -12,17 +15,19 @@ interface Props {
   submitLabel: string;
   busy?: boolean;
   onSubmit: (content: ProfileContent) => void;
+  lookupTitle?: (url: string) => Promise<string | null>;
 }
 
 const categoryOf = (promptId: string) => PROMPTS.find((p) => p.id === promptId)?.category;
 
-export function ProfileContentForm({ initial, submitLabel, busy, onSubmit }: Props) {
+export function ProfileContentForm({ initial, submitLabel, busy, onSubmit, lookupTitle = lookupMusicTitle }: Props) {
   const [answers, setAnswers] = useState<Partial<Record<PromptCategory, PromptAnswer>>>(() =>
     Object.fromEntries((initial?.prompts ?? []).map((p) => [categoryOf(p.promptId), p])),
   );
   const [picking, setPicking] = useState<PromptCategory>();
   const [goal, setGoal] = useState<GoalId | undefined>(initial?.goal);
   const [interests, setInterests] = useState<string[]>(initial?.interests ?? []);
+  const [music, setMusic] = useState<MusicLink | undefined>(initial?.music);
   const [errors, setErrors] = useState<ProfileContentErrors>({});
 
   const edited = (field: keyof ProfileContentErrors) => setErrors(({ [field]: _, ...rest }) => rest);
@@ -40,6 +45,7 @@ export function ProfileContentForm({ initial, submitLabel, busy, onSubmit }: Pro
       prompts: PROMPT_CATEGORIES.flatMap(({ id }) => (answers[id] ? [{ ...answers[id]!, answer: answers[id]!.answer.trim() }] : [])),
       goal,
       interests,
+      ...(music && { music: { ...music, title: music.title.trim() } }),
     };
     const found = validateProfileContent(content);
     setErrors(found);
@@ -122,6 +128,12 @@ export function ProfileContentForm({ initial, submitLabel, busy, onSubmit }: Pro
           ))}
         </View>
         {errors.interests && <Text style={s.error}>{errors.interests}</Text>}
+      </View>
+
+      <View style={{ gap: 12 }}>
+        <Text style={[font.label, { color: colors.hint }]}>Dein Song, freiwillig</Text>
+        <Text style={font.small}>Ein Lieblingssong oder eine Playlist aus Spotify oder Apple Music. Andere können ihn direkt anhören.</Text>
+        <MusicField value={music} error={errors.music} lookupTitle={lookupTitle} onChange={(m) => { edited('music'); setMusic(m); }} />
       </View>
 
       <Button title={submitLabel} busy={busy} onPress={submit} />

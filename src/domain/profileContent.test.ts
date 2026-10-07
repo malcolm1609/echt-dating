@@ -47,6 +47,12 @@ describe('validateProfileContent', () => {
     expect(validateProfileContent(unknown).alltag).toBeDefined();
   });
 
+  it('checks an optional favourite song', () => {
+    const music = { provider: 'spotify' as const, kind: 'track' as const, url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody' };
+    expect(validateProfileContent({ ...complete, music })).toEqual({});
+    expect(validateProfileContent({ ...complete, music: { ...music, title: '' } }).music).toBe('Wie heißt der Song oder die Playlist?');
+  });
+
   it('limits interests to five from the list', () => {
     expect(validateProfileContent({ ...complete, interests: INTERESTS.slice(0, 6) }).interests).toBe('Höchstens 5 Interessen.');
     expect(validateProfileContent({ ...complete, interests: ['Raketenbau'] }).interests).toBeDefined();

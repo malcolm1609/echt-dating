@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Animated, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
+import type { MusicLink } from '../domain/music.ts';
 import type { GoalId } from '../domain/profileContent.ts';
 import type { ShownPrompt } from './ProfileDetails';
 import { Button, s } from './kit';
@@ -17,6 +18,7 @@ export interface Pick {
   goal?: GoalId;
   prompts?: ShownPrompt[];
   interests?: string[];
+  music?: MusicLink;
 }
 
 export type Decision = 'like' | 'pass';
@@ -102,6 +104,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
             prompts={current.prompts ?? []}
             interests={current.interests ?? []}
             myInterests={myInterests}
+            music={current.music}
           />
         </ScrollView>
       </Animated.View>

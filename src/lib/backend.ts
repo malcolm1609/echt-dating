@@ -71,11 +71,11 @@ function supabaseBackend(url: string, key: string): Backend {
     async myProfile() {
       const { data } = await db.auth.getUser();
       if (!data.user) throw new Error('Nicht angemeldet');
-      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused, goal, prompts, interests').eq('id', data.user.id).single())!;
+      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused, goal, prompts, interests, music').eq('id', data.user.id).single())!;
       const phone = data.user.phone ? `+${data.user.phone.replace(/^\+/, '')}` : null;
       return {
         displayName: p.display_name, age: ageOn(p.birthdate, new Date()), bio: p.bio, gender: p.gender, seeking: p.seeking, phone, paused: p.paused,
-        goal: p.goal ?? undefined, interests: p.interests, prompts: p.prompts.map((x: any) => ({ promptId: x.prompt_id, answer: x.answer })),
+        goal: p.goal ?? undefined, interests: p.interests, music: p.music ?? undefined, prompts: p.prompts.map((x: any) => ({ promptId: x.prompt_id, answer: x.answer })),
       };
     },
     async saveBio(bio) {
@@ -108,7 +108,7 @@ function supabaseBackend(url: string, key: string): Backend {
     async todaysPicks() {
       const [rows, today] = await Promise.all([db.rpc('todays_picks'), db.from('my_picks_today').select('used').single()]);
       const picks = (ok(rows) ?? []).map((r: any) => ({
-        id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km, goal: r.goal ?? undefined, interests: r.interests,
+        id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km, goal: r.goal ?? undefined, interests: r.interests, music: r.music ?? undefined,
         prompts: r.prompts.map((x: any) => ({ question: promptText(x.prompt_id) ?? '', answer: x.answer })),
       }));
       return { picks, used: ok(today)?.used ?? 0 };
@@ -133,6 +133,7 @@ function supabaseBackend(url: string, key: string): Backend {
 const contentColumns = (c: ProfileContent) => ({
   goal: c.goal ?? null,
   interests: c.interests,
+  music: c.music ?? null,
   prompts: c.prompts.map((p) => ({ prompt_id: p.promptId, answer: p.answer })),
 });
 
@@ -142,6 +143,7 @@ const DEMO_PICKS: Pick[] = [
   {
     id: 'demo-1', displayName: 'Jonas', age: 31, bio: 'Baut Fahrräder, kocht lieber als er bestellt.', distanceKm: 4, goal: 'fest',
     interests: ['Radfahren', 'Kochen', 'Brettspiele'],
+    music: { provider: 'spotify', kind: 'track', url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody – Queen' },
     prompts: shown(
       ['alltag-4', 'Gerade Shakshuka, seit ich in Tel Aviv war. Mit viel zu viel Koriander.'],
       ['anknuepfen-4', 'Laufräder einspeichen. Mein drittes Rad ist fast fertig.'],
