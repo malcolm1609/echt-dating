@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { ageOn } from '../domain/onboarding.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
+import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
 
 export type MyStatus =
@@ -13,6 +15,11 @@ export interface Backend {
   demo: boolean;
   sendCode(email: string): Promise<void>;
   verifyCode(email: string, code: string): Promise<void>;
+  /** Zweite Prüfung: SMS-Code an die Handynummer (E.164). Eine Nummer gehört genau zu einem Konto. */
+  sendPhoneCode(phone: string): Promise<void>;
+  verifyPhoneCode(phone: string, code: string): Promise<void>;
+  myProfile(): Promise<MyProfile>;
+  saveBio(bio: string): Promise<void>;
   saveProfile(profile: CompleteProfile, location: Location): Promise<void>;
   /** Liefert die Adresse der Ausweis- und Selfie-Prüfung beim Anbieter. */
   startVerification(): Promise<{ url: string | null }>;
@@ -21,6 +28,11 @@ export interface Backend {
   touchActivity(): Promise<void>;
   todaysPicks(): Promise<{ picks: Pick[]; used: number }>;
   decide(id: string, decision: Decision): Promise<{ matched: boolean }>;
+  /** Pausiert: keine Vorschläge, und man wird niemandem gezeigt. */
+  isPaused(): Promise<boolean>;
+  setPaused(paused: boolean): Promise<void>;
+  /** Nur Demo: alles auf Anfang. */
+  reset?(): void;
 }
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -45,6 +57,23 @@ function supabaseBackend(url: string, key: string): Backend {
     },
     async verifyCode(email, token) {
       ok(await db.auth.verifyOtp({ email, token, type: 'email' }));
+    },
+    async sendPhoneCode(phone) {
+      const { error } = await db.auth.updateUser({ phone });
+      if (error) throw error;
+    },
+    async verifyPhoneCode(phone, token) {
+      ok(await db.auth.verifyOtp({ phone, token, type: 'phone_change' }));
+    },
+    async myProfile() {
+      const { data } = await db.auth.getUser();
+      if (!data.user) throw new Error('Nicht angemeldet');
+      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused').eq('id', data.user.id).single())!;
+      const phone = data.user.phone ? `+${data.user.phone.replace(/^\+/, '')}` : null;
+      return { displayName: p.display_name, age: ageOn(p.birthdate, new Date()), bio: p.bio, gender: p.gender, seeking: p.seeking, phone, paused: p.paused };
+    },
+    async saveBio(bio) {
+      ok(await db.from('profiles').update({ bio }).eq('id', await uid()));
     },
     async saveProfile(p, { lat, lng }) {
       const id = await uid();
@@ -72,6 +101,12 @@ function supabaseBackend(url: string, key: string): Backend {
       const picks = (ok(rows) ?? []).map((r: any) => ({ id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km }));
       return { picks, used: ok(today)?.used ?? 0 };
     },
+    async isPaused() {
+      return ok(await db.from('profiles').select('paused').eq('id', await uid()).single())!.paused;
+    },
+    async setPaused(paused) {
+      ok(await db.from('profiles').update({ paused }).eq('id', await uid()));
+    },
     async decide(to_id, decision) {
       const me = await uid();
       ok(await db.from('likes').insert({ from_id: me, to_id, decision }));
@@ -90,14 +125,35 @@ const DEMO_PICKS: Pick[] = [
 ];
 
 /** Ohne Supabase-Zugangsdaten: klickbarer Ablauf mit Beispieldaten. */
-function demoBackend(): Backend {
+export function demoBackend(delayMs = 300): Backend {
   let verified = false;
-  const wait = () => new Promise<void>((r) => setTimeout(r, 300));
+  let paused = false;
+  let decided: string[] = [];
+  let phone: string | null = null;
+  let profile: CompleteProfile = { displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] };
+  let bio = 'Läuft gern am Kanal, liest lieber Papier als Bildschirm.';
+  const wait = () => new Promise<void>((r) => setTimeout(r, delayMs));
   return {
     demo: true,
     sendCode: wait,
     verifyCode: wait,
-    saveProfile: wait,
+    sendPhoneCode: wait,
+    async verifyPhoneCode(p) {
+      await wait();
+      phone = p;
+    },
+    async saveProfile(p) {
+      await wait();
+      profile = p;
+    },
+    async myProfile() {
+      await wait();
+      return { displayName: profile.displayName, age: ageOn(profile.birthdate, new Date()), bio, gender: profile.gender, seeking: profile.seeking, phone, paused };
+    },
+    async saveBio(b) {
+      await wait();
+      bio = b;
+    },
     async startVerification() {
       await wait();
       verified = true;
@@ -109,11 +165,25 @@ function demoBackend(): Backend {
     touchActivity: wait,
     async todaysPicks() {
       await wait();
-      return { picks: DEMO_PICKS, used: 0 };
+      if (paused) return { picks: [], used: decided.length };
+      return { picks: DEMO_PICKS.filter((p) => !decided.includes(p.id)), used: decided.length };
     },
     async decide(id, decision) {
       await wait();
+      if (!decided.includes(id)) decided = [...decided, id];
       return { matched: decision === 'like' && id === 'demo-2' };
+    },
+    async isPaused() {
+      return paused;
+    },
+    async setPaused(p) {
+      paused = p;
+    },
+    reset() {
+      verified = false;
+      paused = false;
+      decided = [];
+      phone = null;
     },
   };
 }

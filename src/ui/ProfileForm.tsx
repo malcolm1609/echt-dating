@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Text, View } from 'react-native';
 import type { Gender } from '../domain/admission';
 import { ProfileDraft, ProfileErrors, validateProfileDraft } from '../domain/onboarding';
+import { maskBirthdate, toIsoDate } from '../lib/birthdate';
 import { Button, Chip, Field, s } from './kit';
 
 export type CompleteProfile = Required<ProfileDraft> & { seeking: Gender[] };
@@ -25,19 +26,19 @@ export function ProfileForm({ today = new Date(), onSubmit }: { today?: Date; on
   };
 
   const submit = () => {
-    const draft = { displayName: displayName.trim(), birthdate, gender, seeking };
+    const draft = { displayName: displayName.trim(), birthdate: toIsoDate(birthdate), gender, seeking };
     const found = validateProfileDraft(draft, today);
     setErrors(found);
     if (Object.keys(found).length === 0) onSubmit(draft as CompleteProfile);
   };
 
   return (
-    <View style={{ gap: 20 }}>
+    <View style={{ gap: 24 }}>
       <Field label="Vorname" value={displayName} onChangeText={(v) => { edited('displayName'); setDisplayName(v); }} error={errors.displayName} autoComplete="given-name" />
-      <Field label="Geburtsdatum" value={birthdate} onChangeText={(v) => { edited('birthdate'); setBirthdate(v); }} error={errors.birthdate} placeholder="JJJJ-MM-TT" keyboardType="numbers-and-punctuation" />
+      <Field label="Geburtsdatum" value={birthdate} onChangeText={(v) => { edited('birthdate'); setBirthdate(maskBirthdate(v)); }} error={errors.birthdate} placeholder="TT.MM.JJJJ" keyboardType="number-pad" maxLength={10} />
       <Group label="Ich bin" error={errors.gender}>
         {GENDERS.map((g) => (
-          <Chip key={g.value} label={g.me} a11y={`Ich bin ${g.me}`} selected={gender === g.value} onPress={() => { edited('gender'); setGender(g.value); }} />
+          <Chip key={g.value} role="radio" label={g.me} a11y={`Ich bin ${g.me}`} selected={gender === g.value} onPress={() => { edited('gender'); setGender(g.value); }} />
         ))}
       </Group>
       <Group label="Ich suche" error={errors.seeking}>
@@ -54,7 +55,7 @@ function Group({ label, error, children }: { label: string; error?: string; chil
   return (
     <View style={s.field}>
       <Text style={s.label}>{label}</Text>
-      <View style={{ flexDirection: 'row', gap: 10 }}>{children}</View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>{children}</View>
       {error && <Text style={s.error}>{error}</Text>}
     </View>
   );

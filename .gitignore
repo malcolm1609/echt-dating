@@ -40,3 +40,5 @@ yarn-error.*
 /ios
 /android
 .env
+echt-prototyp.html
+supabase/functions/deno.lock

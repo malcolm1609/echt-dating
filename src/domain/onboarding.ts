@@ -45,7 +45,7 @@ export function ageOn(birthdate: string, today: Date): number {
 export function validateProfileDraft(draft: ProfileDraft, today: Date): ProfileErrors {
   const errors: ProfileErrors = {};
   if (!draft.displayName.trim()) errors.displayName = 'Bitte gib deinen Vornamen an.';
-  if (!parseDate(draft.birthdate)) errors.birthdate = 'Bitte im Format JJJJ-MM-TT angeben.';
+  if (!parseDate(draft.birthdate)) errors.birthdate = 'Bitte gib ein gültiges Datum an, z. B. 12.04.1998.';
   else if (ageOn(draft.birthdate, today) < 18) errors.birthdate = 'Du musst mindestens 18 Jahre alt sein.';
   if (!draft.gender) errors.gender = 'Bitte wähle dein Geschlecht.';
   if (draft.seeking.length === 0) errors.seeking = 'Bitte wähle, wen du kennenlernen möchtest.';

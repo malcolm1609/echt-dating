@@ -31,7 +31,7 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Umkreis per Haversine statt PostGIS (reicht fürs MVP, kein Extension-Zwang)
    - Noch offen: echtes Supabase-Projekt in EU-Region anlegen
 3. **Anmeldung + Warteliste in der App** ✅ (`app/`, Logik in `src/domain/onboarding.ts`)
-   - Willkommen → E-Mail-Code → Profil (Vorname, Geburtsdatum, Geschlecht, sucht) + Standort → Ausweisprüfung → Status/Warteliste
+   - Willkommen → E-Mail-Code → Handynummer per SMS (eine Nummer pro Konto) → Profil (Vorname, Geburtsdatum, Geschlecht, sucht) → Standort (nur GPS) → Ausweisprüfung → Status/Warteliste
    - Zulassung nach Prüfung: nächstes offenes Gebiet im Umkreis, Alter laut Ausweis, sonst Warteliste (auch „kein Gebiet offen“)
    - Ohne Supabase-Zugangsdaten läuft die App im Demo-Modus mit Beispieldaten
 4. **Ausweisprüfung mit Didit** ✅ (`supabase/functions`)
@@ -45,9 +45,19 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Gegenseitiges Like zeigt sofort den Match-Moment, danach ruhiges Tagesende
    - Öffnen der App zählt als Aktivität (`touch_activity`)
    - Noch offen: Profilfotos (bisher Initiale als Platzhalter)
-6. Match + Fragenrunde in 3 Stufen
-7. Chat, Date-Vorschlag, „Freundlich beenden“
-8. Check nach dem Date
+6. **Match + Fragenrunde in 3 Stufen** ✅ Prototyp (`src/ui/QuestionRound.tsx`, Regeln in `src/domain/conversation.ts`)
+   - Runde 1 Leicht, 2 Persönlich, 3 Tief; nächste Runde erst, wenn beide fertig sind
+   - Antwort der anderen Person erst sichtbar, wenn man selbst geantwortet hat; danach öffnet sich der Chat
+7. **Chat, Date-Vorschlag, „Freundlich beenden“** ✅ Prototyp (`src/ui/Chat.tsx`)
+   - Hinweis, wenn die andere Person seit 2+ Tagen auf Antwort wartet
+   - Date-Vorschlag mit Partner-Café und Uhrzeit, „Freundlich beenden“ mit fertiger, ehrlicher Nachricht
+8. **Check nach dem Date** ✅ Prototyp: Wiedersehen nur bei beidseitigem Ja sichtbar, ein einseitiges Nein bleibt verborgen
+9. **Navigation**: Tabs Heute, Matches, Profil (Profil pausieren)
+
+Matches, Fragenrunde, Chat und Date laufen bisher nur im Demo-Modus (`src/lib/matches.ts`, im Speicher, die andere Seite antwortet automatisch).
+Noch offen: Tabellen und Zugriffsregeln dafür in Supabase und die echte Anbindung.
+
+Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --output-dir dist && node scripts/prototype-html.mjs dist`
 
 ## Offene Punkte
 - Monetarisierung (Werbung + werbefreies Abo 3–6 €/Monat ist nur ein erster Gedanke)

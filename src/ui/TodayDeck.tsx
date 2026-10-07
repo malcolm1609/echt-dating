@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Animated, Text, useWindowDimensions, View } from 'react-native';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import { Button, s } from './kit';
+import { useEntrance, usePulse } from './motion';
+import { ProfileCard } from './ProfileCard';
 import { colors, font } from './theme';
 
 export interface Pick {
@@ -18,18 +20,30 @@ interface Props {
   picks: Pick[];
   usedBefore: number;
   onDecide: (id: string, decision: Decision) => Promise<{ matched: boolean }>;
+  onOpenMatch?: (pick: Pick) => void;
 }
 
-export function TodayDeck({ picks, usedBefore, onDecide }: Props) {
+export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch }: Props) {
   const [index, setIndex] = useState(0);
+  // Neu geladene Vorschläge enthalten nur noch offene Personen: dann wieder vorne anfangen.
+  const [shownPicks, setShownPicks] = useState(picks);
+  if (shownPicks !== picks) {
+    setShownPicks(picks);
+    setIndex(0);
+  }
   const [match, setMatch] = useState<Pick | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const current = picks[index];
+  const enterCard = useEntrance(current?.id);
+  const enterMatch = useEntrance(match?.id);
+  const like = usePulse();
+  const roomy = useWindowDimensions().width >= 360;
 
   const decide = async (decision: Decision) => {
     setBusy(true);
     setError(undefined);
+    if (decision === 'like') like.pulse();
     try {
       const { matched } = await onDecide(current.id, decision);
       if (matched) setMatch(current);
@@ -43,20 +57,21 @@ export function TodayDeck({ picks, usedBefore, onDecide }: Props) {
 
   if (match) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
-        <Text style={[font.small, { color: colors.hint }]}>MATCH</Text>
-        <Text style={font.display}>Ihr mögt euch beide</Text>
+      <Animated.View style={[{ flex: 1, justifyContent: 'center', gap: 16 }, enterMatch]}>
+        <Text style={[font.label, { color: colors.hint }]}>Match</Text>
+        <Text style={[font.display, { fontSize: 56, lineHeight: 56 }]}>Ihr mögt euch beide<Text style={{ color: colors.accent }}>.</Text></Text>
         <Text style={font.body}>Du und {match.displayName} startet mit einer kurzen Fragenrunde statt mit Smalltalk.</Text>
         <View style={{ flex: 1 }} />
+        {onOpenMatch && <Button title="Zur Fragenrunde" onPress={() => { setMatch(null); onOpenMatch(match); }} />}
         <Button title="Später schreiben" variant="ghost" onPress={() => setMatch(null)} />
-      </View>
+      </Animated.View>
     );
   }
 
   if (!current) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-        <Text style={font.title}>Das war’s für heute</Text>
+        <Text style={font.display}>Das war’s für heute<Text style={{ color: colors.accent }}>.</Text></Text>
         <Text style={font.body}>Morgen bekommst du neue Vorschläge. Weniger Auswahl heißt mehr Aufmerksamkeit für jede Person.</Text>
       </View>
     );
@@ -70,22 +85,17 @@ export function TodayDeck({ picks, usedBefore, onDecide }: Props) {
           <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i < position ? colors.accent : colors.line }} />
         ))}
       </View>
-      <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 28, padding: 24, justifyContent: 'flex-end', gap: 10 }}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 120, fontWeight: '800', color: colors.line }}>{current.displayName[0]}</Text>
-        </View>
-        <Text style={font.title}>{`${current.displayName}, ${current.age}`}</Text>
-        <Text style={[font.small, { color: colors.hint }]}>{`${current.distanceKm} km entfernt`}</Text>
-        {current.bio ? <Text style={font.body}>{current.bio}</Text> : null}
-      </View>
+      <Animated.View style={[{ flex: 1 }, enterCard]}>
+        <ProfileCard name={current.displayName} age={current.age} bio={current.bio} eyebrow={`${current.distanceKm} km entfernt`} style={{ flex: 1 }} />
+      </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <View style={{ flex: 1 }}>
           <Button title="Weiter" variant="ghost" disabled={busy} onPress={() => decide('pass')} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Button title="Gefällt mir" disabled={busy} onPress={() => decide('like')} />
-        </View>
+        <Animated.View style={[{ flex: 1.4 }, like.style]}>
+          <Button title="Gefällt mir" icon={roomy ? 'heart' : undefined} disabled={busy} onPress={() => decide('like')} />
+        </Animated.View>
       </View>
     </View>
   );

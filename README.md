@@ -11,6 +11,10 @@ npm start       # Expo (ohne .env im Demo-Modus)
 DATABASE_URL=postgres://... supabase/tests/run.sh
 ```
 
+## Handynummer per SMS einrichten
+
+Jedes Konto bestätigt nach der E-Mail eine Handynummer (eine Nummer pro Konto, ohne bestätigte Nummer lässt die Datenbank kein Profil zu). Dafür in Supabase unter Authentication → Providers → Phone einen SMS-Anbieter (z. B. Twilio, MessageBird oder Vonage) eintragen und „Enable phone confirmations“ einschalten. Zugangsdaten nur dort eintragen, nie ins Repo.
+
 ## Ausweisprüfung mit Didit einrichten
 
 1. Konto auf [didit.me](https://didit.me) anlegen und einen KYC-Workflow mit Ausweis, Liveness und Face Match erstellen.

@@ -103,7 +103,7 @@ reset role;
 select pg_temp.assert((select f = 1 and m = 8 from area_stats where area_id = 1), 'area_stats zählt nur zugelassene Personen');
 
 -- Anmeldung aus der App
-insert into auth.users values ('00000000-0000-0000-0000-0000000000f1');
+insert into auth.users values ('00000000-0000-0000-0000-0000000000f1', '+4915100000001', now());
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
 insert into profiles (id, display_name, birthdate, gender, seeking, lat, lng)
   values (auth.uid(), 'Eva', '2000-05-05', 'f', '{m}', 52.5, 13.4);
