@@ -16,7 +16,7 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
 |---|---|---|
 | App | Expo (React Native, TypeScript, Expo Router) | iOS + Android aus einer Codebasis |
 | Backend | Supabase (Postgres, Auth, Storage, Edge Functions) | Row-Level-Security, EU-Region (DSGVO), Umkreissuche per SQL |
-| Identitätsprüfung | Externer Anbieter mit Ausweis + Liveness (z. B. Veriff, IDnow) | Echtheit ist der Kern, nicht selbst bauen; nur Ergebnis per Webhook speichern |
+| Identitätsprüfung | Didit (entschieden am 2026-10-07) | 500 Prüfungen/Monat kostenlos, danach ca. 0,33 $ laut Anbieter; EU-Speicherung; nur Ergebnis per Webhook speichern |
 | Tests | Jest (jest-expo), TDD | Regeln zuerst als reine Logik getestet |
 
 ## MVP-Umfang (Reihenfolge)
@@ -34,7 +34,11 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Willkommen → E-Mail-Code → Profil (Vorname, Geburtsdatum, Geschlecht, sucht) + Standort → Ausweisprüfung → Status/Warteliste
    - Zulassung nach Prüfung: nächstes offenes Gebiet im Umkreis, Alter laut Ausweis, sonst Warteliste (auch „kein Gebiet offen“)
    - Ohne Supabase-Zugangsdaten läuft die App im Demo-Modus mit Beispieldaten
-4. **Ausweisprüfung anbinden** (offen): Anbieter wählen, Edge Functions `verification-start` (Prüf-Link) und `verification-webhook` (Ergebnis → `processVerification` → Status setzen)
+4. **Ausweisprüfung mit Didit** ✅ (`supabase/functions`)
+   - `verification-start`: legt eine Didit-Sitzung an (vendor_data = Nutzer-ID) und gibt den Prüf-Link zurück
+   - `verification-webhook`: prüft die HMAC-Signatur (X-Signature-V2, Fallback X-Signature, max. 5 Min. alt), speichert nur das Ergebnis, setzt Status, Gebiet und Geburtsdatum laut Ausweis
+   - Entscheidet nur einmal pro Profil, doppelte Webhooks ändern nichts
+   - Noch offen: Didit-Konto + Workflow (Ausweis, Liveness, Face Match) anlegen und Secrets in Supabase setzen
 5. „Heute“-Screen mit Tagesvorschlägen
 6. Match + Fragenrunde in 3 Stufen
 7. Chat, Date-Vorschlag, „Freundlich beenden“
@@ -42,5 +46,4 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
 
 ## Offene Punkte
 - Monetarisierung (Werbung + werbefreies Abo 3–6 €/Monat ist nur ein erster Gedanke)
-- Wahl des Verifikationsanbieters (Kosten pro Prüfung)
 - Geschlechter jenseits von f/m und wer wen sucht: die Verhältnisregel muss das später abbilden

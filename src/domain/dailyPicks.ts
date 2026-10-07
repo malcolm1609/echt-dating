@@ -1,4 +1,4 @@
-import type { ActivityStatus } from './activity';
+import type { ActivityStatus } from './activity.ts';
 
 export interface Candidate {
   id: string;
