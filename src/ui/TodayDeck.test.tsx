@@ -39,6 +39,17 @@ describe('TodayDeck', () => {
     expect(await screen.findByText('Das war’s für heute')).toBeTruthy();
   });
 
+  it('starts at the first suggestion again when the list is reloaded', async () => {
+    const onDecide = jest.fn().mockResolvedValue({ matched: false });
+    const { rerender } = render(<TodayDeck picks={picks} usedBefore={0} onDecide={onDecide} />);
+    fireEvent.press(screen.getByText('Weiter'));
+    await screen.findByText('Kai, 28');
+    // Nach dem Neuladen liefert der Server nur noch die offenen Vorschläge.
+    rerender(<TodayDeck picks={picks.slice(1)} usedBefore={1} onDecide={onDecide} />);
+    expect(screen.getByText('Kai, 28')).toBeTruthy();
+    expect(screen.getByLabelText('2 von 6 Vorschlägen')).toBeTruthy();
+  });
+
   it('keeps the person on screen if saving fails', async () => {
     const onDecide = jest.fn().mockRejectedValue(new Error('offline'));
     render(<TodayDeck picks={picks} usedBefore={0} onDecide={onDecide} />);

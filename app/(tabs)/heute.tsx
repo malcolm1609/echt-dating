@@ -9,11 +9,13 @@ import { font } from '../../src/ui/theme';
 
 export default function Today() {
   const [data, setData] = useState<{ picks: Pick[]; used: number }>();
+  const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {
     setFailed(false);
     backend.touchActivity().catch(() => {});
+    backend.isPaused().then(setPaused, () => {});
     backend.todaysPicks().then(setData, () => setFailed(true));
   }, []);
   useFocusEffect(load);
@@ -28,7 +30,8 @@ export default function Today() {
         </>
       )}
       {!data && !failed && <Text style={font.small}>Lädt …</Text>}
-      {data && (
+      {paused && <Text style={font.body}>Dein Profil ist pausiert. Im Profil-Tab kannst du wieder aktiv werden.</Text>}
+      {data && !paused && (
         <TodayDeck
           picks={data.picks}
           usedBefore={data.used}

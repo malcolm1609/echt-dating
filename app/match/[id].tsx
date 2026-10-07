@@ -4,20 +4,28 @@ import { chatUnlocked } from '../../src/domain/conversation.ts';
 import { backend } from '../../src/lib/backend';
 import { matchStore, useMatch } from '../../src/lib/matches';
 import { Chat } from '../../src/ui/Chat';
-import { Screen } from '../../src/ui/kit';
+import { Button, Screen } from '../../src/ui/kit';
 import { QuestionRound } from '../../src/ui/QuestionRound';
 import { colors, font } from '../../src/ui/theme';
 
 export default function MatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const match = useMatch(id);
-  if (!match) return <Screen><Text style={font.body}>Match nicht gefunden.</Text></Screen>;
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/matches'));
+  if (!match) {
+    return (
+      <Screen>
+        <Text style={font.body}>Dieses Match gibt es nicht mehr.</Text>
+        <Button title="Zu deinen Matches" variant="ghost" onPress={() => router.replace('/matches')} />
+      </Screen>
+    );
+  }
   const unlocked = chatUnlocked(match.answers);
 
   return (
     <Screen>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={() => (router.canGoBack() ? router.back() : router.replace('/matches'))} hitSlop={12}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} hitSlop={12}>
           <Text style={{ color: colors.accent, fontSize: 28 }}>‹</Text>
         </Pressable>
         <Text style={font.title}>{`${match.name}, ${match.age}`}</Text>

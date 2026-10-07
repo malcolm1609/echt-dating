@@ -23,6 +23,12 @@ interface Props {
 
 export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch }: Props) {
   const [index, setIndex] = useState(0);
+  // Neu geladene Vorschläge enthalten nur noch offene Personen: dann wieder vorne anfangen.
+  const [shownPicks, setShownPicks] = useState(picks);
+  if (shownPicks !== picks) {
+    setShownPicks(picks);
+    setIndex(0);
+  }
   const [match, setMatch] = useState<Pick | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();

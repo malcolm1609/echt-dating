@@ -21,6 +21,11 @@ export interface Backend {
   touchActivity(): Promise<void>;
   todaysPicks(): Promise<{ picks: Pick[]; used: number }>;
   decide(id: string, decision: Decision): Promise<{ matched: boolean }>;
+  /** Pausiert: keine Vorschläge, und man wird niemandem gezeigt. */
+  isPaused(): Promise<boolean>;
+  setPaused(paused: boolean): Promise<void>;
+  /** Nur Demo: alles auf Anfang. */
+  reset?(): void;
 }
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -72,6 +77,12 @@ function supabaseBackend(url: string, key: string): Backend {
       const picks = (ok(rows) ?? []).map((r: any) => ({ id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km }));
       return { picks, used: ok(today)?.used ?? 0 };
     },
+    async isPaused() {
+      return ok(await db.from('profiles').select('paused').eq('id', await uid()).single())!.paused;
+    },
+    async setPaused(paused) {
+      ok(await db.from('profiles').update({ paused }).eq('id', await uid()));
+    },
     async decide(to_id, decision) {
       const me = await uid();
       ok(await db.from('likes').insert({ from_id: me, to_id, decision }));
@@ -90,9 +101,11 @@ const DEMO_PICKS: Pick[] = [
 ];
 
 /** Ohne Supabase-Zugangsdaten: klickbarer Ablauf mit Beispieldaten. */
-function demoBackend(): Backend {
+export function demoBackend(delayMs = 300): Backend {
   let verified = false;
-  const wait = () => new Promise<void>((r) => setTimeout(r, 300));
+  let paused = false;
+  let decided: string[] = [];
+  const wait = () => new Promise<void>((r) => setTimeout(r, delayMs));
   return {
     demo: true,
     sendCode: wait,
@@ -109,11 +122,24 @@ function demoBackend(): Backend {
     touchActivity: wait,
     async todaysPicks() {
       await wait();
-      return { picks: DEMO_PICKS, used: 0 };
+      if (paused) return { picks: [], used: decided.length };
+      return { picks: DEMO_PICKS.filter((p) => !decided.includes(p.id)), used: decided.length };
     },
     async decide(id, decision) {
       await wait();
+      if (!decided.includes(id)) decided = [...decided, id];
       return { matched: decision === 'like' && id === 'demo-2' };
+    },
+    async isPaused() {
+      return paused;
+    },
+    async setPaused(p) {
+      paused = p;
+    },
+    reset() {
+      verified = false;
+      paused = false;
+      decided = [];
     },
   };
 }

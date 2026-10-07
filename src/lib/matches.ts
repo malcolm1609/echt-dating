@@ -26,6 +26,7 @@ export interface MatchStore {
   markDatePast(id: string): void;
   answerAfterDate(id: string, answer: DateAnswer): void;
   endKindly(id: string, text: string): void;
+  reset(): void;
 }
 
 const hours = (h: number) => new Date(Date.now() - h * 3600_000);
@@ -40,7 +41,7 @@ const DEMO_THEIR_ANSWERS = [
 
 /** Klickbarer Prototyp: alles im Speicher, die andere Seite antwortet automatisch. */
 export function createDemoStore(delayMs = 1200): MatchStore {
-  let matches: Match[] = [
+  const initial = (): Match[] => [
     {
       id: 'mara', name: 'Mara', age: 29, answers: allAnswered(), afterDate: {}, ended: false,
       messages: [
@@ -54,6 +55,7 @@ export function createDemoStore(delayMs = 1200): MatchStore {
       date: { place: 'Café Partner, Kreuzberg', when: 'Samstag, 15 Uhr', accepted: true, past: true },
     },
   ];
+  let matches = initial();
   const listeners = new Set<() => void>();
   const emit = () => listeners.forEach((l) => l());
   const update = (id: string, fn: (m: Match) => Match) => {
@@ -98,6 +100,10 @@ export function createDemoStore(delayMs = 1200): MatchStore {
     },
     endKindly(id, text) {
       update(id, (m) => ({ ...m, ended: true, messages: [...m.messages, msg('me', text)] }));
+    },
+    reset() {
+      matches = initial();
+      emit();
     },
   };
 
