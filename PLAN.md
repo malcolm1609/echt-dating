@@ -15,7 +15,7 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
 | Bereich | Wahl | Warum |
 |---|---|---|
 | App | Expo (React Native, TypeScript, Expo Router) | iOS + Android aus einer Codebasis |
-| Backend | Supabase (Postgres + PostGIS, Auth, Storage, Edge Functions) | Umkreissuche per PostGIS, Row-Level-Security, EU-Region (DSGVO) |
+| Backend | Supabase (Postgres, Auth, Storage, Edge Functions) | Row-Level-Security, EU-Region (DSGVO), Umkreissuche per SQL |
 | Identitätsprüfung | Externer Anbieter mit Ausweis + Liveness (z. B. Veriff, IDnow) | Echtheit ist der Kern, nicht selbst bauen; nur Ergebnis per Webhook speichern |
 | Tests | Jest (jest-expo), TDD | Regeln zuerst als reine Logik getestet |
 
