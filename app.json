@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "echt",
+    "name": "Echt",
     "slug": "echt",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true
     },
@@ -19,7 +19,19 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "scheme": "echt",
+    "backgroundColor": "#0E0D10",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Echt nutzt deinen ungefähren Standort, um dir Menschen in deiner Nähe zu zeigen."
+        }
+      ]
+    ]
   }
 }

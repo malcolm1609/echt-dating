@@ -30,8 +30,11 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Likes nur an sichtbare Profile, max. 6 pro Tag, gegenseitiges Like erzeugt automatisch ein Match
    - Umkreis per Haversine statt PostGIS (reicht fürs MVP, kein Extension-Zwang)
    - Noch offen: echtes Supabase-Projekt in EU-Region anlegen
-3. Anmeldung + Verifikation (Anbieter-SDK, Webhook → Zulassungsentscheidung)
-4. Warteliste-Screen (Platz, Wartezeit, Verhältnis im Umkreis)
+3. **Anmeldung + Warteliste in der App** ✅ (`app/`, Logik in `src/domain/onboarding.ts`)
+   - Willkommen → E-Mail-Code → Profil (Vorname, Geburtsdatum, Geschlecht, sucht) + Standort → Ausweisprüfung → Status/Warteliste
+   - Zulassung nach Prüfung: nächstes offenes Gebiet im Umkreis, Alter laut Ausweis, sonst Warteliste (auch „kein Gebiet offen“)
+   - Ohne Supabase-Zugangsdaten läuft die App im Demo-Modus mit Beispieldaten
+4. **Ausweisprüfung anbinden** (offen): Anbieter wählen, Edge Functions `verification-start` (Prüf-Link) und `verification-webhook` (Ergebnis → `processVerification` → Status setzen)
 5. „Heute“-Screen mit Tagesvorschlägen
 6. Match + Fragenrunde in 3 Stufen
 7. Chat, Date-Vorschlag, „Freundlich beenden“

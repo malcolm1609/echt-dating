@@ -112,4 +112,17 @@ reset role;
 -- Gebietsstatistik für die Zulassung
 select pg_temp.assert((select f = 1 and m = 8 from area_stats where area_id = 1), 'area_stats zählt nur zugelassene Personen');
 
+-- Anmeldung aus der App
+insert into auth.users values ('00000000-0000-0000-0000-0000000000f1');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
+insert into profiles (id, display_name, birthdate, gender, seeking, lat, lng)
+  values (auth.uid(), 'Eva', '2000-05-05', 'f', '{m}', 52.5, 13.4);
+select pg_temp.assert((select status from profiles where id = auth.uid()) = 'pending_verification', 'neues Profil startet mit ausstehender Prüfung');
+do $$ begin
+  update profiles set birthdate = '1990-01-01' where id = auth.uid();
+  raise exception 'FAILED: Geburtsdatum nachträglich änderbar';
+exception when insufficient_privilege then raise notice 'ok - Geburtsdatum ist nach dem Anlegen gesperrt';
+end $$;
+reset role;
+
 rollback;
