@@ -13,7 +13,7 @@ export default function Profile() {
 
   return (
     <Screen>
-      <StepHeader step={2} total={4} name="Über dich" />
+      <StepHeader step={3} total={5} name="Über dich" />
       <ScrollView contentContainerStyle={{ gap: 28, paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
         <View style={{ gap: 12 }}>
           <Text style={font.display}>Erzähl kurz<Text style={{ color: colors.accent }}>.</Text></Text>

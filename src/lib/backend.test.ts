@@ -29,4 +29,15 @@ describe('demoBackend', () => {
     expect((await b.todaysPicks()).used).toBe(0);
     expect(await b.isPaused()).toBe(false);
   });
+
+  it('shows the saved profile with the confirmed phone number and a new bio', async () => {
+    const b = demoBackend(0);
+    await b.sendPhoneCode('+4915123456789');
+    await b.verifyPhoneCode('+4915123456789', '123456');
+    await b.saveProfile({ displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] }, { lat: 52.5, lng: 13.4 });
+    await b.saveBio('Backt Brot.');
+    const me = await b.myProfile();
+    expect(me).toMatchObject({ displayName: 'Anna', bio: 'Backt Brot.', phone: '+4915123456789', seeking: ['m'], paused: false });
+    expect(me.age).toBeGreaterThanOrEqual(28);
+  });
 });

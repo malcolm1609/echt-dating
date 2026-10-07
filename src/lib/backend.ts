@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { ageOn } from '../domain/onboarding.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
+import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
 
 export type MyStatus =
@@ -13,6 +15,11 @@ export interface Backend {
   demo: boolean;
   sendCode(email: string): Promise<void>;
   verifyCode(email: string, code: string): Promise<void>;
+  /** Zweite Prüfung: SMS-Code an die Handynummer (E.164). Eine Nummer gehört genau zu einem Konto. */
+  sendPhoneCode(phone: string): Promise<void>;
+  verifyPhoneCode(phone: string, code: string): Promise<void>;
+  myProfile(): Promise<MyProfile>;
+  saveBio(bio: string): Promise<void>;
   saveProfile(profile: CompleteProfile, location: Location): Promise<void>;
   /** Liefert die Adresse der Ausweis- und Selfie-Prüfung beim Anbieter. */
   startVerification(): Promise<{ url: string | null }>;
@@ -50,6 +57,23 @@ function supabaseBackend(url: string, key: string): Backend {
     },
     async verifyCode(email, token) {
       ok(await db.auth.verifyOtp({ email, token, type: 'email' }));
+    },
+    async sendPhoneCode(phone) {
+      const { error } = await db.auth.updateUser({ phone });
+      if (error) throw error;
+    },
+    async verifyPhoneCode(phone, token) {
+      ok(await db.auth.verifyOtp({ phone, token, type: 'phone_change' }));
+    },
+    async myProfile() {
+      const { data } = await db.auth.getUser();
+      if (!data.user) throw new Error('Nicht angemeldet');
+      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused').eq('id', data.user.id).single())!;
+      const phone = data.user.phone ? `+${data.user.phone.replace(/^\+/, '')}` : null;
+      return { displayName: p.display_name, age: ageOn(p.birthdate, new Date()), bio: p.bio, gender: p.gender, seeking: p.seeking, phone, paused: p.paused };
+    },
+    async saveBio(bio) {
+      ok(await db.from('profiles').update({ bio }).eq('id', await uid()));
     },
     async saveProfile(p, { lat, lng }) {
       const id = await uid();
@@ -105,12 +129,31 @@ export function demoBackend(delayMs = 300): Backend {
   let verified = false;
   let paused = false;
   let decided: string[] = [];
+  let phone: string | null = null;
+  let profile: CompleteProfile = { displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] };
+  let bio = 'Läuft gern am Kanal, liest lieber Papier als Bildschirm.';
   const wait = () => new Promise<void>((r) => setTimeout(r, delayMs));
   return {
     demo: true,
     sendCode: wait,
     verifyCode: wait,
-    saveProfile: wait,
+    sendPhoneCode: wait,
+    async verifyPhoneCode(p) {
+      await wait();
+      phone = p;
+    },
+    async saveProfile(p) {
+      await wait();
+      profile = p;
+    },
+    async myProfile() {
+      await wait();
+      return { displayName: profile.displayName, age: ageOn(profile.birthdate, new Date()), bio, gender: profile.gender, seeking: profile.seeking, phone, paused };
+    },
+    async saveBio(b) {
+      await wait();
+      bio = b;
+    },
     async startVerification() {
       await wait();
       verified = true;
@@ -140,6 +183,7 @@ export function demoBackend(delayMs = 300): Backend {
       verified = false;
       paused = false;
       decided = [];
+      phone = null;
     },
   };
 }

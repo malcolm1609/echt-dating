@@ -26,7 +26,7 @@ export default function SignIn() {
 
   return (
     <Screen>
-      <StepHeader step={1} total={4} name="E-Mail" />
+      <StepHeader step={1} total={5} name="E-Mail" />
       <View style={{ gap: 12 }}>
         <Text style={font.display}>{sent ? 'Schau in\ndein Postfach' : 'Wie erreichen\nwir dich'}<Text style={{ color: colors.accent }}>{sent ? '.' : '?'}</Text></Text>
         <Text style={font.body}>{sent ? `Der 6-stellige Code ist an ${email} unterwegs.` : 'Du bekommst einen Code per Mail. Kein Passwort, das du dir merken musst.'}</Text>
@@ -49,7 +49,7 @@ export default function SignIn() {
               setSent(true);
             } else {
               await backend.verifyCode(email.trim(), code.trim());
-              router.replace('/profil');
+              router.replace('/handy');
             }
           })
         }

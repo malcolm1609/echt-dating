@@ -1,6 +1,6 @@
 -- Nur für lokale Tests ohne Supabase: bildet auth.users, auth.uid() und die Rollen nach.
 create schema if not exists auth;
-create table if not exists auth.users (id uuid primary key);
+create table if not exists auth.users (id uuid primary key, phone text unique, phone_confirmed_at timestamptz);
 create or replace function auth.uid() returns uuid language sql stable as
 $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 do $$ begin

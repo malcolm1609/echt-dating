@@ -8,7 +8,8 @@ export function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
     let alive = true;
-    AccessibilityInfo.isReduceMotionEnabled?.().then((v) => alive && setReduced(v), () => {});
+    // Nur bei eingeschalteter Einstellung neu rendern, sonst bleibt alles wie es ist.
+    AccessibilityInfo.isReduceMotionEnabled?.().then((v) => alive && v && setReduced(true), () => {});
     const sub = AccessibilityInfo.addEventListener?.('reduceMotionChanged', setReduced);
     return () => {
       alive = false;

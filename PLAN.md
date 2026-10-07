@@ -31,7 +31,7 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Umkreis per Haversine statt PostGIS (reicht fürs MVP, kein Extension-Zwang)
    - Noch offen: echtes Supabase-Projekt in EU-Region anlegen
 3. **Anmeldung + Warteliste in der App** ✅ (`app/`, Logik in `src/domain/onboarding.ts`)
-   - Willkommen → E-Mail-Code → Profil (Vorname, Geburtsdatum, Geschlecht, sucht) + Standort → Ausweisprüfung → Status/Warteliste
+   - Willkommen → E-Mail-Code → Handynummer per SMS (eine Nummer pro Konto) → Profil (Vorname, Geburtsdatum, Geschlecht, sucht) → Standort (nur GPS) → Ausweisprüfung → Status/Warteliste
    - Zulassung nach Prüfung: nächstes offenes Gebiet im Umkreis, Alter laut Ausweis, sonst Warteliste (auch „kein Gebiet offen“)
    - Ohne Supabase-Zugangsdaten läuft die App im Demo-Modus mit Beispieldaten
 4. **Ausweisprüfung mit Didit** ✅ (`supabase/functions`)

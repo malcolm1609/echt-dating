@@ -3,7 +3,8 @@ import { Animated, Text, useWindowDimensions, View } from 'react-native';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import { Button, s } from './kit';
 import { useEntrance, usePulse } from './motion';
-import { colors, font, fontFamily } from './theme';
+import { ProfileCard } from './ProfileCard';
+import { colors, font } from './theme';
 
 export interface Pick {
   id: string;
@@ -84,11 +85,8 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch }: Props) {
           <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i < position ? colors.accent : colors.line }} />
         ))}
       </View>
-      <Animated.View style={[{ flex: 1, backgroundColor: colors.surface, borderRadius: 28, padding: 24, justifyContent: 'flex-end', gap: 10, overflow: 'hidden' }, enterCard]}>
-        <Text accessible={false} style={{ position: 'absolute', top: 0, left: 18, fontFamily: fontFamily.display, fontSize: 220, color: colors.raised }}>{current.displayName[0]}</Text>
-        <Text style={[font.label, { color: colors.hint }]}>{`${current.distanceKm} km entfernt`}</Text>
-        <Text style={[font.display, { fontSize: 44, lineHeight: 46 }]}>{`${current.displayName}, ${current.age}`}</Text>
-        {current.bio ? <Text style={[font.body, { fontSize: 18, lineHeight: 26 }]}>{current.bio}</Text> : null}
+      <Animated.View style={[{ flex: 1 }, enterCard]}>
+        <ProfileCard name={current.displayName} age={current.age} bio={current.bio} eyebrow={`${current.distanceKm} km entfernt`} style={{ flex: 1 }} />
       </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}
       <View style={{ flexDirection: 'row', gap: 12 }}>

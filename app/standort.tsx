@@ -22,7 +22,7 @@ export default function Standort() {
 
   return (
     <Screen>
-      <StepHeader step={3} total={4} name="Standort" />
+      <StepHeader step={4} total={5} name="Standort" />
       <LocationStep
         onLocate={() => locate(device)}
         onOpenSettings={() => Linking.openSettings()}

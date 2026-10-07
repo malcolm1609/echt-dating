@@ -45,7 +45,7 @@ export function Button({ title, onPress, disabled, busy, variant = 'primary', ic
   );
 }
 
-export function Field({ label, error, ...props }: TextInputProps & { label: string; error?: string }) {
+export function Field({ label, error, style, ...props }: TextInputProps & { label: string; error?: string }) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={s.field}>
@@ -55,7 +55,7 @@ export function Field({ label, error, ...props }: TextInputProps & { label: stri
         placeholderTextColor={colors.muted}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        style={[s.input, soft, Platform.OS === 'web' && ({ outlineStyle: 'none' } as object), focused && { borderColor: colors.hint, backgroundColor: colors.raised }, error && { borderColor: colors.error }]}
+        style={[s.input, soft, Platform.OS === 'web' && ({ outlineStyle: 'none' } as object), focused && { borderColor: colors.hint, backgroundColor: colors.raised }, error && { borderColor: colors.error }, style]}
         {...props}
       />
       {error && <Text style={s.error}>{error}</Text>}
