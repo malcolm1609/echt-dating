@@ -41,3 +41,4 @@ yarn-error.*
 /android
 .env
 echt-prototyp.html
+supabase/functions/deno.lock
