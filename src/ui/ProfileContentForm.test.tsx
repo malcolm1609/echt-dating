@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { PROMPTS } from '../domain/profileContent.ts';
 import { ProfileContentForm } from './ProfileContentForm';
 
@@ -57,5 +57,36 @@ describe('ProfileContentForm', () => {
     render(<ProfileContentForm initial={initial} submitLabel="Speichern" onSubmit={onSubmit} />);
     fireEvent.press(screen.getByText('Speichern'));
     expect(onSubmit).toHaveBeenCalledWith(initial);
+  });
+
+  it('adds a favourite song from a Spotify link and fills in the title', async () => {
+    const onSubmit = jest.fn();
+    const lookupTitle = jest.fn().mockResolvedValue('Bohemian Rhapsody – Queen');
+    render(<ProfileContentForm submitLabel="Weiter" onSubmit={onSubmit} lookupTitle={lookupTitle} />);
+    fillAll();
+    fireEvent.press(screen.getByLabelText('Feste Beziehung'));
+    fireEvent.changeText(screen.getByLabelText('Link zu Spotify oder Apple Music'), 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv?si=x');
+    expect(screen.getByText('Spotify · Song erkannt')).toBeTruthy();
+    await act(async () => {});
+    expect(lookupTitle).toHaveBeenCalledWith('https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv');
+    expect(screen.getByDisplayValue('Bohemian Rhapsody – Queen')).toBeTruthy();
+    fireEvent.press(screen.getByText('Weiter'));
+    expect(onSubmit.mock.calls[0][0].music).toEqual({ provider: 'spotify', kind: 'track', url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody – Queen' });
+  });
+
+  it('says when a link is not from Spotify or Apple Music', () => {
+    render(<ProfileContentForm submitLabel="Weiter" onSubmit={jest.fn()} lookupTitle={jest.fn()} />);
+    fireEvent.changeText(screen.getByLabelText('Link zu Spotify oder Apple Music'), 'https://youtube.com/watch?v=1');
+    expect(screen.getByText(/kein Link von Spotify oder Apple Music/)).toBeTruthy();
+  });
+
+  it('lets people leave the song out or remove it', () => {
+    const onSubmit = jest.fn();
+    const music = { provider: 'spotify' as const, kind: 'track' as const, url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody' };
+    const initial = { prompts: ['alltag', 'anknuepfen', 'werte'].map((c) => ({ promptId: first(c).id, answer: 'Eine schon gespeicherte Antwort.' })), goal: 'offen' as const, interests: [], music };
+    render(<ProfileContentForm initial={initial} submitLabel="Speichern" onSubmit={onSubmit} lookupTitle={jest.fn()} />);
+    fireEvent.press(screen.getByText('Song entfernen'));
+    fireEvent.press(screen.getByText('Speichern'));
+    expect(onSubmit.mock.calls[0][0].music).toBeUndefined();
   });
 });

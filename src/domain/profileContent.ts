@@ -2,6 +2,8 @@
 // drei Fragen aus je einer Kategorie, ein Beziehungsziel, bis zu fünf Interessen.
 // Fragen zielen auf Konkretes (Ort, Erlebnis, Empfehlung), nicht auf Witz.
 
+import { MusicLink, validateMusic } from './music.ts';
+
 export type PromptCategory = 'alltag' | 'anknuepfen' | 'werte';
 export type GoalId = 'fest' | 'ernst' | 'offen' | 'freundschaft';
 
@@ -85,9 +87,11 @@ export interface ProfileContent {
   prompts: PromptAnswer[];
   goal?: GoalId;
   interests: string[];
+  /** Freiwillig: Lieblingssong oder Playlist als Link. */
+  music?: MusicLink;
 }
 
-export type ProfileContentErrors = Partial<Record<PromptCategory | 'goal' | 'interests', string>>;
+export type ProfileContentErrors = Partial<Record<PromptCategory | 'goal' | 'interests' | 'music', string>>;
 
 export function validateProfileContent(c: ProfileContent): ProfileContentErrors {
   const errors: ProfileContentErrors = {};
@@ -101,6 +105,8 @@ export function validateProfileContent(c: ProfileContent): ProfileContentErrors 
   if (!c.goal || !goalLabel(c.goal)) errors.goal = 'Bitte wähle, was du suchst.';
   if (c.interests.length > INTEREST_MAX) errors.interests = `Höchstens ${INTEREST_MAX} Interessen.`;
   else if (c.interests.some((i) => !INTERESTS.includes(i))) errors.interests = 'Bitte nur Interessen aus der Liste.';
+  const music = c.music && validateMusic(c.music);
+  if (music) errors.music = music;
   return errors;
 }
 

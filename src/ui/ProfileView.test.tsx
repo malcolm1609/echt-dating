@@ -59,11 +59,11 @@ describe('ProfileView', () => {
 
   it('lets people change questions, goal and interests', async () => {
     const { onSaveContent } = setup();
-    fireEvent.press(screen.getByText('Fragen, Ziel und Interessen ändern'));
+    fireEvent.press(screen.getByText('Fragen, Ziel, Interessen und Song ändern'));
     fireEvent.press(screen.getByLabelText('Erstmal Freundschaft'));
     fireEvent.press(screen.getByText('Änderungen speichern'));
     await act(async () => {});
-    expect(onSaveContent).toHaveBeenCalledWith({ ...{ prompts: me.prompts, interests: me.interests }, goal: 'freundschaft' });
+    expect(onSaveContent).toHaveBeenCalledWith({ prompts: me.prompts, interests: me.interests, goal: 'freundschaft' });
     expect(screen.getByText('Sucht: Erstmal Freundschaft')).toBeTruthy();
   });
 });

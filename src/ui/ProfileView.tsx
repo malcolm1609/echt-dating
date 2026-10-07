@@ -2,6 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
 import type { Gender } from '../domain/admission';
+import type { MusicLink } from '../domain/music.ts';
 import { GoalId, ProfileContent, PromptAnswer, promptText } from '../domain/profileContent.ts';
 import { maskPhone } from '../domain/phone.ts';
 import { Button, Field, s } from './kit';
@@ -22,6 +23,7 @@ export interface MyProfile {
   goal?: GoalId;
   prompts: PromptAnswer[];
   interests: string[];
+  music?: MusicLink;
 }
 
 const SEEKING: Record<Gender, string> = { f: 'Frauen', m: 'Männer' };
@@ -35,7 +37,7 @@ interface Props {
 
 export function ProfileView({ profile, onSaveBio, onSaveContent, onTogglePause }: Props) {
   const [saved, setSaved] = useState(profile.bio);
-  const [content, setContent] = useState<ProfileContent>({ prompts: profile.prompts, goal: profile.goal, interests: profile.interests });
+  const [content, setContent] = useState<ProfileContent>({ prompts: profile.prompts, goal: profile.goal, interests: profile.interests, music: profile.music });
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState(profile.bio);
   const [busy, setBusy] = useState(false);
@@ -66,6 +68,7 @@ export function ProfileView({ profile, onSaveBio, onSaveContent, onTogglePause }
           goal={content.goal}
           prompts={content.prompts.map((p) => ({ question: promptText(p.promptId) ?? '', answer: p.answer }))}
           interests={content.interests}
+          music={content.music}
           dimmed={profile.paused}
         />
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
@@ -88,7 +91,7 @@ export function ProfileView({ profile, onSaveBio, onSaveContent, onTogglePause }
 
       {editing ? (
         <View style={{ gap: 16 }}>
-          <Text style={font.title}>Fragen, Ziel und Interessen</Text>
+          <Text style={font.title}>Fragen, Ziel, Interessen und Song</Text>
           <ProfileContentForm
             initial={content}
             submitLabel="Änderungen speichern"
@@ -98,7 +101,7 @@ export function ProfileView({ profile, onSaveBio, onSaveContent, onTogglePause }
           <Button title="Abbrechen" variant="ghost" onPress={() => setEditing(false)} />
         </View>
       ) : (
-        <Button title="Fragen, Ziel und Interessen ändern" icon="edit-3" variant="ghost" onPress={() => setEditing(true)} />
+        <Button title="Fragen, Ziel, Interessen und Song ändern" icon="edit-3" variant="ghost" onPress={() => setEditing(true)} />
       )}
 
       <Section title="Du suchst">
