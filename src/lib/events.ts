@@ -21,6 +21,9 @@ const DEMO_EVENTS: MeetupEvent[] = [
   { id: 'quiz', title: 'Pub-Quiz mit Fremden', kind: 'Spiele', when: 'Donnerstag, 19:30', place: 'Kiezkneipe Lotte, Friedrichshain', seats: 12, joined: { f: 4, m: 6 }, price: 0, plusFirst: false, access: 'open', host: jonas },
   { id: 'kochen', title: 'Pasta-Kochabend', kind: 'Essen & Trinken', when: 'Freitag, 19 Uhr', place: 'Kochschule Tafelrunde, Mitte', seats: 10, joined: { f: 3, m: 3 }, price: 25, plusFirst: false, access: 'open', host: { name: 'Kochschule Tafelrunde', events: 14, ratings: [5, 4, 5, 5, 4], reviews: ['Man kocht in Zweierteams, da kommt man sofort ins Gespräch.'] } },
   { id: 'bouldern', title: 'Bouldern für Anfänger', kind: 'Sport', when: 'Samstag, 14 Uhr', place: 'Boulderhalle Kegel, Friedrichshain', seats: 8, joined: { f: 2, m: 1 }, price: 15, plusFirst: true, access: 'open', host: { name: 'Selin', events: 2, ratings: [5, 5], reviews: ['Selin erklärt super geduldig.'] } },
+  { id: 'semesterparty', title: 'Zusammen zur Semesterparty', kind: 'Feiern', when: 'Heute, 22:30', place: 'Treffpunkt Marktplatz, dann zusammen weiter', seats: 6, joined: { f: 1, m: 2 }, price: 0, plusFirst: false, access: 'open', tonight: true, campus: 'JLU Gießen', host: { name: 'Lena', events: 3, ratings: [5, 5, 4], reviews: ['Mit Lena war man nie allein auf der Tanzfläche.'] } },
+  { id: 'kneipentour', title: 'Kneipentour, wer kommt mit?', kind: 'Feiern', when: 'Heute, 21 Uhr', place: 'Start an der Bar am Seltersweg', seats: 8, joined: { f: 2, m: 2 }, price: 0, plusFirst: false, access: 'open', tonight: true, host: { name: 'Tom', events: 1, ratings: [4], reviews: ['Entspannt, keiner musste trinken.'] } },
+  { id: 'mensa', title: 'Mittag in der Mensa mit Fremden', kind: 'Essen & Trinken', when: 'Morgen, 12:30', place: 'Mensa am Campus', seats: 8, joined: { f: 2, m: 3 }, price: 0, plusFirst: false, access: 'open', campus: 'JLU Gießen', host: { name: 'Studierendenwerk', events: 9, ratings: [5, 4, 5], reviews: ['Fester Tisch mit Schild, man findet sich sofort.'] } },
   { id: 'picknick', title: 'Picknick am Kanal', kind: 'Draußen', when: 'Sonntag, 13 Uhr', place: 'Maybachufer, Neukölln', seats: 10, joined: { f: 2, m: 3 }, price: 0, plusFirst: false, access: 'invite', host: { name: 'Mara', events: 1, ratings: [], reviews: [] } },
 ];
 const DEMO_PAST: PastEvent[] = [
@@ -58,9 +61,9 @@ export function createEventStore() {
       listeners.add(l);
       return () => listeners.delete(l);
     },
-    join(id: string, g: Gender, plus: boolean) {
+    join(id: string, g: Gender, plus: boolean, campus: string | null = null) {
       const e = events.find((x) => x.id === id);
-      if (!e || joinState(e, g, { joined: mine.has(id), plus, invited: invited.has(id), noShows }) !== 'open') return;
+      if (!e || joinState(e, g, { joined: mine.has(id), plus, invited: invited.has(id), noShows, campus }) !== 'open') return;
       seat(id, g, 1);
       mine = new Set(mine).add(id);
       emit();

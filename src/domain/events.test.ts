@@ -56,4 +56,17 @@ describe('events', () => {
   it('only matches people who picked each other', () => {
     expect(mutualPicks(['lena', 'kai'], ['lena', 'tom'])).toEqual(['lena']);
   });
+
+  it('keeps campus events for verified students of that university', () => {
+    const mensa: MeetupEvent = { ...quiz, campus: 'JLU Gießen' };
+    expect(joinState(mensa, 'f', me)).toBe('campus_only');
+    expect(joinState(mensa, 'f', { ...me, campus: 'THM' })).toBe('campus_only');
+    expect(joinState(mensa, 'f', { ...me, campus: 'JLU Gießen' })).toBe('open');
+  });
+
+  it('lets small groups go out tonight', () => {
+    const tonight: EventDraft = { title: 'Zur Semesterparty', kind: 'Feiern', place: 'Marktplatz', when: 'Heute, 22 Uhr', seats: 6, price: 0, access: 'open', tonight: true };
+    expect(validateEvent(tonight)).toEqual({});
+    expect(validateEvent({ ...tonight, seats: 12 }).seats).toBe('Wähle 4, 6 oder 8 Plätze.');
+  });
 });
