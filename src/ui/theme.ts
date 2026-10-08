@@ -1,28 +1,31 @@
-// Nachts, warm, ehrlich: dunkler Grund, Koralle nur für das, was zählt, Lila für leise Hinweise.
+// Hell und zurückhaltend wie eine fertige App: Weiß, dunkle Tinte, Tannengrün nur für die Hauptaktion.
 export const colors = {
-  bg: '#0E0D10', // Grund
-  surface: '#1A181D', // erhöhte Flächen, Karten
-  raised: '#232027', // gedrückt / Hover
-  line: '#2C2930',
-  text: '#F4F1F5', // Tinte
-  muted: '#A49EAB', // leise Tinte, AA auf bg und surface
-  accent: '#FF6F59', // Signal
-  hint: '#B9A7F2', // Hinweis, Fokus
-  error: '#FF8A8A',
+  bg: '#FFFFFF', // Grund
+  surface: '#F4F4F1', // Karten, Eingabefelder
+  raised: '#E9E9E5', // gedrückt / Hover
+  line: '#E2E2DE',
+  text: '#171717', // Tinte
+  muted: '#66665F', // leise Tinte, AA auf bg und surface
+  accent: '#1E5B43', // Tannengrün, Hauptaktion
+  hint: '#1E5B43', // Hinweise und Fokus im selben Grün, damit es bei einer Akzentfarbe bleibt
+  error: '#B3261E',
+  onAccent: '#FFFFFF', // Text auf Grün
 };
 
 export const fontFamily = {
-  display: 'BricolageGrotesque_800ExtraBold',
-  title: 'BricolageGrotesque_700Bold',
-  medium: 'BricolageGrotesque_500Medium',
+  regular: 'HankenGrotesk_400Regular',
+  medium: 'HankenGrotesk_500Medium',
+  semibold: 'HankenGrotesk_600SemiBold',
+  title: 'HankenGrotesk_700Bold',
+  display: 'HankenGrotesk_700Bold',
 };
 
 export const font = {
-  display: { fontFamily: fontFamily.display, fontSize: 48, lineHeight: 50, letterSpacing: -1.6, color: colors.text },
-  title: { fontFamily: fontFamily.title, fontSize: 30, lineHeight: 34, letterSpacing: -0.6, color: colors.text },
-  body: { fontSize: 16, lineHeight: 24, color: colors.text },
-  small: { fontSize: 13, lineHeight: 19, color: colors.muted },
-  label: { fontSize: 12, fontWeight: '700' as const, letterSpacing: 1.4, textTransform: 'uppercase' as const, color: colors.muted },
+  display: { fontFamily: fontFamily.display, fontSize: 32, lineHeight: 38, letterSpacing: -0.4, color: colors.text },
+  title: { fontFamily: fontFamily.title, fontSize: 22, lineHeight: 28, letterSpacing: -0.2, color: colors.text },
+  body: { fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 24, color: colors.text },
+  small: { fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 20, color: colors.muted },
+  label: { fontFamily: fontFamily.semibold, fontSize: 14, lineHeight: 20, color: colors.muted },
 };
 
 export const motion = { fast: 160, base: 260 };

@@ -67,7 +67,7 @@ export function PhoneVerify({ onSend, onVerify, onDone }: Props) {
     return (
       <View style={{ flex: 1, gap: 20 }}>
         <View style={{ gap: 12 }}>
-          <Text style={font.display}>Deine{'\n'}Nummer<Text style={{ color: colors.accent }}>.</Text></Text>
+          <Text style={font.display}>Deine{'\n'}Nummer</Text>
           <Text style={font.body}>Eine Nummer, ein Konto. So legt niemand mehrere Profile an. Andere sehen deine Nummer nie.</Text>
         </View>
         <Field
@@ -89,7 +89,7 @@ export function PhoneVerify({ onSend, onVerify, onDone }: Props) {
   return (
     <Animated.View style={[{ flex: 1, gap: 20 }, enter]}>
       <View style={{ gap: 12 }}>
-        <Text style={font.display}>Kurz in die{'\n'}SMS schauen<Text style={{ color: colors.accent }}>.</Text></Text>
+        <Text style={font.display}>Kurz in die{'\n'}SMS schauen</Text>
         <Text style={font.body}>{`Der 6-stellige Code ist an ${formatPhone(phone)} unterwegs.`}</Text>
       </View>
       <Field label="SMS-Code" value={code} onChangeText={(v) => { setError(undefined); setCode(v.replace(/\D/g, '').slice(0, 6)); }} keyboardType="number-pad" autoComplete="sms-otp" textContentType="oneTimeCode" error={error} />

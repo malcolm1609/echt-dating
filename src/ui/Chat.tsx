@@ -4,7 +4,7 @@ import { afterDateOutcome, DateAnswer, waitingDays } from '../domain/conversatio
 import { dateIdeas } from '../domain/dateIdeas.ts';
 import type { Match } from '../lib/matches';
 import { Button, Chip, s } from './kit';
-import { colors, font } from './theme';
+import { colors, font, fontFamily } from './theme';
 
 export const PARTNER_CAFES = ['Café Lindner, Kreuzberg', 'Kaffeebar Nord, Prenzlauer Berg', 'Rösterei am Kanal, Neukölln'];
 const TIMES = ['Samstag, 15 Uhr', 'Sonntag, 11 Uhr', 'Mittwoch, 19 Uhr'];
@@ -36,7 +36,7 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
       {match.messages.length === 0 && <Text style={font.small}>{`Fragenrunde geschafft. Schreib ${match.name} etwas zu einer Antwort, die dich neugierig gemacht hat.`}</Text>}
       {match.messages.map((m) => (
         <View key={m.id} style={{ alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start', maxWidth: '82%', backgroundColor: m.from === 'me' ? colors.accent : colors.surface, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 14 }}>
-          <Text style={[font.body, m.from === 'me' && { color: colors.bg }]}>{m.text}</Text>
+          <Text style={[font.body, m.from === 'me' && { color: colors.onAccent }]}>{m.text}</Text>
         </View>
       ))}
 
@@ -85,9 +85,9 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
                 send(draft.trim());
                 setDraft('');
               }}
-              style={{ backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 14, paddingHorizontal: 18, opacity: draft.trim() ? 1 : 0.5 }}
+              style={{ backgroundColor: colors.accent, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, opacity: draft.trim() ? 1 : 0.5 }}
             >
-              <Text style={{ color: colors.bg, fontWeight: '700' }}>Senden</Text>
+              <Text style={{ color: colors.onAccent, fontFamily: fontFamily.semibold }}>Senden</Text>
             </Pressable>
           </View>
           {!match.date && panel !== 'date' && <Button title="Date vorschlagen" variant="ghost" onPress={() => setPanel('date')} />}

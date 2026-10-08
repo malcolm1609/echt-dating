@@ -17,7 +17,7 @@ export default function Status() {
       {!state && <Text style={font.small}>Lädt …</Text>}
       {state?.status === 'pending_verification' && (
         <>
-          <Text style={font.display}>Wir prüfen gerade<Text style={{ color: colors.accent }}>.</Text></Text>
+          <Text style={font.display}>Wir prüfen gerade</Text>
           <Text style={font.body}>Sobald dein Ausweis und dein Selfie geprüft sind, siehst du hier, wie es weitergeht.</Text>
           <Button title="Aktualisieren" variant="ghost" onPress={load} />
         </>
@@ -31,7 +31,7 @@ export default function Status() {
       )}
       {state?.status === 'admitted' && (
         <>
-          <Text style={font.display}>Du bist dabei<Text style={{ color: colors.accent }}>.</Text></Text>
+          <Text style={font.display}>Du bist dabei</Text>
           <Text style={font.body}>Du bekommst jeden Tag bis zu 6 Vorschläge.</Text>
           <View style={{ flex: 1 }} />
           <Button title="Zu deinen Vorschlägen" onPress={() => router.replace('/heute')} />
@@ -39,7 +39,7 @@ export default function Status() {
       )}
       {state?.status === 'rejected' && (
         <>
-          <Text style={font.display}>Das hat leider nicht geklappt<Text style={{ color: colors.accent }}>.</Text></Text>
+          <Text style={font.display}>Das hat leider nicht geklappt</Text>
           <Text style={font.body}>Wir konnten deine Identität nicht bestätigen oder du bist noch keine 18. Schreib uns, wenn du denkst, dass das ein Fehler ist.</Text>
         </>
       )}
@@ -52,7 +52,7 @@ function Waitlist({ position, ratio }: Extract<MyStatus, { status: 'waitlisted' 
   return (
     <>
       <Text style={[font.label, { color: colors.hint }]}>Du bist verifiziert</Text>
-      <Text style={font.display}>Fast da<Text style={{ color: colors.accent }}>.</Text></Text>
+      <Text style={font.display}>Fast da</Text>
       {position !== null && (
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
           <Text style={[font.display, { fontSize: 96, lineHeight: 96, color: colors.accent }]}>{position}</Text>

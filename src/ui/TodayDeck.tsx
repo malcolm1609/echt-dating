@@ -31,9 +31,10 @@ interface Props {
   onOpenMatch?: (pick: Pick) => void;
   myInterests?: string[];
   myGoal?: GoalId;
+  title?: string;
 }
 
-export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests = [], myGoal }: Props) {
+export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests = [], myGoal, title }: Props) {
   const [index, setIndex] = useState(0);
   // Neu geladene Vorschläge enthalten nur noch offene Personen: dann wieder vorne anfangen.
   const [shownPicks, setShownPicks] = useState(picks);
@@ -69,7 +70,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
     return (
       <Animated.View style={[{ flex: 1, justifyContent: 'center', gap: 16 }, enterMatch]}>
         <Text style={[font.label, { color: colors.hint }]}>Match</Text>
-        <Text style={[font.display, { fontSize: 56, lineHeight: 56 }]}>Ihr mögt euch beide<Text style={{ color: colors.accent }}>.</Text></Text>
+        <Text style={[font.display, { fontSize: 40, lineHeight: 46 }]}>Ihr mögt euch beide</Text>
         <Text style={font.body}>Du und {match.displayName} startet mit einer kurzen Fragenrunde statt mit Smalltalk.</Text>
         <View style={{ flex: 1 }} />
         {onOpenMatch && <Button title="Zur Fragenrunde" onPress={() => { setMatch(null); onOpenMatch(match); }} />}
@@ -81,7 +82,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   if (!current) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-        <Text style={font.display}>Das war’s für heute<Text style={{ color: colors.accent }}>.</Text></Text>
+        <Text style={font.display}>Das war’s für heute</Text>
         <Text style={font.body}>Morgen bekommst du neue Vorschläge. Weniger Auswahl heißt mehr Aufmerksamkeit für jede Person.</Text>
       </View>
     );
@@ -90,15 +91,14 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   const position = usedBefore + index + 1;
   const reason = pickReason({ goal: myGoal, interests: myInterests }, { goal: current.goal, interests: current.interests ?? [] });
   return (
-    <View style={{ flex: 1, gap: 20 }}>
-      <View accessibilityLabel={`${position} von ${DAILY_LIMIT} Vorschlägen`} style={{ flexDirection: 'row', gap: 6 }}>
-        {Array.from({ length: DAILY_LIMIT }, (_, i) => (
-          <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i < position ? colors.accent : colors.line }} />
-        ))}
+    <View style={{ flex: 1, gap: 16 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        {title && <Text accessibilityRole="header" style={font.display}>{title}</Text>}
+        <Text accessibilityLabel={`${position} von ${DAILY_LIMIT} Vorschlägen`} style={font.small}>{`${position} von ${DAILY_LIMIT}`}</Text>
       </View>
       <Animated.View style={[{ flex: 1 }, enterCard]}>
         <ScrollView key={current.id} contentContainerStyle={{ paddingBottom: 8 }} showsVerticalScrollIndicator={false}>
-          {reason && <Text style={[font.small, { color: colors.hint, marginBottom: 12 }]}>{reason}</Text>}
+          
           <ProfileDetails
             name={current.displayName}
             age={current.age}
@@ -110,6 +110,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
             myInterests={myInterests}
             music={current.music}
           />
+          {reason && <Text style={[font.label, { color: colors.accent, marginTop: 14 }]}>{reason}</Text>}
         </ScrollView>
       </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}

@@ -28,7 +28,7 @@ export default function SignIn() {
     <Screen>
       <StepHeader step={1} total={6} name="E-Mail" />
       <View style={{ gap: 12 }}>
-        <Text style={font.display}>{sent ? 'Schau in\ndein Postfach' : 'Wie erreichen\nwir dich'}<Text style={{ color: colors.accent }}>{sent ? '.' : '?'}</Text></Text>
+        <Text style={font.display}>{sent ? 'Schau in\ndein Postfach' : 'Wie erreichen\nwir dich'}{sent ? '' : '?'}</Text>
         <Text style={font.body}>{sent ? `Der 6-stellige Code ist an ${email} unterwegs.` : 'Du bekommst einen Code per Mail. Kein Passwort, das du dir merken musst.'}</Text>
       </View>
       {sent ? (

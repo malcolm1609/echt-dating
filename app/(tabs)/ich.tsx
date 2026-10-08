@@ -25,7 +25,7 @@ export default function Me() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: 12 }} keyboardShouldPersistTaps="handled">
-        <Text style={font.display}>Du<Text style={{ color: colors.accent }}>.</Text></Text>
+        <Text style={font.display}>Du</Text>
         {!profile && !error && <Text style={font.small}>Lädt …</Text>}
         {error && (
           <View style={{ gap: 12 }}>

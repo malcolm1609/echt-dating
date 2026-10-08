@@ -16,7 +16,7 @@ export default function Profile() {
       <StepHeader step={3} total={6} name="Über dich" />
       <ScrollView contentContainerStyle={{ gap: 28, paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
         <View style={{ gap: 12 }}>
-          <Text style={font.display}>Erzähl kurz<Text style={{ color: colors.accent }}>.</Text></Text>
+          <Text style={font.display}>Erzähl kurz</Text>
           <Text style={font.small}>Dein Geburtsdatum gleichen wir später mit dem Ausweis ab. Andere sehen nur dein Alter.</Text>
         </View>
         <ProfileForm onSubmit={next} />

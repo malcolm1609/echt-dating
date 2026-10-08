@@ -6,7 +6,7 @@ import { backend } from '../../src/lib/backend';
 import { matchStore } from '../../src/lib/matches';
 import { Button, Screen } from '../../src/ui/kit';
 import { Pick, TodayDeck } from '../../src/ui/TodayDeck';
-import { colors, font } from '../../src/ui/theme';
+import { font } from '../../src/ui/theme';
 
 export default function Today() {
   const [data, setData] = useState<{ picks: Pick[]; used: number }>();
@@ -25,7 +25,7 @@ export default function Today() {
 
   return (
     <Screen>
-      <Text style={font.display}>Heute<Text style={{ color: colors.accent }}>.</Text></Text>
+      {(!data || paused) && <Text accessibilityRole="header" style={font.display}>Heute</Text>}
       {failed && (
         <>
           <Text style={font.body}>Deine Vorschläge konnten nicht geladen werden.</Text>
@@ -40,6 +40,7 @@ export default function Today() {
           usedBefore={data.used}
           myInterests={me.interests}
           myGoal={me.goal}
+          title="Heute"
           onDecide={async (id, decision) => {
             const result = await backend.decide(id, decision);
             const pick = data.picks.find((p) => p.id === id);

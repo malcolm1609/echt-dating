@@ -14,7 +14,7 @@ for (const font of all.filter((f) => f.endsWith('.ttf'))) {
 
 writeFileSync(out, `<title>Echt Prototyp</title>
 <style>
-  :root { --bg: #0E0D10; --frame: #050506; color-scheme: dark; }
+  :root { --bg: #FFFFFF; --frame: #ECECE8; color-scheme: light; }
   html, body { height: 100%; }
   body { overflow: hidden; background: var(--frame); }
   #root { display: flex; height: 100%; flex: 1; max-width: 430px; margin: 0 auto; background: var(--bg); }

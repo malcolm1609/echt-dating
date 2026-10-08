@@ -3,7 +3,7 @@ import { Text, TextInput, View } from 'react-native';
 import { Answers, answerKey, QUESTION_ROUNDS, roundState, theirAnswerFor } from '../domain/conversation.ts';
 import { Button, s } from './kit';
 import type { ShownPrompt } from './ProfileDetails';
-import { colors, font } from './theme';
+import { colors, font, fontFamily } from './theme';
 
 interface Props {
   name: string;
@@ -56,7 +56,7 @@ function Question({ name, question, opener, pair, onAnswer }: { name: string; qu
           <Text style={[font.body, { fontStyle: 'italic' }]}>{`„${opener.answer}“`}</Text>
         </View>
       )}
-      <Text style={[font.body, { fontWeight: '700' }]}>{question}</Text>
+      <Text style={[font.body, { fontFamily: fontFamily.semibold }]}>{question}</Text>
       {pair?.mine ? (
         <Text style={font.body}>
           <Text style={{ color: colors.muted }}>Du: </Text>

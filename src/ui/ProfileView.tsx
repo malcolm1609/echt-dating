@@ -78,7 +78,7 @@ export function ProfileView({ profile, onSaveBio, onSaveContent, onSavePreferenc
           dimmed={profile.paused}
         />
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: profile.paused ? colors.muted : '#7BE0A6' }} />
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: profile.paused ? colors.muted : colors.accent }} />
           <Text style={[font.body, { flex: 1 }]}>{profile.paused ? 'Pausiert: du bekommst keine Vorschläge und wirst nicht gezeigt.' : 'Aktiv: du wirst heute vorgeschlagen.'}</Text>
         </View>
       </View>

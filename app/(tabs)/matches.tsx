@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { chatUnlocked, QUESTION_ROUNDS, roundState } from '../../src/domain/conversation.ts';
 import { Match, useMatches } from '../../src/lib/matches';
 import { Screen } from '../../src/ui/kit';
+import { photoTone } from '../../src/ui/ProfileCard';
 import { colors, font, fontFamily } from '../../src/ui/theme';
 
 function stageOf(m: Match): string {
@@ -18,16 +19,16 @@ export default function Matches() {
   const matches = useMatches();
   return (
     <Screen>
-      <Text style={font.display}>Matches<Text style={{ color: colors.accent }}>.</Text></Text>
+      <Text style={font.display}>Matches</Text>
       {matches.length === 0 && <Text style={font.body}>Noch keine Matches. Schau in deine Vorschläge von heute.</Text>}
-      <ScrollView contentContainerStyle={{ gap: 10 }}>
+      <ScrollView>
         {matches.map((m) => (
-          <Pressable key={m.id} accessibilityRole="button" onPress={() => router.push(`/match/${m.id}`)} style={{ flexDirection: 'row', gap: 14, alignItems: 'center', backgroundColor: colors.surface, borderRadius: 18, padding: 14 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.line, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: colors.text, fontFamily: fontFamily.display, fontSize: 22 }}>{m.name[0]}</Text>
+          <Pressable key={m.id} accessibilityRole="button" onPress={() => router.push(`/match/${m.id}`)} style={({ pressed }) => ({ flexDirection: 'row', gap: 14, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line, opacity: pressed ? 0.6 : 1 })}>
+            <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: photoTone(m.name), alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#FFFFFF', fontFamily: fontFamily.semibold, fontSize: 20 }}>{m.name[0]}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[font.body, { fontWeight: '700' }]}>{`${m.name}, ${m.age}`}</Text>
+              <Text style={[font.body, { fontFamily: fontFamily.semibold }]}>{`${m.name}, ${m.age}`}</Text>
               <Text style={font.small} numberOfLines={1}>{stageOf(m)}</Text>
             </View>
           </Pressable>

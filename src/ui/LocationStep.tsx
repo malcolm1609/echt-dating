@@ -51,7 +51,7 @@ export function LocationStep({ onLocate, onDone, onOpenSettings }: Props) {
   return (
     <View style={{ flex: 1, gap: 28 }}>
       <View style={{ gap: 12 }}>
-        <Text style={font.display}>Wo bist du{'\n'}zu Hause<Text style={{ color: colors.accent }}>?</Text></Text>
+        <Text style={font.display}>Wo bist du{'\n'}zu Hause?</Text>
         <Text style={font.body}>Wir zeigen dir Menschen im Umkreis von 25 km.</Text>
       </View>
       <View style={{ gap: 18 }}>

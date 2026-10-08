@@ -1,14 +1,19 @@
 import { Text, View, ViewStyle } from 'react-native';
 import { colors, font, fontFamily } from './theme';
 
-// Eine Person, wie sie in „Heute“ erscheint. Die große Initiale steht für das Foto, bis es Fotos gibt.
+// Ruhige Fototöne als Platzhalter, bis es echte Fotos gibt. Weiße Schrift bleibt auf allen lesbar.
+const PHOTO_TONES = ['#7D6A5A', '#5F6E5C', '#6C6178', '#566A7A', '#7E6158', '#6A6A5E'];
+export const photoTone = (name: string) => PHOTO_TONES[[...name].reduce((sum, c) => sum + c.charCodeAt(0), 0) % PHOTO_TONES.length];
+
+// Eine Person, wie sie in „Heute“ erscheint: großes Foto, Name darauf, kurzer Satz darunter.
 export function ProfileCard({ name, age, bio, eyebrow, style }: { name: string; age: number; bio: string; eyebrow: string; style?: ViewStyle }) {
   return (
-    <View style={[{ backgroundColor: colors.surface, borderRadius: 28, padding: 24, justifyContent: 'flex-end', gap: 10, overflow: 'hidden' }, style]}>
-      <Text accessible={false} style={{ position: 'absolute', top: 0, left: 18, fontFamily: fontFamily.display, fontSize: 220, color: colors.raised }}>{name[0]}</Text>
-      <Text style={[font.label, { color: colors.hint }]}>{eyebrow}</Text>
-      <Text style={[font.display, { fontSize: 44, lineHeight: 46 }]}>{`${name}, ${age}`}</Text>
-      {bio ? <Text style={[font.body, { fontSize: 18, lineHeight: 26 }]}>{bio}</Text> : null}
+    <View style={{ gap: 12 }}>
+      <View accessibilityLabel={`Foto von ${name}`} style={[{ backgroundColor: photoTone(name), borderRadius: 16, padding: 18, justifyContent: 'flex-end', overflow: 'hidden' }, style]}>
+        <Text style={{ fontFamily: fontFamily.title, fontSize: 30, lineHeight: 36, color: '#FFFFFF' }}>{`${name}, ${age}`}</Text>
+        <Text style={{ fontFamily: fontFamily.medium, fontSize: 15, lineHeight: 20, color: '#FFFFFF' }}>{eyebrow}</Text>
+      </View>
+      {bio ? <Text style={[font.body, { fontSize: 17, lineHeight: 25, color: colors.text }]}>{bio}</Text> : null}
     </View>
   );
 }

@@ -14,7 +14,7 @@ export default function Fragen() {
       <StepHeader step={4} total={6} name="Dein Profil" />
       <ScrollView contentContainerStyle={{ gap: 28, paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
         <View style={{ gap: 12 }}>
-          <Text style={font.display}>Drei Fragen<Text style={{ color: colors.accent }}>.</Text></Text>
+          <Text style={font.display}>Drei Fragen</Text>
           <Text style={font.body}>Statt eines leeren Textfelds: Such dir pro Bereich eine Frage aus. Konkretes wirkt besser als Floskeln, ein Ort oder ein Erlebnis gibt anderen etwas zum Anknüpfen.</Text>
         </View>
         <ProfileContentForm
