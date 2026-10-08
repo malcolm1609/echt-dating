@@ -52,6 +52,7 @@ export default function Today() {
             return result;
           }}
           onOpenMatch={(pick) => router.push(`/match/${pick.id}`)}
+          onReport={(id, reason) => matchStore.report(id, reason)}
         />
       )}
     </Screen>

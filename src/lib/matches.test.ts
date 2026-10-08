@@ -29,7 +29,34 @@ const serverMatch = {
   messages: [{ id: 7, mine: false, text: 'Hallo!', at: '2026-10-08T10:00:00Z' }],
   date: { idea: null, place: 'Café', when: 'Samstag', reserved: false, accepted: true, past: false, mine: true },
   after_date: null,
+  unread: true,
 };
+
+describe('demo match store: new and safety', () => {
+  it('marks replies as new unless the match is open', () => {
+    jest.useFakeTimers();
+    const store = createDemoStore(10);
+    store.add({ id: 'elif', name: 'Elif', age: 28 });
+    expect(store.get('elif')?.unread).toBe(true);
+    const stop = store.watch('elif');
+    expect(store.get('elif')?.unread).toBe(false);
+    store.answer('elif', '0-0', 'Hallo');
+    jest.advanceTimersByTime(10);
+    expect(store.get('elif')?.unread).toBe(false);
+    stop();
+    store.answer('elif', '0-1', 'Noch was');
+    jest.advanceTimersByTime(10);
+    expect(store.get('elif')?.unread).toBe(true);
+    jest.useRealTimers();
+  });
+
+  it('reporting or blocking removes the match', async () => {
+    const store = createDemoStore(0);
+    await store.report('mara', 'fake');
+    await store.block('noah');
+    expect(store.list()).toEqual([]);
+  });
+});
 
 describe('server match store', () => {
   it('maps the server view to what the screens show', () => {
@@ -54,5 +81,36 @@ describe('server match store', () => {
     expect(rpc).toHaveBeenCalledWith('answer_question', { other: 'u-2', question_key: '0-1', answer: 'Gestern' });
     await new Promise((r) => setTimeout(r, 0));
     expect(rpc.mock.calls.filter(([fn]) => fn === 'my_matches')).toHaveLength(2);
+  });
+
+  const serverDb = () => {
+    const rpc = jest.fn(async (fn: string) => (fn === 'my_matches' ? { data: [serverMatch], error: null } : { data: null, error: null }));
+    const profiles = { select: () => profiles, eq: () => profiles, maybeSingle: async () => ({ data: { interests: [] } }) };
+    return { rpc, db: { rpc, auth: { getUser: async () => ({ data: { user: { id: 'u-1' } } }) }, from: () => profiles } as unknown as SupabaseClient };
+  };
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+
+  it('an open match is marked read and stays read after reloading', async () => {
+    const { rpc, db } = serverDb();
+    const store = createServerStore(db);
+    store.refresh();
+    await tick();
+    expect(store.get('u-2')?.unread).toBe(true);
+    const stop = store.watch('u-2');
+    expect(rpc).toHaveBeenCalledWith('mark_read', { other: 'u-2' });
+    await tick();
+    expect(store.get('u-2')?.unread).toBe(false);
+    stop();
+  });
+
+  it('reporting blocks on the server and removes the match', async () => {
+    const { rpc, db } = serverDb();
+    const store = createServerStore(db);
+    store.refresh();
+    await tick();
+    rpc.mockImplementationOnce(async () => ({ data: null, error: null }));
+    await store.report('u-2', 'harassment');
+    expect(rpc).toHaveBeenCalledWith('report_user', { other: 'u-2', reason: 'harassment' });
+    expect(store.get('u-2')).toBeUndefined();
   });
 });

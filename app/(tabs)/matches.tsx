@@ -32,8 +32,9 @@ export default function Matches() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[font.body, { fontFamily: fontFamily.semibold }]}>{`${m.name}, ${m.age}`}</Text>
-              <Text style={font.small} numberOfLines={1}>{stageOf(m)}</Text>
+              <Text style={[font.small, m.unread && { color: colors.text, fontFamily: fontFamily.semibold }]} numberOfLines={1}>{stageOf(m)}</Text>
             </View>
+            {m.unread && !m.ended && <View accessibilityLabel="Neu" style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent }} />}
           </Pressable>
         ))}
         </View>

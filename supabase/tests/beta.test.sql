@@ -61,8 +61,9 @@ select pg_temp.assert(
    from jsonb_array_elements(my_matches()) m where (m->>'id')::uuid = (select id from chat)),
   'Beispielprofil antwortet im Chat, sagt dem Date zu und will sich wiedersehen');
 
+select report_user((select id from chat), 'fake');
 select beta_reset_me();
-select pg_temp.assert(jsonb_array_length(my_matches()) = 2, 'Zurücksetzen bringt den Startzustand');
+select pg_temp.assert(jsonb_array_length(my_matches()) = 2, 'Zurücksetzen bringt den Startzustand, auch nach dem Melden');
 reset role;
 
 -- Ohne Testbetrieb gilt wieder alles

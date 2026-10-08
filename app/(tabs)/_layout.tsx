@@ -1,8 +1,10 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useUnreadCount } from '../../src/lib/matches';
 import { colors } from '../../src/ui/theme';
 
 // Systemeigene Tabs: auf iOS 26 automatisch Liquid Glass, auf Android die Material-Leiste.
 export default function TabsLayout() {
+  const unread = useUnreadCount();
   return (
     <NativeTabs tintColor={colors.accent} minimizeBehavior="onScrollDown">
       <NativeTabs.Trigger name="heute">
@@ -12,6 +14,7 @@ export default function TabsLayout() {
       <NativeTabs.Trigger name="matches">
         <NativeTabs.Trigger.Label>Matches</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left', selected: 'bubble.left.fill' }} md="chat_bubble" />
+        <NativeTabs.Trigger.Badge hidden={!unread}>{String(unread)}</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="treffen">
         <NativeTabs.Trigger.Label>Treffen</NativeTabs.Trigger.Label>

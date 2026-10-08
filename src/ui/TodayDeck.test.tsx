@@ -8,6 +8,20 @@ const picks: Pick[] = [
 ];
 
 describe('TodayDeck', () => {
+  it('reports a person without using up a suggestion', async () => {
+    const onDecide = jest.fn();
+    const onReport = jest.fn().mockResolvedValue(undefined);
+    render(<TodayDeck picks={picks} usedBefore={0} onDecide={onDecide} onReport={onReport} />);
+    fireEvent.press(screen.getByText('Ben melden'));
+    expect(screen.getByText('Melden und blockieren')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Fake-Profil oder nicht echt'));
+    fireEvent.press(screen.getByText('Melden und blockieren'));
+    expect(onReport).toHaveBeenCalledWith('a', 'fake');
+    expect(await screen.findByText('Kai, 28')).toBeTruthy();
+    expect(screen.getByLabelText('1 von 6 Vorschlägen')).toBeTruthy();
+    expect(onDecide).not.toHaveBeenCalled();
+  });
+
   it('shows one person at a time with age and distance', () => {
     render(<TodayDeck picks={picks} usedBefore={0} onDecide={jest.fn()} />);
     expect(screen.getByText('Ben, 30')).toBeTruthy();

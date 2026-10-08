@@ -2,6 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { Tabs } from 'expo-router/tabs';
 import type { ComponentProps } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useUnreadCount } from '../../src/lib/matches';
 import { Glass } from '../../src/ui/Glass';
 import { colors, fontFamily } from '../../src/ui/theme';
 
@@ -11,25 +12,34 @@ const ICONS: Record<string, keyof typeof Feather.glyphMap> = { heute: 'sun', mat
 
 // Im Browser gibt es keine System-Tabs: eine schwebende Glasleiste nach dem Vorbild von iOS 26.
 function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const unread = useUnreadCount();
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 14, alignItems: 'center' }}>
       <Glass style={{ flexDirection: 'row', borderRadius: 999, padding: 5, gap: 2 }}>
         {state.routes.map((route, i) => {
           const focused = state.index === i;
           const title = descriptors[route.key].options.title ?? route.name;
+          const badge = route.name === 'matches' && unread > 0;
           return (
             <Pressable
               key={route.key}
               accessibilityRole="tab"
               accessibilityState={{ selected: focused }}
-              accessibilityLabel={title}
+              accessibilityLabel={badge ? `${title}, ${unread} neu` : title}
               onPress={() => {
                 const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                 if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
               }}
               style={({ pressed }) => ({ minWidth: 72, alignItems: 'center', gap: 3, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: focused ? colors.accentSoft : 'transparent', transform: [{ scale: pressed ? 0.94 : 1 }] })}
             >
-              <Feather name={ICONS[route.name] ?? 'circle'} size={20} color={focused ? colors.accent : colors.text} />
+              <View>
+                <Feather name={ICONS[route.name] ?? 'circle'} size={20} color={focused ? colors.accent : colors.text} />
+                {badge && (
+                  <View style={{ position: 'absolute', top: -5, right: -10, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: colors.onAccent, fontFamily: fontFamily.semibold, fontSize: 10 }}>{unread}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={{ fontFamily: focused ? fontFamily.semibold : fontFamily.medium, fontSize: 11, color: focused ? colors.accent : colors.text }}>{title}</Text>
             </Pressable>
           );

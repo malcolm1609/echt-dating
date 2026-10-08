@@ -9,6 +9,8 @@ import { Glass } from './Glass';
 import { Button, s } from './kit';
 import { useEntrance, usePulse } from './motion';
 import { ProfileDetails } from './ProfileDetails';
+import { ReportPanel } from './ReportPanel';
+import type { ReportReason } from '../domain/safety.ts';
 import { colors, font, fontFamily } from './theme';
 
 export interface Pick {
@@ -33,9 +35,11 @@ interface Props {
   myInterests?: string[];
   myGoal?: GoalId;
   title?: string;
+  /** Meldet und blendet die Person aus, ohne einen der Vorschläge zu verbrauchen. */
+  onReport?: (id: string, reason: ReportReason) => Promise<void>;
 }
 
-export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests = [], myGoal, title }: Props) {
+export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests = [], myGoal, title, onReport }: Props) {
   const [index, setIndex] = useState(0);
   // Neu geladene Vorschläge enthalten nur noch offene Personen: dann wieder vorne anfangen.
   const [shownPicks, setShownPicks] = useState(picks);
@@ -46,6 +50,9 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   const [match, setMatch] = useState<Pick | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [reporting, setReporting] = useState(false);
+  // Gemeldete zählen nicht als Vorschlag: der Zähler oben läuft nur über echte Entscheidungen.
+  const [reported, setReported] = useState(0);
   const current = picks[index];
   const enterCard = useEntrance(current?.id);
   const enterMatch = useEntrance(match?.id);
@@ -89,7 +96,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
     );
   }
 
-  const position = usedBefore + index + 1;
+  const position = usedBefore + index - reported + 1;
   const reason = pickReason({ goal: myGoal, interests: myInterests }, { goal: current.goal, interests: current.interests ?? [] });
   return (
     <View style={{ flex: 1, gap: 16 }}>
@@ -113,6 +120,22 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
             music={current.music}
           />
           {reason && <Text style={[font.label, { color: colors.accent, marginTop: 14 }]}>{reason}</Text>}
+          {onReport && (reporting ? (
+            <View style={{ marginTop: 20 }}>
+              <ReportPanel
+                name={current.displayName}
+                onReport={async (r) => {
+                  await onReport(current.id, r);
+                  setReporting(false);
+                  setReported((n) => n + 1);
+                  setIndex((i) => i + 1);
+                }}
+                onCancel={() => setReporting(false)}
+              />
+            </View>
+          ) : (
+            <Text accessibilityRole="button" onPress={() => setReporting(true)} style={[font.small, { marginTop: 20, textDecorationLine: 'underline' }]}>{`${current.displayName} melden`}</Text>
+          ))}
         </ScrollView>
       </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}
