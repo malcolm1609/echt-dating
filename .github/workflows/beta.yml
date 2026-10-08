@@ -76,7 +76,9 @@ jobs:
           echo "anon=$anon" >> "$GITHUB_OUTPUT"
           echo "service=$service" >> "$GITHUB_OUTPUT"
 
+      # Nur für die Anmeldung per E-Mail-Code; die Testkonten mit Passwort brauchen das nicht.
       - name: Anmeldung per 6-stelligem Code statt Link
+        continue-on-error: true
         env:
           SITE: ${{ steps.pages.outputs.base_url }}
         run: |
@@ -84,13 +86,18 @@ jobs:
           jq -n --arg site "$SITE" --arg t "$template" '{
             site_url: $site,
             uri_allow_list: ($site + "/**"),
-            mailer_otp_length: 6,
             mailer_subjects_magic_link: "Dein Code für Echt",
             mailer_templates_magic_link_content: $t,
             mailer_subjects_confirmation: "Dein Code für Echt",
             mailer_templates_confirmation_content: $t
-          }' | curl -fsS -X PATCH -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
-            --data @- "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" > /dev/null
+          }' > auth.json
+          status=$(curl -sS -o response.txt -w '%{http_code}' -X PATCH -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data @auth.json \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth")
+          if [ "$status" -ge 300 ]; then
+            echo "::warning::Auth-Einstellungen nicht übernommen ($status): $(cat response.txt)"
+            exit 1
+          fi
 
       - run: npm ci
 
