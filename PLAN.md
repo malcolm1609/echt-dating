@@ -58,8 +58,9 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Ein Platz für jemanden, der mich schon geliked hat (bleibt verborgen), einer für die diese Woche am seltensten Gezeigten; wer heute 12-mal bewertet wurde, pausiert bis morgen
    - Unter jedem Vorschlag ein Satz, warum er passt; Date-Ideen aus gemeinsamen Interessen (`src/domain/dateIdeas.ts`)
    - Grundlage: Recherche „Algorithmus und Filter für Echt“ (Projektdateien)
-10. **Navigation**: Tabs Heute, Matches, Treffen, Profil (Profil pausieren)
-11. **Treffen, Date-Planer und Echt Plus** ✅ Prototyp (`src/domain/events.ts`, `src/domain/plus.ts`, Demo-Speicher in `src/lib/events.ts` und `src/lib/plus.ts`)
+10. **„In deiner Nähe sind heute aktiv“** ✅ (`src/domain/activeNearby.ts`, Funktion `active_nearby()`): auf Heute und der Warteliste, erst ab 51 Personen, von der Datenbank schon abgerundet (50er, 100er, 1000er), kein Live-Zähler
+11. **Navigation**: Tabs Heute, Matches, Treffen, Profil (Profil pausieren)
+12. **Treffen, Date-Planer und Echt Plus** ✅ Prototyp (`src/domain/events.ts`, `src/domain/plus.ts`, Demo-Speicher in `src/lib/events.ts` und `src/lib/plus.ts`)
    - Treffen: kleine Events (8–12 Leute) für verifizierte Mitglieder, Plätze je zur Hälfte für Frauen und Männer, volle Hälfte = Nachrücken
    - Date-Planer im Chat: Partner-Cafés mit Entfernung und 10 % Rabatt für jedes Echt-Date, Tischreservierung nur mit Plus
    - Echt Plus für 4,99 €/Monat: Reservierung, „Gelesen“ (nur wenn beide es einschalten), Events einen Tag früher und 20 % günstiger, mehr Filter und Fragen

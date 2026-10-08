@@ -2,13 +2,16 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { backend, MyStatus } from '../src/lib/backend';
+import { ActiveNearby } from '../src/ui/ActiveNearby';
 import { Button, Screen, s } from '../src/ui/kit';
 import { colors, font } from '../src/ui/theme';
 
 export default function Status() {
   const [state, setState] = useState<MyStatus>();
+  const [nearby, setNearby] = useState<number | null>();
   const load = useCallback(() => {
     backend.myStatus().then(setState, () => setState(undefined));
+    backend.activeNearby().then(setNearby, () => {});
   }, []);
   useFocusEffect(load);
 
@@ -23,6 +26,7 @@ export default function Status() {
         </>
       )}
       {state?.status === 'waitlisted' && <Waitlist {...state} />}
+      {state?.status === 'waitlisted' && <ActiveNearby bucket={nearby} />}
       {state?.status === 'waitlisted' && backend.demo && (
         <>
           <View style={{ flex: 1 }} />
