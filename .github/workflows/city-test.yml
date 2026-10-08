@@ -1,0 +1,132 @@
+# Großer Stresstest gegen den Beta-Server: 10.000 Testpersonen in 4 Städten (Gießen, Marburg, Frankfurt, Mainz),
+# davon in Stufen bis zu 2.000 gleichzeitig in der App. Die Last kommt von 8 Rechnern gleichzeitig, wie echte
+# Nutzer von vielen Adressen. Alle Testkonten und Test-Städte werden am Ende wieder gelöscht.
+# Startet von Hand (Actions → Stadttest → Run workflow) oder bei „[stadttest]“ in der Commit-Nachricht;
+# „[stadttest klein]“ ist ein kurzer Probelauf mit 400 Personen.
+name: Stadttest
+
+on:
+  workflow_dispatch:
+    inputs:
+      users:
+        description: Testpersonen insgesamt
+        default: '10000'
+      phases:
+        description: Stufen (gleichzeitig aktive Personen)
+        default: '250,500,1000,2000'
+      seconds:
+        description: Sekunden je Stufe
+        default: '60'
+  push:
+    branches: ['claude/**']
+
+concurrency:
+  group: beta-test
+  cancel-in-progress: false
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+  SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+  SMALL: ${{ contains(github.event.head_commit.message, '[stadttest klein]') }}
+  SHARDS: '8'
+
+jobs:
+  setup:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[stadttest')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      run: ${{ steps.setup.outputs.run }}
+      t0: ${{ steps.setup.outputs.t0 }}
+      start: ${{ steps.setup.outputs.start }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: scripts/beta-test/keys.sh
+      - name: Städte, Konten, Profile und Verlauf anlegen
+        id: setup
+        run: |
+          if [ "$SMALL" = true ]; then export CITY_USERS=400 CITY_LOGIN_MINUTES=3; else export CITY_USERS=${{ inputs.users || '10000' }}; fi
+          node scripts/beta-test/citytest.mjs setup city-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: city-setup
+          path: city-results
+
+  run:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    env:
+      CITY_RUN: ${{ needs.setup.outputs.run }}
+      CITY_T0: ${{ needs.setup.outputs.t0 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: scripts/beta-test/keys.sh
+      - name: Anmelden und App benutzen
+        run: |
+          if [ "$SMALL" = true ]; then export CITY_USERS=400 CITY_PHASES=40,80 CITY_SECONDS=20;
+          else export CITY_USERS=${{ inputs.users || '10000' }} CITY_PHASES=${{ inputs.phases || '250,500,1000,2000' }} CITY_SECONDS=${{ inputs.seconds || '60' }}; fi
+          node scripts/beta-test/citytest.mjs run ${{ matrix.shard }} city-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: city-shard-${{ matrix.shard }}
+          path: city-results
+
+  finish:
+    needs: [setup, run]
+    if: always() && needs.setup.outputs.run != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CITY_RUN: ${{ needs.setup.outputs.run }}
+      CITY_START: ${{ needs.setup.outputs.start }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: scripts/beta-test/keys.sh
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: city-*
+          path: city-results
+          merge-multiple: true
+      - name: Auswerten
+        id: finish
+        continue-on-error: true
+        run: |
+          if [ "$SMALL" = true ]; then export CITY_USERS=400 CITY_PHASES=40,80 CITY_SECONDS=20;
+          else export CITY_USERS=${{ inputs.users || '10000' }} CITY_PHASES=${{ inputs.phases || '250,500,1000,2000' }} CITY_SECONDS=${{ inputs.seconds || '60' }}; fi
+          node scripts/beta-test/citytest.mjs finish city-results
+      - name: Aufräumen
+        if: always()
+        run: node scripts/beta-test/citytest.mjs cleanup city-results
+      - name: Zusammenfassung
+        if: always()
+        run: node scripts/beta-test/summary.mjs city-results | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stadttest-ergebnis
+          path: city-results/stadttest.json
+      - if: steps.finish.outcome != 'success'
+        run: exit 1

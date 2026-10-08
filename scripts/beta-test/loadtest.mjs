@@ -4,7 +4,7 @@
 // Aufruf: SUPABASE_URL=… SUPABASE_ANON_KEY=… SUPABASE_SERVICE_ROLE_KEY=… [LOAD_USERS=100] [LOAD_PHASES=10,25,50,100]
 //         [LOAD_SECONDS=60] node scripts/beta-test/loadtest.mjs [bericht.json]
 import { writeFileSync } from 'node:fs';
-import { admin, ok, password, pct, profileFor, runId, signIn, sleep } from './lib.mjs';
+import { admin, meter, ok, password, pct, pool, profileFor, runId, signIn, sleep, useApp } from './lib.mjs';
 
 const USERS = Number(process.env.LOAD_USERS ?? 100);
 const PHASES = (process.env.LOAD_PHASES ?? '10,25,50,100').split(',').map(Number).filter((n) => n > 0 && n <= USERS);
@@ -14,59 +14,6 @@ const run = runId();
 const report = { run, users: USERS, setup: {}, races: [], phases: [], invariants: [] };
 const users = [];
 let t = performance.now();
-
-// Viele Aufgaben mit begrenzter Gleichzeitigkeit.
-async function pool(items, limit, fn) {
-  const out = [];
-  let i = 0;
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (i < items.length) {
-      const k = i++;
-      out[k] = await fn(items[k], k);
-    }
-  }));
-  return out;
-}
-
-// Ein Aufruf mit Zeitmessung; Fehler werden gezählt, nicht geworfen.
-function meter() {
-  const ops = new Map();
-  const stat = (name) => ops.get(name) ?? ops.set(name, { times: [], errors: new Map(), expected: 0 }).get(name);
-  return {
-    ops,
-    async time(name, fn, allow = () => false) {
-      const t = performance.now();
-      let res;
-      try {
-        res = await fn();
-      } catch (e) {
-        res = { error: e };
-      }
-      const s = stat(name);
-      s.times.push(performance.now() - t);
-      if (res?.error && allow(res.error)) s.expected++;
-      else if (res?.error) {
-        const key = `${res.error.code ?? res.error.status ?? ''} ${res.error.message ?? res.error}`.trim().slice(0, 90);
-        s.errors.set(key, (s.errors.get(key) ?? 0) + 1);
-      }
-      return res;
-    },
-    summary(seconds) {
-      return [...ops].map(([name, s]) => {
-        const sorted = [...s.times].sort((a, b) => a - b);
-        const errors = [...s.errors.values()].reduce((a, b) => a + b, 0);
-        return {
-          name, count: sorted.length, perSecond: +(sorted.length / seconds).toFixed(1), errors, expectedRejections: s.expected,
-          p50: Math.round(pct(sorted, 50)), p95: Math.round(pct(sorted, 95)), p99: Math.round(pct(sorted, 99)), max: Math.round(sorted.at(-1) ?? 0),
-          errorTypes: Object.fromEntries(s.errors),
-        };
-      });
-    },
-  };
-}
-
-// Erwartete Fehler, die zur App gehören (z. B. Tageslimit erreicht, Event voll), zählen nicht als Störung.
-const expected = (e) => /daily limit|full|half|no seats|already|duplicate|not visible|row-level security|violates check|chat closed|round locked/i.test(e?.message ?? '');
 
 try {
   // ------------------------------------------------------------------------------------------
@@ -159,32 +106,12 @@ try {
     console.log(`\n  Stufe: ${n} gleichzeitig …`);
     await Promise.all(active.map(async (u) => {
       await sleep(Math.random() * 2000);
-      while (Date.now() < until) {
-        // App öffnen: Aktivität, Vorschläge, Zähler
-        await m.time('App öffnen (touch_activity)', () => u.db.rpc('touch_activity'));
-        const [picks] = await Promise.all([
-          m.time('Vorschläge (todays_picks)', () => u.db.rpc('todays_picks')),
-          m.time('Zähler (my_picks_today)', () => u.db.from('my_picks_today').select('used').single()),
-        ]);
-        const pick = picks?.data?.[Math.floor(Math.random() * (picks.data.length || 1))];
-        if (pick) {
-          await m.time('Entscheiden (likes)', () => u.db.from('likes').insert({ from_id: u.id, to_id: pick.id, decision: Math.random() < 0.6 ? 'like' : 'pass' }), expected);
-        }
-        await sleep(300 + Math.random() * 900);
-        const matches = await m.time('Matches (my_matches)', () => u.db.rpc('my_matches'));
-        const open = matches?.data?.find((x) => !x.answers?.['0-0']);
-        if (open) await m.time('Fragenrunde (answer_question)', () => u.db.rpc('answer_question', { other: open.id, question_key: '0-0', answer: 'Antwort aus dem Stresstest' }), expected);
-        await sleep(300 + Math.random() * 900);
-        const evs = await m.time('Treffen (my_events)', () => u.db.rpc('my_events'));
-        const ev = evs?.data?.events?.find((e) => e.id === eventId);
-        if (ev?.mine) await m.time('Gruppenchat (send_event_message)', () => u.db.rpc('send_event_message', { event_id: eventId, body: 'Bin dabei!' }), expected);
-        await sleep(500 + Math.random() * 1500);
-      }
+      await useApp(u, m, eventId, until);
     }));
     const ops = m.summary(SECONDS);
     const total = ops.reduce((a, o) => a + o.count, 0);
     const errors = ops.reduce((a, o) => a + o.errors, 0);
-    const all = [...m.ops.values()].flatMap((s) => s.times).sort((a, b) => a - b);
+    const all = Object.values(m.stats).flatMap((s) => s.times).sort((a, b) => a - b);
     const phase = { concurrent: n, requests: total, perSecond: +(total / SECONDS).toFixed(1), errors, errorRate: +((100 * errors) / (total || 1)).toFixed(2),
       p50: Math.round(pct(all, 50)), p95: Math.round(pct(all, 95)), p99: Math.round(pct(all, 99)), ops };
     report.phases.push(phase);
