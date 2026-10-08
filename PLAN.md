@@ -64,7 +64,11 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Date-Planer im Chat: Partner-Cafés mit Entfernung und 10 % Rabatt für jedes Echt-Date, Tischreservierung nur mit Plus
    - Echt Plus für 4,99 €/Monat: Reservierung, „Gelesen“ (nur wenn beide es einschalten), Events einen Tag früher und 20 % günstiger, mehr Filter und Fragen
    - Immer kostenlos: Verifikation, Date-Check-in, Standort mit Vertrauensperson teilen; keine kaufbaren Likes oder Boosts
-   - Noch offen: echte Zahlung (In-App-Kauf), Partner-Verträge, Event-Tabellen in Supabase
+   - Gastgeber: jedes Mitglied kann ein Event anlegen (`app/event-neu.tsx`), nur öffentliche Orte, 8/10/12 Plätze, 0–50 €, „Offen“ oder „Auf Einladung“ (freie Plätze später in die offene Liste)
+   - Kein Feed: Gastgeber-Karte mit Sternen, Anzahl Events und Bewertungen von Leuten, die wirklich da waren
+   - Nach dem Event (`app/rueckblick/[id].tsx`): Sterne, ein Satz, „Wen möchtest du wiedersehen?“; nur gegenseitige Wünsche werden zu Matches
+   - Wer 2-mal ohne Absage fehlt, kann eine Zeit lang nicht buchen
+   - Noch offen: echte Zahlung (In-App-Kauf), Partner-Verträge, Event-Tabellen in Supabase, Benachrichtigungen bei passenden Interessen
 
 Matches, Fragenrunde, Chat und Date laufen bisher nur im Demo-Modus (`src/lib/matches.ts`, im Speicher, die andere Seite antwortet automatisch).
 Noch offen: Tabellen und Zugriffsregeln dafür in Supabase und die echte Anbindung.
