@@ -100,10 +100,10 @@ try {
     await snap('treffen');
     if (!(await page.getByText('Platz sichern').count())) throw new Error('kein buchbares Event');
   });
-  await r.check('Platz sichern und Gruppenchat', async () => {
+  await r.check('Platz sichern öffnet Event-Seite mit Gruppenchat', async () => {
     await vis(page.getByText('Platz sichern')).click();
-    await page.waitForTimeout(2500);
-    await vis(page.getByRole('button', { name: /Gruppenchat/ })).click();
+    // Nach dem Buchen öffnet die App direkt die Event-Seite mit dem Gruppenchat.
+    await page.waitForURL(/\/event\//, { timeout: 15000 });
     await vis(page.getByLabel('Nachricht an die Gruppe')).waitFor({ timeout: 10000 });
     await vis(page.getByLabel('Nachricht an die Gruppe')).fill('Bin dabei, bis später!');
     await vis(page.getByLabel('Senden')).click();
