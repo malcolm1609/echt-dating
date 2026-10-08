@@ -33,7 +33,7 @@ $$;
 create or replace view public_profiles as
   select t.id, t.display_name, date_part('year', age(t.birthdate))::int as age, t.gender, t.bio,
          round(distance_km(me.lat, me.lng, t.lat, t.lng))::int as distance_km,
-         t.goal, t.prompts, t.interests, goal_fit(me.goal, t.goal) as goal_fit, t.music
+         t.goal, t.prompts, t.interests, goal_fit(me.goal, t.goal) as goal_fit, t.music, t.photos
   from profiles me
   join areas a on a.id = me.area_id
   join profiles t on t.id <> me.id
@@ -73,6 +73,10 @@ language sql stable security definer set search_path = public as $$
         'age', date_part('year', age(o.birthdate))::int,
         'prompts', o.prompts,
         'interests', o.interests,
+        'bio', o.bio,
+        'goal', o.goal,
+        'music', o.music,
+        'photos', o.photos,
         'ended', x.ended_at is not null,
         'unread', r.read_at is null
           or exists (select from messages where match_id = x.id and sender_id = o.id and created_at > r.read_at)

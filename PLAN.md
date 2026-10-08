@@ -95,6 +95,13 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
 
 16. **Konto löschen** ✅ (`delete_my_account()`, Einstellungen): löscht das Anmeldekonto, alles andere hängt per „on delete cascade“ daran
 
+17. **Profilfotos** ✅ (Migration `20261008150000_photos.sql`, `src/ui/PhotoEditor.tsx`, `src/lib/photos.ts`)
+   - 1 bis 6 Fotos im 4:5-Format, im Profil-Tab hochladen, antippen macht eins zum Hauptfoto; Dateien im Supabase-Bucket „photos“ im eigenen Ordner, in `profiles.photos` nur die Reihenfolge
+   - Hauptfoto auf der Karte, weitere zwischen den Antworten; Fotos in Vorschlägen, Matches, Event-Teilnehmenden
+   - Im Match lässt sich das ganze Profil der anderen Person öffnen
+   - Beispielprofile bekommen gezeichnete Platzhalter (DiceBear) statt fremder Gesichter
+   - Noch offen: Hauptfoto mit dem Ausweis-Selfie abgleichen, Foto als Pflicht für die Vorschläge, privater Bucket mit signierten Adressen
+
 Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --output-dir dist && node scripts/prototype-html.mjs dist`
 
 ## Offene Punkte

@@ -23,6 +23,8 @@ export interface Pick {
   prompts?: ShownPrompt[];
   interests?: string[];
   music?: MusicLink;
+  /** Bild-Adressen, das erste ist das Hauptfoto. */
+  photos?: string[];
 }
 
 export type Decision = 'like' | 'pass';
@@ -118,6 +120,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
             interests={current.interests ?? []}
             myInterests={myInterests}
             music={current.music}
+            photos={current.photos}
           />
           {reason && <Text style={[font.label, { color: colors.accent, marginTop: 14 }]}>{reason}</Text>}
           {onReport && (reporting ? (

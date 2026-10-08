@@ -3,7 +3,10 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { Answers, answerKey, DateAnswer, QUESTION_ROUNDS } from '../domain/conversation.ts';
 import { PROMPTS, promptText, sharedInterests } from '../domain/profileContent.ts';
 import { ReportReason, unreadCount } from '../domain/safety.ts';
+import type { MusicLink } from '../domain/music.ts';
+import type { GoalId } from '../domain/profileContent.ts';
 import type { ShownPrompt } from '../ui/ProfileDetails';
+import { photoUrls, placeholderPhoto } from './photos';
 import { supabase } from './supabase';
 
 export interface Message { id: string; from: 'me' | 'them'; text: string; at: Date }
@@ -30,13 +33,19 @@ export interface Match {
   readReceipts?: boolean;
   /** Neues Match oder etwas Neues von der anderen Person seit dem letzten Ansehen. */
   unread?: boolean;
+  /** Das ganze Profil der anderen Person, zum Nachlesen im Chat. */
+  profile?: MatchProfile;
+  /** Bild-Adressen, das erste ist das Hauptfoto. */
+  photos?: string[];
 }
+
+export interface MatchProfile { bio: string; goal?: GoalId; prompts: ShownPrompt[]; interests: string[]; music?: MusicLink }
 
 export interface MatchStore {
   list(): Match[];
   get(id: string): Match | undefined;
   subscribe(listener: () => void): () => void;
-  add(person: { id: string; name: string; age: number; opener?: ShownPrompt; shared?: string[] }): void;
+  add(person: { id: string; name: string; age: number; opener?: ShownPrompt; shared?: string[]; profile?: MatchProfile; photos?: string[] }): void;
   answer(id: string, key: string, text: string): void;
   send(id: string, text: string): void;
   proposeDate(id: string, idea: string, place: string, when: string, reserved?: boolean): void;
@@ -75,7 +84,8 @@ const DEMO_OPENER_REPLY = 'Ich habe deine Antworten gelesen und hatte sofort Fra
 export function createDemoStore(delayMs = 1200): MatchStore {
   const initial = (): Match[] => [
     {
-      id: 'mara', name: 'Mara', age: 29, answers: allAnswered(), afterDate: {}, ended: false, readReceipts: true, unread: true, shared: ['Kaffee', 'Flohmärkte'],
+      id: 'mara', name: 'Mara', age: 29, photos: [placeholderPhoto('Mara')], answers: allAnswered(), afterDate: {}, ended: false, readReceipts: true, unread: true, shared: ['Kaffee', 'Flohmärkte'],
+      profile: { bio: 'Lehramt Bio und Deutsch, sonntags auf dem Flohmarkt.', goal: 'fest', prompts: [{ question: 'Ein Ort in meiner Stadt, den ich dir zeigen würde …', answer: 'Die Lahnwiesen, wenn abends alle grillen.' }], interests: ['Kaffee', 'Flohmärkte', 'Lesen'] },
       messages: [
         { id: 'm1', from: 'me', text: 'Deine Antwort zur Freundschaft hat mich echt berührt.', at: hours(80) },
         { id: 'm2', from: 'them', text: 'Danke! Hast du am Wochenende Zeit für einen Kaffee?', at: hours(60) },
@@ -175,6 +185,10 @@ interface ServerMatch {
   date: (Omit<DateProposal, 'idea'> & { idea: string | null }) | null;
   after_date: { mine: DateAnswer; theirs: DateAnswer | null } | null;
   unread: boolean;
+  bio?: string;
+  goal?: GoalId | null;
+  music?: MusicLink | null;
+  photos?: string[];
 }
 
 export function fromServer(m: ServerMatch, myInterests: string[]): Match {
@@ -191,6 +205,8 @@ export function fromServer(m: ServerMatch, myInterests: string[]): Match {
     afterDate: { mine: m.after_date?.mine, theirs: m.after_date?.theirs ?? undefined },
     ended: m.ended,
     unread: m.unread,
+    photos: photoUrls(m.photos),
+    profile: { bio: m.bio ?? '', goal: m.goal ?? undefined, prompts, interests: m.interests, music: m.music ?? undefined },
   };
 }
 

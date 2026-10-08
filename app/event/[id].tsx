@@ -6,7 +6,8 @@ import { backend } from '../../src/lib/backend';
 import { eventStore, useEvent } from '../../src/lib/events';
 import { Button, Screen, s } from '../../src/ui/kit';
 import { PlaceLink } from '../../src/ui/PlaceLink';
-import { photoTone } from '../../src/ui/ProfileCard';
+import { photoUrl } from '../../src/lib/photos';
+import { Avatar } from '../../src/ui/ProfileCard';
 import { colors, font, fontFamily } from '../../src/ui/theme';
 
 // Gruppenchat und Teilnehmende eines Events. Sichtbar nur für alle, die dabei sind.
@@ -59,9 +60,7 @@ export default function EventScreen() {
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {people.map((p) => (
                   <View key={p.id} style={{ alignItems: 'center', gap: 4, width: 64 }}>
-                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: photoTone(p.name), alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: '#FFFFFF', fontFamily: fontFamily.semibold, fontSize: 18 }}>{p.name[0]}</Text>
-                    </View>
+                    <Avatar name={p.name} photo={p.photo ? photoUrl(p.photo) : null} size={48} />
                     <Text style={font.small} numberOfLines={1}>{`${p.name}, ${p.age}`}</Text>
                   </View>
                 ))}

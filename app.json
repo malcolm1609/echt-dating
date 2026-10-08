@@ -31,6 +31,14 @@
         {
           "locationWhenInUsePermission": "Echt nutzt deinen ungefähren Standort, um dir Menschen in deiner Nähe zu zeigen."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Echt braucht Zugriff auf deine Fotos, damit du Bilder für dein Profil auswählen kannst.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ]
   }

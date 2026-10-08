@@ -1,9 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Text, View, ViewStyle } from 'react-native';
+import { useState } from 'react';
+import { Image, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Glass } from './Glass';
 import { colors, font, fontFamily, shadow } from './theme';
 
-// Ruhige Fototöne als Platzhalter, bis es echte Fotos gibt. Weiße Schrift bleibt auf allen lesbar.
+// Ruhige Fototöne, solange (oder falls) kein Foto lädt. Weiße Schrift bleibt auf allen lesbar.
 const PHOTO_TONES: [string, string][] = [
   ['#B49C86', '#6B5646'],
   ['#9AAA94', '#4F5E4B'],
@@ -17,11 +18,14 @@ export const photoTone = (name: string) => PHOTO_TONES[toneIndex(name)][1];
 export const photoGradient = (name: string) => PHOTO_TONES[toneIndex(name)];
 
 // Eine Person, wie sie in „Heute“ erscheint: großes Foto mit Glas-Chip, Name groß darauf, kurzer Satz darunter.
-export function ProfileCard({ name, age, bio, eyebrow, style }: { name: string; age: number; bio: string; eyebrow: string; style?: ViewStyle }) {
+export function ProfileCard({ name, age, bio, eyebrow, photo, style }: { name: string; age: number; bio: string; eyebrow: string; photo?: string; style?: ViewStyle }) {
+  const [broken, setBroken] = useState<string>();
+  const shown = photo && photo !== broken ? photo : undefined;
   return (
     <View style={{ gap: 14 }}>
       <View style={[{ borderRadius: 28, backgroundColor: colors.surface }, shadow, style]}>
         <LinearGradient accessibilityLabel={`Foto von ${name}`} colors={photoGradient(name)} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={{ flex: 1, borderRadius: 28, overflow: 'hidden', justifyContent: 'space-between' }}>
+          {shown && <Image source={{ uri: shown }} resizeMode="cover" onError={() => setBroken(shown)} style={StyleSheet.absoluteFill} />}
           <View style={{ flexDirection: 'row', padding: 14 }}>
             <Glass tone="dark" style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
               <Text style={{ fontFamily: fontFamily.semibold, fontSize: 13, color: '#FFFFFF' }}>{eyebrow}</Text>
@@ -36,6 +40,20 @@ export function ProfileCard({ name, age, bio, eyebrow, style }: { name: string; 
         </LinearGradient>
       </View>
       {bio ? <Text style={[font.body, { fontSize: 17, lineHeight: 25, paddingHorizontal: 4 }]}>{bio}</Text> : null}
+    </View>
+  );
+}
+
+/** Runder Kopf für Listen: Foto, sonst Fototon mit Initiale. */
+export function Avatar({ name, photo, size = 52 }: { name: string; photo?: string | null; size?: number }) {
+  const [broken, setBroken] = useState(false);
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', backgroundColor: photoTone(name), alignItems: 'center', justifyContent: 'center' }}>
+      {photo && !broken ? (
+        <Image accessibilityLabel={`Foto von ${name}`} source={{ uri: photo }} onError={() => setBroken(true)} style={{ width: size, height: size }} />
+      ) : (
+        <Text style={{ color: '#FFFFFF', fontFamily: fontFamily.semibold, fontSize: size * 0.38 }}>{name[0]}</Text>
+      )}
     </View>
   );
 }

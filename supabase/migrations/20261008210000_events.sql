@@ -103,7 +103,7 @@ end $$;
 create function event_people(p_event bigint) returns jsonb
 language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'name', p.display_name,
-           'age', date_part('year', age(p.birthdate))::int, 'gender', a.gender) order by a.joined_at), '[]')
+           'age', date_part('year', age(p.birthdate))::int, 'gender', a.gender, 'photo', p.photos[1]) order by a.joined_at), '[]')
   from event_attendees a join profiles p on p.id = a.user_id
   where a.event_id = p_event and a.user_id <> auth.uid()
 $$;

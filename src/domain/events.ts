@@ -33,7 +33,7 @@ export interface MeetupEvent {
   messages?: EventMessage[];
 }
 
-export interface EventPerson { id: string; name: string; age: number; gender: Gender }
+export interface EventPerson { id: string; name: string; age: number; gender: Gender; photo?: string | null }
 export interface EventMessage { id: string; mine: boolean; name: string; text: string; at: Date }
 
 export type JoinState = 'joined' | 'open' | 'full' | 'plus_first' | 'invite_only' | 'campus_only' | 'blocked';
