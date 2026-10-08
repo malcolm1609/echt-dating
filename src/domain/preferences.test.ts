@@ -1,22 +1,23 @@
-import { DISTANCE_OPTIONS, defaultPreferences, fitsEachOther, preferencesSummary, validatePreferences } from './preferences.ts';
+import { defaultPreferences, fitsEachOther, preferencesSummary, validatePreferences } from './preferences.ts';
 
 describe('defaultPreferences', () => {
-  it('starts wide: eight years either side, never below 18, the whole area', () => {
-    expect(defaultPreferences(30)).toEqual({ ageMin: 22, ageMax: 38, maxDistanceKm: 30 });
-    expect(defaultPreferences(20)).toEqual({ ageMin: 18, ageMax: 28, maxDistanceKm: 30 });
+  it('starts wide: eight years either side, never below 18, 50 km around', () => {
+    expect(defaultPreferences(30)).toEqual({ ageMin: 22, ageMax: 38, maxDistanceKm: 50 });
+    expect(defaultPreferences(20)).toEqual({ ageMin: 18, ageMax: 28, maxDistanceKm: 50 });
   });
 });
 
 describe('validatePreferences', () => {
-  it('accepts an adult age range and one of the distance steps', () => {
+  it('accepts an adult age range and 5 to 100 km in steps of 5', () => {
     expect(validatePreferences({ ageMin: 25, ageMax: 35, maxDistanceKm: 10 })).toBeNull();
-    expect(DISTANCE_OPTIONS).toEqual([5, 10, 20, 30]);
+    expect(validatePreferences({ ageMin: 25, ageMax: 35, maxDistanceKm: 100 })).toBeNull();
+    expect(validatePreferences({ ageMin: 25, ageMax: 35, maxDistanceKm: 105 })).toBe('Bitte wähle 5 bis 100 km.');
   });
 
   it('rejects ranges below 18, upside down ranges and odd distances', () => {
     expect(validatePreferences({ ageMin: 17, ageMax: 30, maxDistanceKm: 30 })).toBe('Echt ist erst ab 18.');
     expect(validatePreferences({ ageMin: 40, ageMax: 30, maxDistanceKm: 30 })).toBe('Das Mindestalter ist höher als das Höchstalter.');
-    expect(validatePreferences({ ageMin: 25, ageMax: 35, maxDistanceKm: 12 })).toBe('Bitte wähle eine der Entfernungen.');
+    expect(validatePreferences({ ageMin: 25, ageMax: 35, maxDistanceKm: 12 })).toBe('Bitte wähle 5 bis 100 km.');
   });
 });
 

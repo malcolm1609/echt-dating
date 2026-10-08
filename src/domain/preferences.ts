@@ -8,20 +8,24 @@ export interface Preferences {
 export const ADULT = 18;
 export const AGE_LIMIT = 99;
 export const DEFAULT_AGE_SPAN = 8;
-/** Höchstens der Gebietsradius (30 km), sonst wäre der Filter wirkungslos. */
-export const DISTANCE_OPTIONS = [5, 10, 20, 30];
+/** Umkreis per Schieberegler in 5-km-Schritten. Bis 100 km, damit z. B. Gießen, Marburg und Wetzlar
+ *  sich sehen können und auch in kleineren Unistädten genug Auswahl bleibt. */
+export const DISTANCE_MIN = 5;
+export const DISTANCE_MAX = 100;
+export const DISTANCE_STEP = 5;
+export const DEFAULT_DISTANCE = 50;
 
 export const defaultPreferences = (age: number): Preferences => ({
   ageMin: Math.max(ADULT, age - DEFAULT_AGE_SPAN),
   ageMax: Math.min(AGE_LIMIT, age + DEFAULT_AGE_SPAN),
-  maxDistanceKm: DISTANCE_OPTIONS[DISTANCE_OPTIONS.length - 1],
+  maxDistanceKm: DEFAULT_DISTANCE,
 });
 
 export function validatePreferences(p: Preferences): string | null {
   if (p.ageMin < ADULT) return 'Echt ist erst ab 18.';
   if (p.ageMax > AGE_LIMIT) return `Höchstens ${AGE_LIMIT} Jahre.`;
   if (p.ageMin > p.ageMax) return 'Das Mindestalter ist höher als das Höchstalter.';
-  if (!DISTANCE_OPTIONS.includes(p.maxDistanceKm)) return 'Bitte wähle eine der Entfernungen.';
+  if (p.maxDistanceKm < DISTANCE_MIN || p.maxDistanceKm > DISTANCE_MAX || p.maxDistanceKm % DISTANCE_STEP) return `Bitte wähle ${DISTANCE_MIN} bis ${DISTANCE_MAX} km.`;
   return null;
 }
 

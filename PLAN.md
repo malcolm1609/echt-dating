@@ -53,7 +53,7 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Date-Vorschlag mit Partner-Café und Uhrzeit, „Freundlich beenden“ mit fertiger, ehrlicher Nachricht
 8. **Check nach dem Date** ✅ Prototyp: Wiedersehen nur bei beidseitigem Ja sichtbar, ein einseitiges Nein bleibt verborgen
 9. **Vorschläge und Filter** ✅ (`src/domain/preferences.ts`, `src/domain/ranking.ts`, Migration `20261008000000_preferences.sql`)
-   - Harte Filter nur Alter (Start: eigenes Alter ± 8) und Entfernung (5/10/20/30 km), beidseitig; einstellbar im Profil unter „Wen ich sehen möchte“
+   - Harte Filter nur Alter (Start: eigenes Alter ± 8) und Entfernung (5 bis 100 km in 5-km-Schritten, Start 50 km, auch über den Gebietsradius hinaus), beidseitig; einstellbar im Profil unter „Wen ich sehen möchte“ per Schieberegler (Alter mit zwei Griffen, rechts „60+“)
    - Reihenfolge nach festen Punkten: gleiches Ziel, gemeinsame Interessen, in den letzten 2 Tagen aktiv; kein lernendes Modell, keine Like-Zahlen
    - Ein Platz für jemanden, der mich schon geliked hat (bleibt verborgen), einer für die diese Woche am seltensten Gezeigten; wer heute 12-mal bewertet wurde, pausiert bis morgen
    - Unter jedem Vorschlag ein Satz, warum er passt; Date-Ideen aus gemeinsamen Interessen (`src/domain/dateIdeas.ts`)

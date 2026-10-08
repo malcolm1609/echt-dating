@@ -34,8 +34,21 @@ end $$;
 do $$ begin
   update profiles set max_distance_km = 500 where display_name = 'Lea';
   raise exception 'FAILED: beliebige Entfernung gespeichert';
-exception when check_violation then raise notice 'ok - nur die angebotenen Entfernungen';
+exception when check_violation then raise notice 'ok - höchstens 100 km';
 end $$;
+do $$ begin
+  update profiles set max_distance_km = 12 where display_name = 'Lea';
+  raise exception 'FAILED: krumme Entfernung gespeichert';
+exception when check_violation then raise notice 'ok - nur 5-km-Schritte';
+end $$;
+
+-- Weiter als der Gebietsradius (30 km): Wer beidseitig 60 km zulässt, sieht sich trotzdem.
+update profiles set max_distance_km = 60, age_min = 18, age_max = 99 where display_name in ('Lea', 'Fern');
+update profiles set lat = 52.92 where display_name = 'Fern';
+select pg_temp.as_user('00000000-0000-0000-0000-00000000007a');
+select pg_temp.assert(exists (select from public_profiles where display_name = 'Fern' and distance_km > 30), 'auch über den Gebietsradius hinaus');
+reset role;
+update profiles set lat = 52.655 where display_name = 'Fern';
 
 -- Reihenfolge: 8 passende Männer mit gleichem Ziel; Fan passt schlechter, hat Lea aber schon geliked.
 update profiles set age_min = 18, age_max = 99, max_distance_km = 30;

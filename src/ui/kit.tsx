@@ -1,7 +1,8 @@
 import Feather from '@expo/vector-icons/Feather';
 import { ReactNode, useState } from 'react';
-import { Platform, Pressable, PressableStateCallbackType, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View } from 'react-native';
+import { Animated, Platform, Pressable, PressableStateCallbackType, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEntrance } from './motion';
 import { colors, font, fontFamily, motion } from './theme';
 
 // react-native-web liefert zusätzlich hovered/focused; auf dem Handy bleiben sie leer.
@@ -16,10 +17,13 @@ const ring = (on?: boolean) => (on ? (Platform.select({ web: { boxShadow: `0 0 0
 // Im Browser schwebt die Tab-Leiste über dem Inhalt, deshalb dort unten Platz lassen.
 const tabBarSpace = Platform.OS === 'web' ? 92 : 24;
 
+// Jeder Screen gleitet beim Öffnen kurz ein, damit Wechsel nicht hart wirken (im Browser gibt es
+// keine System-Animation beim Öffnen einer neuen Seite).
 export function Screen({ children, tabs }: { children: ReactNode; tabs?: boolean }) {
+  const enter = useEntrance();
   return (
     <SafeAreaView style={s.screen}>
-      <View style={[s.inner, tabs && { paddingBottom: tabBarSpace }]}>{children}</View>
+      <Animated.View style={[s.inner, tabs && { paddingBottom: tabBarSpace }, enter]}>{children}</Animated.View>
     </SafeAreaView>
   );
 }
