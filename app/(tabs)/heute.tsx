@@ -1,9 +1,9 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text } from 'react-native';
-import { GoalId, PROMPTS, sharedInterests } from '../../src/domain/profileContent.ts';
+import { GoalId, sharedInterests } from '../../src/domain/profileContent.ts';
 import { backend } from '../../src/lib/backend';
-import { matchStore } from '../../src/lib/matches';
+import { matchStore, openerFor } from '../../src/lib/matches';
 import { ActiveNearby } from '../../src/ui/ActiveNearby';
 import { Button, Screen } from '../../src/ui/kit';
 import { Pick, TodayDeck } from '../../src/ui/TodayDeck';
@@ -48,7 +48,7 @@ export default function Today() {
           onDecide={async (id, decision) => {
             const result = await backend.decide(id, decision);
             const pick = data.picks.find((p) => p.id === id);
-            if (result.matched && pick) matchStore.add({ id: pick.id, name: pick.displayName, age: pick.age, opener: openerFor(pick), shared: sharedInterests(me.interests, pick.interests ?? []) });
+            if (result.matched && pick) matchStore.add({ id: pick.id, name: pick.displayName, age: pick.age, opener: openerFor(pick.prompts), shared: sharedInterests(me.interests, pick.interests ?? []) });
             return result;
           }}
           onOpenMatch={(pick) => router.push(`/match/${pick.id}`)}
@@ -57,7 +57,3 @@ export default function Today() {
     </Screen>
   );
 }
-
-// Die Fragenrunde beginnt mit der Antwort, die am meisten zum Anknüpfen einlädt.
-const openerFor = (pick: Pick) =>
-  pick.prompts?.find((p) => PROMPTS.find((x) => x.text === p.question)?.category === 'anknuepfen') ?? pick.prompts?.[0];

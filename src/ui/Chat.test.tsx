@@ -76,4 +76,15 @@ describe('Chat', () => {
     fireEvent.press(screen.getByText('Date-Check-in einschalten (kostenlos)'));
     expect(screen.getByText(/Check-in aktiv/)).toBeTruthy();
   });
+
+  it('lets the invited person accept a date, but not the one who proposed it', () => {
+    const acceptDate = jest.fn();
+    const date = { place: 'Café', when: 'Samstag, 15 Uhr', accepted: false, past: false };
+    const { rerender } = render(<Chat match={{ ...base, date: { ...date, mine: false } }} now={now} {...actions()} acceptDate={acceptDate} />);
+    fireEvent.press(screen.getByText('Zusagen'));
+    expect(acceptDate).toHaveBeenCalled();
+    rerender(<Chat match={{ ...base, date: { ...date, mine: true } }} now={now} {...actions()} acceptDate={acceptDate} />);
+    expect(screen.queryByText('Zusagen')).toBeNull();
+    expect(screen.getByText('Wartet auf Mara')).toBeTruthy();
+  });
 });

@@ -19,15 +19,17 @@ interface Props {
   now?: Date;
   send: (text: string) => void;
   proposeDate: (idea: string, place: string, when: string, reserved: boolean) => void;
+  acceptDate?: () => void;
   markDatePast: () => void;
   answerAfterDate: (a: DateAnswer) => void;
   endKindly: (text: string) => void;
-  demo?: boolean;
+  /** Demo und Testbetrieb: Date sofort als vorbei markieren. */
+  testTools?: boolean;
   plus?: { active: boolean; readReceipts: boolean };
   onUpgrade?: () => void;
 }
 
-export function Chat({ match, now = new Date(), send, proposeDate, markDatePast, answerAfterDate, endKindly, demo, plus = { active: false, readReceipts: false }, onUpgrade }: Props) {
+export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, markDatePast, answerAfterDate, endKindly, testTools, plus = { active: false, readReceipts: false }, onUpgrade }: Props) {
   const [draft, setDraft] = useState('');
   const [panel, setPanel] = useState<'none' | 'date' | 'end'>('none');
   const ideas = dateIdeas(match.shared ?? []);
@@ -56,7 +58,8 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
         <View style={s.hint}>
           <Text style={s.label}>Date</Text>
           <Text style={font.body}>{[match.date.idea, match.date.when, `Treffpunkt ${match.date.place}`].filter(Boolean).join(' · ')}</Text>
-          <Text style={font.small}>{match.date.accepted ? (match.date.past ? 'Vorbei' : 'Zugesagt') : `Wartet auf ${match.name}`}</Text>
+          <Text style={font.small}>{match.date.accepted ? (match.date.past ? 'Vorbei' : 'Zugesagt') : match.date.mine === false ? `${match.name} schlägt das vor` : `Wartet auf ${match.name}`}</Text>
+          {!match.date.accepted && match.date.mine === false && acceptDate && <Button title="Zusagen" onPress={acceptDate} />}
           {match.date.reserved && <Text style={font.small}>Tisch ist reserviert.</Text>}
           {PARTNER_CAFES.some((c) => c.name === match.date!.place) && <Text style={font.small}>{`Mit Echt bekommt ihr dort ${PARTNER_DATE_DISCOUNT} % Rabatt.`}</Text>}
           {!match.date.past && (checkIn ? (
@@ -66,7 +69,7 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
               <Button title="Date-Check-in einschalten (kostenlos)" variant="ghost" icon="shield" onPress={() => setCheckIn(true)} />
             </View>
           ))}
-          {demo && match.date.accepted && !match.date.past && <Button title="Demo: Date ist vorbei" variant="ghost" onPress={markDatePast} />}
+          {testTools && match.date.accepted && !match.date.past && <Button title="Test: Date ist vorbei" variant="ghost" onPress={markDatePast} />}
         </View>
       )}
 

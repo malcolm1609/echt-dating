@@ -1,0 +1,147 @@
+{
+  "area": { "name": "Gießen", "lat": 50.5841, "lng": 8.6784, "radius_km": 30, "capacity": 2000 },
+  "testers": [
+    {
+      "email": "test-tom@example.com", "display_name": "Tom", "birthdate": "2002-03-14", "gender": "m", "seeking": ["f"],
+      "bio": "Testkonto. Studiert Informatik an der THM und fährt überall mit dem Rad hin.",
+      "goal": "ernst", "interests": ["Radfahren", "Kaffee", "Brettspiele", "Konzerte"], "lat": 50.5862, "lng": 8.6731,
+      "prompts": [
+        { "prompt_id": "alltag-7", "answer": "Samstags auf dem Wochenmarkt am Brandplatz, danach Kaffee in der Innenstadt." },
+        { "prompt_id": "anknuepfen-4", "answer": "Gerade lerne ich Gitarre. Drei Akkorde sitzen, der vierte wehrt sich." },
+        { "prompt_id": "werte-1", "answer": "Wenn wir auch mal zusammen still sein können, ohne dass es komisch wird." }
+      ]
+    },
+    {
+      "email": "test-lea@example.com", "display_name": "Lea", "birthdate": "2003-06-02", "gender": "f", "seeking": ["m"],
+      "bio": "Testkonto. Lehramt Deutsch und Bio an der JLU, im Sommer ständig an der Lahn.",
+      "goal": "offen", "interests": ["Wandern", "Lesen", "Kino", "Backen"], "lat": 50.5803, "lng": 8.6852,
+      "prompts": [
+        { "prompt_id": "alltag-3", "answer": "Der Botanische Garten, wenn morgens noch fast niemand da ist." },
+        { "prompt_id": "anknuepfen-2", "answer": "Die Serie „Normal People“. Danach brauchte ich erstmal einen Spaziergang." },
+        { "prompt_id": "werte-2", "answer": "Wir uns Dinge sagen, bevor sie groß werden." }
+      ]
+    }
+  ],
+  "samples": [
+    { "email": "beta-f01@example.com", "display_name": "Mara", "birthdate": "2003-09-21", "gender": "f", "seeking": ["m"], "bio": "Psychologie im 5. Semester, liebt Flohmärkte und schlechte Wortwitze.", "goal": "ernst", "interests": ["Flohmärkte", "Kaffee", "Podcasts"], "lat": 50.5848, "lng": 8.6762,
+      "prompts": [
+        { "prompt_id": "alltag-1", "answer": "Lange frühstücken, dann mit dem Rad raus zum Schiffenberg." },
+        { "prompt_id": "anknuepfen-1", "answer": "Die Lahnwiesen an einem warmen Abend, mit Decke und viel zu viel Essen." },
+        { "prompt_id": "werte-3", "answer": "Dass man nicht immer reden muss, um für jemanden da zu sein." }
+      ] },
+    { "email": "beta-f02@example.com", "display_name": "Jana", "birthdate": "2002-04-11", "gender": "f", "seeking": ["m"], "bio": "Tiermedizin, deshalb immer leicht nach Stall riechend. Dafür sehr gut im Zuhören.", "goal": "fest", "interests": ["Tiere", "Wandern", "Backen"], "lat": 50.5701, "lng": 8.6705,
+      "prompts": [
+        { "prompt_id": "alltag-2", "answer": "Eine Runde um den Schwanenteich und danach Pasta mit viel Parmesan." },
+        { "prompt_id": "anknuepfen-6", "answer": "Der Abend, an dem wir nach der Prüfung bis zum Sonnenaufgang auf dem Dach saßen." },
+        { "prompt_id": "werte-6", "answer": "Ich backe. Wer mir wichtig ist, bekommt zum Geburtstag einen Kuchen nach Wunsch." }
+      ] },
+    { "email": "beta-f03@example.com", "display_name": "Sophie", "birthdate": "2004-01-30", "gender": "f", "seeking": ["m"], "bio": "Ernährungswissenschaften, kocht für die ganze WG und fotografiert alles davon.", "goal": "offen", "interests": ["Kochen", "Fotografie", "Reisen"], "lat": 50.5869, "lng": 8.6648,
+      "prompts": [
+        { "prompt_id": "alltag-4", "answer": "Shakshuka, seit dem Urlaub in Tel Aviv. Mit zu viel Koriander." },
+        { "prompt_id": "anknuepfen-5", "answer": "Drei Wochen Interrail nach dem Abi. Seitdem kann ich überall schlafen." },
+        { "prompt_id": "werte-4", "answer": "Meine Mitbewohnerinnen, die mich durch die Statistikklausur gebracht haben." }
+      ] },
+    { "email": "beta-f04@example.com", "display_name": "Elif", "birthdate": "2001-11-08", "gender": "f", "seeking": ["m"], "bio": "Master Biologie, sonntags auf dem Flohmarkt, unter der Woche im Labor.", "goal": "ernst", "interests": ["Wissenschaft", "Flohmärkte", "Konzerte", "Kochen"], "lat": 50.5772, "lng": 8.6921,
+      "prompts": [
+        { "prompt_id": "alltag-8", "answer": "Warum Hefe beim Backen eigentlich tut, was sie tut. Frag lieber nicht." },
+        { "prompt_id": "anknuepfen-7", "answer": "Frag mich gern nach dem besten Döner in Gießen. Ich habe eine Liste." },
+        { "prompt_id": "werte-1", "answer": "Wenn wir zusammen schweigen können und es nicht komisch ist." }
+      ] },
+    { "email": "beta-f05@example.com", "display_name": "Hanna", "birthdate": "2003-02-17", "gender": "f", "seeking": ["m"], "bio": "Sport auf Lehramt, läuft jeden Morgen an der Lahn entlang. Ja, wirklich jeden.", "goal": "fest", "interests": ["Laufen", "Schwimmen", "Serien"], "lat": 50.5915, "lng": 8.6803,
+      "prompts": [
+        { "prompt_id": "alltag-10", "answer": "Laufschuhe, Lahnufer, dann der größte Kaffee, den die Mensa hergibt." },
+        { "prompt_id": "anknuepfen-9", "answer": "Mit dir würde ich gern einmal den Halbmarathon in Gießen laufen. Oder zuschauen." },
+        { "prompt_id": "werte-5", "answer": "Pünktlichkeit. Zehn Minuten sind okay, eine Stunde nicht." }
+      ] },
+    { "email": "beta-f06@example.com", "display_name": "Lina", "birthdate": "2002-08-25", "gender": "f", "seeking": ["m"], "bio": "Kunstgeschichte und Theater-AG. Geht lieber ins Stadttheater als in den Club.", "goal": "offen", "interests": ["Theater", "Kunst & Museen", "Lesen"], "lat": 50.5826, "lng": 8.6699,
+      "prompts": [
+        { "prompt_id": "alltag-5", "answer": "Ich vergesse die Zeit, wenn ich in einem Antiquariat stöbere." },
+        { "prompt_id": "anknuepfen-2", "answer": "Der Podcast „Hotel Matze“. Die Folge mit der Hebamme hat mich umgehauen." },
+        { "prompt_id": "werte-8", "answer": "Über Ordnung. Früher fand ich sie spießig, heute beruhigt sie mich." }
+      ] },
+    { "email": "beta-f07@example.com", "display_name": "Carla", "birthdate": "2000-12-03", "gender": "f", "seeking": ["m"], "bio": "Arbeitet nach der Ausbildung als Physiotherapeutin, klettert dreimal die Woche.", "goal": "fest", "interests": ["Klettern", "Yoga", "Camping"], "lat": 50.5958, "lng": 8.6912,
+      "prompts": [
+        { "prompt_id": "alltag-6", "answer": "Sonntagabend wird die Woche geplant, mit Tee und einem Papierkalender." },
+        { "prompt_id": "anknuepfen-4", "answer": "Etwas, das ich gerade lerne: Vorstiegsklettern. Mein Puls findet es spannend." },
+        { "prompt_id": "werte-7", "answer": "Einmal mit dem Bulli durch Norwegen, bevor ich dreißig bin." }
+      ] },
+    { "email": "beta-f08@example.com", "display_name": "Amira", "birthdate": "2004-05-19", "gender": "f", "seeking": ["m"], "bio": "Jura im 3. Semester. Diskutiert gern, verliert ungern, gibt es trotzdem zu.", "goal": "ernst", "interests": ["Politik", "Sprachen lernen", "Kino"], "lat": 50.5794, "lng": 8.6612,
+      "prompts": [
+        { "prompt_id": "alltag-9", "answer": "Zuletzt richtig gelacht habe ich über meinen Vater, der versucht hat, Instagram zu erklären." },
+        { "prompt_id": "anknuepfen-10", "answer": "Das Letzte, was mich begeistert hat: der Spanischkurs am Sprachenzentrum." },
+        { "prompt_id": "werte-9", "answer": "Ein guter Streit endet damit, dass beide etwas gelernt haben. Und mit Pizza." }
+      ] },
+    { "email": "beta-f09@example.com", "display_name": "Paula", "birthdate": "2001-07-07", "gender": "f", "seeking": ["m"], "bio": "Soziale Arbeit, Ehrenamt bei der Tafel, Gärtnerin im Gemeinschaftsgarten.", "goal": "freundschaft", "interests": ["Gärtnern", "Ehrenamt", "Kochen"], "lat": 50.5733, "lng": 8.6801,
+      "prompts": [
+        { "prompt_id": "alltag-7", "answer": "Am Wochenende findet man mich im Gemeinschaftsgarten, meistens zwischen Tomaten." },
+        { "prompt_id": "anknuepfen-3", "answer": "Das beste Essen dieses Jahr: selbst gezogene Zucchini, gefüllt, bei Freunden." },
+        { "prompt_id": "werte-10", "answer": "Zu Hause fühle ich mich, wenn der Tisch voll ist und alle durcheinanderreden." }
+      ] },
+    { "email": "beta-f10@example.com", "display_name": "Nele", "birthdate": "2003-10-12", "gender": "f", "seeking": ["m"], "bio": "Medizin, Chor und ein Hang zu viel zu vielen Zimmerpflanzen.", "goal": "offen", "interests": ["Musik machen", "Konzerte", "Kaffee"], "lat": 50.5884, "lng": 8.6875,
+      "prompts": [
+        { "prompt_id": "alltag-10", "answer": "Mein Morgen beginnt mit Pflanzen gießen und einem Lied, das ich nicht mehr loswerde." },
+        { "prompt_id": "anknuepfen-8", "answer": "Gerade in Dauerschleife: „Ophelia“ von The Lumineers. Sorry an meine Nachbarn." },
+        { "prompt_id": "werte-4", "answer": "Ich bin gerade dankbar für meinen Chor. Montags ist der beste Abend der Woche." }
+      ] },
+    { "email": "beta-m01@example.com", "display_name": "Jonas", "birthdate": "2002-02-09", "gender": "m", "seeking": ["f"], "bio": "Maschinenbau an der THM, baut Fahrräder und kocht lieber, als er bestellt.", "goal": "fest", "interests": ["Radfahren", "Kochen", "Brettspiele"], "lat": 50.5855, "lng": 8.6779,
+      "prompts": [
+        { "prompt_id": "alltag-4", "answer": "Gerade Ofengemüse mit Feta. Jede Woche, bis es jemand verbietet." },
+        { "prompt_id": "anknuepfen-4", "answer": "Laufräder einspeichen. Mein drittes Rad ist fast fertig." },
+        { "prompt_id": "werte-6", "answer": "Ich repariere Dinge. Dein Fahrrad zum Beispiel." }
+      ] },
+    { "email": "beta-m02@example.com", "display_name": "Leon", "birthdate": "2003-05-27", "gender": "m", "seeking": ["f"], "bio": "BWL, spielt Fußball in der Unimannschaft und ist ehrlich gesagt schlecht im Verlieren.", "goal": "offen", "interests": ["Fußball", "Gaming", "Serien"], "lat": 50.5749, "lng": 8.6672,
+      "prompts": [
+        { "prompt_id": "alltag-7", "answer": "Samstags auf dem Platz, sonntags auf dem Sofa mit Muskelkater." },
+        { "prompt_id": "anknuepfen-7", "answer": "Frag mich gern nach dem schönsten Tor, das ich je verschossen habe." },
+        { "prompt_id": "werte-3", "answer": "Dass man nach einem Streit trotzdem zusammen Pizza essen kann." }
+      ] },
+    { "email": "beta-m03@example.com", "display_name": "Felix", "birthdate": "2001-09-15", "gender": "m", "seeking": ["f"], "bio": "Master Geografie, wandert jedes Wochenende irgendwo im Vogelsberg.", "goal": "ernst", "interests": ["Wandern", "Fotografie", "Camping"], "lat": 50.5931, "lng": 8.6702,
+      "prompts": [
+        { "prompt_id": "alltag-1", "answer": "Früh raus in den Vogelsberg, mittags Brotzeit auf irgendeinem Hügel." },
+        { "prompt_id": "anknuepfen-5", "answer": "Zwei Monate Schottland mit Zelt. Seitdem liebe ich Regen, ehrlich." },
+        { "prompt_id": "werte-7", "answer": "Weniger Bildschirm, mehr draußen. Klappt noch mittelmäßig." }
+      ] },
+    { "email": "beta-m04@example.com", "display_name": "Noah", "birthdate": "2004-03-03", "gender": "m", "seeking": ["f"], "bio": "Musikwissenschaft, spielt Bass in einer Band, die noch keinen Namen hat.", "goal": "offen", "interests": ["Musik machen", "Konzerte", "Kaffee"], "lat": 50.5812, "lng": 8.6853,
+      "prompts": [
+        { "prompt_id": "alltag-5", "answer": "Ich vergesse die Zeit, wenn wir im Proberaum einen neuen Song finden." },
+        { "prompt_id": "anknuepfen-1", "answer": "Die kleine Bar in der Innenstadt, in der dienstags offene Bühne ist." },
+        { "prompt_id": "werte-1", "answer": "Wenn ich jemandem einen halbfertigen Song vorspielen kann, ohne mich zu schämen." }
+      ] },
+    { "email": "beta-m05@example.com", "display_name": "David", "birthdate": "2000-06-22", "gender": "m", "seeking": ["f"], "bio": "Fertig mit der Ausbildung, arbeitet als Elektriker und studiert nebenbei Abends.", "goal": "fest", "interests": ["Klettern", "Kochen", "Reisen"], "lat": 50.5696, "lng": 8.6888,
+      "prompts": [
+        { "prompt_id": "alltag-2", "answer": "Nach einem langen Tag hilft mir eine Stunde in der Kletterhalle." },
+        { "prompt_id": "anknuepfen-3", "answer": "Ramen in einem winzigen Laden in Frankfurt. Ich fahre seitdem öfter hin." },
+        { "prompt_id": "werte-2", "answer": "In einer Beziehung ist mir wichtig, dass wir uns gegenseitig Freiraum lassen." }
+      ] },
+    { "email": "beta-m06@example.com", "display_name": "Ben", "birthdate": "2003-12-01", "gender": "m", "seeking": ["f"], "bio": "Agrarwissenschaften, kommt vom Hof im Vogelsberg und kann tatsächlich Traktor fahren.", "goal": "ernst", "interests": ["Tiere", "Gärtnern", "Wandern"], "lat": 50.5964, "lng": 8.6794,
+      "prompts": [
+        { "prompt_id": "alltag-3", "answer": "Mein Lieblingsort ist der Schiffenberg, vor allem im Herbst." },
+        { "prompt_id": "anknuepfen-6", "answer": "Der Abend, an dem unsere Kuh nachts kalbte und ich zum ersten Mal helfen durfte." },
+        { "prompt_id": "werte-5", "answer": "Keine Kompromisse bei Ehrlichkeit. Lieber unbequem als falsch." }
+      ] },
+    { "email": "beta-m07@example.com", "display_name": "Luca", "birthdate": "2002-10-18", "gender": "m", "seeking": ["f"], "bio": "Medizin, Kaffeenerd, macht Latte Art, die meistens nach Kartoffel aussieht.", "goal": "offen", "interests": ["Kaffee", "Lesen", "Kino"], "lat": 50.5838, "lng": 8.6621,
+      "prompts": [
+        { "prompt_id": "alltag-10", "answer": "Mein Morgen beginnt mit Kaffee aus der Handmühle. Ohne geht nichts." },
+        { "prompt_id": "anknuepfen-2", "answer": "Das Buch „Der Mann, der zweimal starb“. Gelesen in einer Nacht vor der Anatomieprüfung." },
+        { "prompt_id": "werte-4", "answer": "Für meine Lerngruppe, die mich jedes Semester wieder einsammelt." }
+      ] },
+    { "email": "beta-m08@example.com", "display_name": "Emil", "birthdate": "2004-08-08", "gender": "m", "seeking": ["f"], "bio": "Informatik im 1. Semester, Brettspiel-Sammler, kennt alle Regeln auswendig.", "goal": "freundschaft", "interests": ["Brettspiele", "Gaming", "Podcasts"], "lat": 50.5765, "lng": 8.6734,
+      "prompts": [
+        { "prompt_id": "alltag-8", "answer": "Ich kann stundenlang über Brettspiele reden. Wirklich stundenlang." },
+        { "prompt_id": "anknuepfen-9", "answer": "Mit dir würde ich gern einmal einen Spieleabend im Café am Kirchenplatz machen." },
+        { "prompt_id": "werte-9", "answer": "Ein guter Streit ist für mich einer über Spielregeln. Danach ist alles wieder gut." }
+      ] },
+    { "email": "beta-m09@example.com", "display_name": "Max", "birthdate": "2001-01-26", "gender": "m", "seeking": ["f"], "bio": "Lehramt Geschichte, Hobbykoch und Stammgast auf dem Wochenmarkt.", "goal": "fest", "interests": ["Kochen", "Wein", "Lesen"], "lat": 50.5899, "lng": 8.6667,
+      "prompts": [
+        { "prompt_id": "alltag-1", "answer": "Wochenmarkt, dann stundenlang kochen, abends Freunde und ein guter Wein." },
+        { "prompt_id": "anknuepfen-3", "answer": "Das beste Essen dieses Jahr: Pilzrisotto bei meiner Oma. Rezept bleibt geheim." },
+        { "prompt_id": "werte-10", "answer": "Zu Hause fühle ich mich, wenn es nach Zwiebeln und Knoblauch riecht." }
+      ] },
+    { "email": "beta-m10@example.com", "display_name": "Paul", "birthdate": "2002-11-29", "gender": "m", "seeking": ["f"], "bio": "Physik, schwimmt im Sommer in jedem See, den er findet.", "goal": "ernst", "interests": ["Schwimmen", "Wissenschaft", "Radfahren"], "lat": 50.5721, "lng": 8.6956,
+      "prompts": [
+        { "prompt_id": "alltag-6", "answer": "Mein Ritual: einmal pro Woche ins Hallenbad, auch wenn es draußen schön ist." },
+        { "prompt_id": "anknuepfen-10", "answer": "Das Letzte, was mich begeistert hat: Sternegucken auf dem Dünsberg." },
+        { "prompt_id": "werte-8", "answer": "Meine Meinung geändert habe ich über Frühaufsteher. Ich bin jetzt einer." }
+      ] }
+  ]
+}

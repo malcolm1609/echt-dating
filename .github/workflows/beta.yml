@@ -1,0 +1,130 @@
+# Beta: richtet den Supabase-Server ein (Tabellen, Anmeldung per Code, Beispielprofile, Testkonten)
+# und veröffentlicht die Web-Version auf GitHub Pages, damit man sie am Handy öffnen kann.
+#
+# Einmalig in GitHub unter Settings → Secrets and variables → Actions anlegen:
+#   SUPABASE_ACCESS_TOKEN  persönlicher Zugangsschlüssel aus supabase.com/dashboard/account/tokens
+#   SUPABASE_PROJECT_REF   Projekt-ID (steht in der Projekt-Adresse, z. B. abcdefghijklmnop)
+#   SUPABASE_DB_PASSWORD   Datenbank-Passwort, das beim Anlegen des Projekts vergeben wurde
+#   BETA_PASSWORD          frei gewähltes Passwort für die Testkonten
+# und unter Settings → Pages als Quelle „GitHub Actions“ wählen.
+name: Beta
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: beta
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.secrets.outputs.ready }}
+    steps:
+      - id: secrets
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          DB: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PW: ${{ secrets.BETA_PASSWORD }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$REF" ] && [ -n "$DB" ] && [ -n "$PW" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Beta übersprungen: Die Supabase-Secrets sind noch nicht eingetragen."
+          fi
+
+  build:
+    needs: check
+    if: needs.check.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Tabellen und Regeln einspielen
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push
+
+      - name: Schlüssel holen
+        id: keys
+        run: |
+          keys=$(curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/api-keys?reveal=true")
+          anon=$(jq -r '(map(select(.type == "publishable"))[0].api_key) // (map(select(.name == "anon"))[0].api_key)' <<< "$keys")
+          service=$(jq -r '(map(select(.type == "secret"))[0].api_key) // (map(select(.name == "service_role"))[0].api_key)' <<< "$keys")
+          echo "::add-mask::$service"
+          echo "anon=$anon" >> "$GITHUB_OUTPUT"
+          echo "service=$service" >> "$GITHUB_OUTPUT"
+
+      - name: Anmeldung per 6-stelligem Code statt Link
+        env:
+          SITE: ${{ steps.pages.outputs.base_url }}
+        run: |
+          template='<h2>Dein Code für Echt</h2><p style="font-size:28px;letter-spacing:4px"><b>{{ .Token }}</b></p><p>Gib ihn in der App ein. Er gilt eine Stunde.</p>'
+          jq -n --arg site "$SITE" --arg t "$template" '{
+            site_url: $site,
+            uri_allow_list: ($site + "/**"),
+            mailer_otp_length: 6,
+            mailer_subjects_magic_link: "Dein Code für Echt",
+            mailer_templates_magic_link_content: $t,
+            mailer_subjects_confirmation: "Dein Code für Echt",
+            mailer_templates_confirmation_content: $t
+          }' | curl -fsS -X PATCH -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+            --data @- "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" > /dev/null
+
+      - run: npm ci
+
+      - name: Beispielprofile und Testkonten
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.service }}
+          BETA_PASSWORD: ${{ secrets.BETA_PASSWORD }}
+        run: node scripts/beta-seed.mjs
+
+      - name: Web-Version bauen
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.keys.outputs.anon }}
+          EXPO_PUBLIC_BETA: '1'
+          EXPO_BASE_URL: ${{ steps.pages.outputs.base_path }}
+        run: |
+          npx expo export --platform web --output-dir dist
+          # Direkt aufgerufene Unterseiten (z. B. /echt-dating/heute) landen so trotzdem in der App.
+          cp dist/index.html dist/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -71,8 +71,13 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Wer 2-mal ohne Absage fehlt, kann eine Zeit lang nicht buchen
    - Noch offen: echte Zahlung (In-App-Kauf), Partner-Verträge, Event-Tabellen in Supabase, Benachrichtigungen bei passenden Interessen
 
-Matches, Fragenrunde, Chat und Date laufen bisher nur im Demo-Modus (`src/lib/matches.ts`, im Speicher, die andere Seite antwortet automatisch).
-Noch offen: Tabellen und Zugriffsregeln dafür in Supabase und die echte Anbindung.
+13. **Beta mit Server** ✅ (Migration `20261008100000_conversations.sql`, `src/lib/matches.ts`, `scripts/beta-seed.mjs`, Workflow `beta.yml`)
+   - Matches, Fragenrunde, Chat, Date, Check danach und „Freundlich beenden“ liegen in Supabase; die App liest über `my_matches()` und schreibt nur über Funktionen, die die Regeln prüfen
+   - Testbetrieb (`beta_settings.enabled`): SMS- und Ausweisprüfung überspringbar, Teststandort Gießen, Beispielprofile (`is_sample`) antworten selbst und bleiben aktiv
+   - 20 Beispielprofile aus Gießen und 2 Testkonten mit Passwort (`supabase/seed/beta-profiles.json`), „Testdaten zurücksetzen“ in den Einstellungen
+   - Web-Version auf GitHub Pages, am Handy im Browser zu öffnen
+   - Vor dem echten Start: Testbetrieb abschalten, Beispielprofile löschen
+   - Treffen, Events, Campus und Echt Plus laufen weiter nur im Demo-Speicher
 
 Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --output-dir dist && node scripts/prototype-html.mjs dist`
 

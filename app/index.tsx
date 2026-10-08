@@ -1,6 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Animated, Text, View } from 'react-native';
 import { backend } from '../src/lib/backend';
 import { Glass } from '../src/ui/Glass';
@@ -17,6 +18,14 @@ const PROMISES = [
 
 export default function Welcome() {
   const enter = useEntrance();
+  // Schon angemeldet: direkt weiter, statt jedes Mal die Begrüßung zu zeigen.
+  useEffect(() => {
+    if (backend.demo) return;
+    backend.myStatus().then(
+      ({ status }) => router.replace(status === 'admitted' ? '/heute' : status === 'pending_verification' ? '/verifizieren' : '/status'),
+      () => {},
+    );
+  }, []);
 
   return (
     <Screen>
@@ -42,6 +51,7 @@ export default function Welcome() {
         </View>
       )}
       <Button title="Los geht’s" onPress={() => router.push('/anmelden')} />
+      {backend.beta && <Button title="Mit Testzugang anmelden" variant="ghost" icon="key" onPress={() => router.push('/testzugang')} />}
     </Screen>
   );
 }

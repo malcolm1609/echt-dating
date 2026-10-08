@@ -1,7 +1,7 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { chatUnlocked, QUESTION_ROUNDS, roundState } from '../../src/domain/conversation.ts';
-import { Match, useMatches } from '../../src/lib/matches';
+import { Match, matchStore, useMatches } from '../../src/lib/matches';
 import { Screen } from '../../src/ui/kit';
 import { photoTone } from '../../src/ui/ProfileCard';
 import { colors, font, fontFamily, shadow } from '../../src/ui/theme';
@@ -17,6 +17,7 @@ function stageOf(m: Match): string {
 
 export default function Matches() {
   const matches = useMatches();
+  useFocusEffect(matchStore.refresh);
   return (
     <Screen tabs>
       <Text style={font.display}>Matches</Text>

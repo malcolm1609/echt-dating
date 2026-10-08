@@ -35,6 +35,22 @@ export default function Settings() {
     router.replace('/');
   };
 
+  const signOut = async () => {
+    await backend.signOut().catch(() => {});
+    matchStore.reset();
+    router.replace('/');
+  };
+
+  const resetTestData = async () => {
+    try {
+      await backend.resetTestData();
+      matchStore.refresh();
+      router.replace('/heute');
+    } catch {
+      setError('Zurücksetzen hat nicht geklappt.');
+    }
+  };
+
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: 12, paddingHorizontal: 2 }} keyboardShouldPersistTaps="handled">
@@ -68,6 +84,8 @@ export default function Settings() {
         {profile && <CampusVerify uni={campus.uni} onVerify={campusStore.verify} />}
         <Button title={plus.active ? 'Echt Plus ist aktiv' : `Echt Plus · ${PLUS_PRICE}`} variant="ghost" icon="star" onPress={() => router.push('/plus')} />
         {backend.demo && <Button title="Demo neu starten" variant="ghost" onPress={restartDemo} />}
+        {backend.beta && <Button title="Testdaten zurücksetzen" variant="ghost" icon="rotate-ccw" onPress={resetTestData} />}
+        {!backend.demo && <Button title="Abmelden" variant="ghost" icon="log-out" onPress={signOut} />}
       </ScrollView>
     </Screen>
   );

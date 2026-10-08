@@ -1,9 +1,16 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { useSyncExternalStore } from 'react';
 import { Answers, answerKey, DateAnswer, QUESTION_ROUNDS } from '../domain/conversation.ts';
+import { PROMPTS, promptText, sharedInterests } from '../domain/profileContent.ts';
 import type { ShownPrompt } from '../ui/ProfileDetails';
+import { supabase } from './supabase';
 
 export interface Message { id: string; from: 'me' | 'them'; text: string; at: Date }
-export interface DateProposal { idea?: string; place: string; when: string; accepted: boolean; past: boolean; reserved?: boolean }
+export interface DateProposal {
+  idea?: string; place: string; when: string; accepted: boolean; past: boolean; reserved?: boolean;
+  /** Von mir vorgeschlagen? Zusagen kann nur die andere Person. */
+  mine?: boolean;
+}
 
 export interface Match {
   id: string;
@@ -30,11 +37,20 @@ export interface MatchStore {
   answer(id: string, key: string, text: string): void;
   send(id: string, text: string): void;
   proposeDate(id: string, idea: string, place: string, when: string, reserved?: boolean): void;
+  acceptDate(id: string): void;
   markDatePast(id: string): void;
   answerAfterDate(id: string, answer: DateAnswer): void;
   endKindly(id: string, text: string): void;
   reset(): void;
+  /** Neu vom Server laden (Demo: nichts zu tun). */
+  refresh(): void;
+  /** Hält ein offenes Match aktuell, bis die zurückgegebene Funktion aufgerufen wird. */
+  watch(id: string): () => void;
 }
+
+// Die Fragenrunde beginnt mit der Antwort, die am meisten zum Anknüpfen einlädt.
+export const openerFor = (prompts?: ShownPrompt[]) =>
+  prompts?.find((p) => PROMPTS.find((x) => x.text === p.question)?.category === 'anknuepfen') ?? prompts?.[0];
 
 const hours = (h: number) => new Date(Date.now() - h * 3600_000);
 const allAnswered = (): Answers =>
@@ -98,8 +114,11 @@ export function createDemoStore(delayMs = 1200): MatchStore {
       if (!replied) later(() => update(id, (m) => ({ ...m, messages: [...m.messages, msg('them', 'Haha, genau so! Erzähl mir mehr 🙂')] })));
     },
     proposeDate(id, idea, place, when, reserved = false) {
-      update(id, (m) => ({ ...m, date: { idea, place, when, accepted: false, past: false, reserved } }));
+      update(id, (m) => ({ ...m, date: { idea, place, when, accepted: false, past: false, reserved, mine: true } }));
       later(() => update(id, (m) => ({ ...m, date: m.date && { ...m.date, accepted: true }, messages: [...m.messages, msg('them', `${when} passt mir super. Bis dann!`)] })));
+    },
+    acceptDate(id) {
+      update(id, (m) => ({ ...m, date: m.date && { ...m.date, accepted: true } }));
     },
     markDatePast(id) {
       update(id, (m) => ({ ...m, date: m.date && { ...m.date, past: true } }));
@@ -115,6 +134,8 @@ export function createDemoStore(delayMs = 1200): MatchStore {
       matches = initial();
       emit();
     },
+    refresh() {},
+    watch: () => () => {},
   };
 
   function get(id: string) {
@@ -122,7 +143,119 @@ export function createDemoStore(delayMs = 1200): MatchStore {
   }
 }
 
-export const matchStore = createDemoStore();
+interface ServerMatch {
+  id: string;
+  name: string;
+  age: number;
+  prompts: { prompt_id: string; answer: string }[];
+  interests: string[];
+  ended: boolean;
+  answers: Record<string, { mine: string; theirs: string | null }>;
+  messages: { id: number; mine: boolean; text: string; at: string }[];
+  date: (Omit<DateProposal, 'idea'> & { idea: string | null }) | null;
+  after_date: { mine: DateAnswer; theirs: DateAnswer | null } | null;
+}
+
+export function fromServer(m: ServerMatch, myInterests: string[]): Match {
+  const prompts = m.prompts.map((p) => ({ question: promptText(p.prompt_id) ?? '', answer: p.answer }));
+  return {
+    id: m.id,
+    name: m.name,
+    age: m.age,
+    opener: openerFor(prompts),
+    shared: sharedInterests(myInterests, m.interests),
+    answers: Object.fromEntries(Object.entries(m.answers).map(([k, a]) => [k, { mine: a.mine, theirs: a.theirs ?? undefined }])),
+    messages: m.messages.map((x) => ({ id: String(x.id), from: x.mine ? 'me' : 'them', text: x.text, at: new Date(x.at) })),
+    date: m.date ? { ...m.date, idea: m.date.idea ?? undefined } : undefined,
+    afterDate: { mine: m.after_date?.mine, theirs: m.after_date?.theirs ?? undefined },
+    ended: m.ended,
+  };
+}
+
+/** Mit Server: Lesen über my_matches(), Schreiben über die Funktionen der Datenbank. */
+export function createServerStore(db: SupabaseClient, pollMs = 4000): MatchStore {
+  let matches: Match[] = [];
+  let myInterests: string[] | undefined;
+  const listeners = new Set<() => void>();
+  const emit = () => listeners.forEach((l) => l());
+  const local = (id: string, fn: (m: Match) => Match) => {
+    matches = matches.map((m) => (m.id === id ? fn(m) : m));
+    emit();
+  };
+
+  const refresh = async () => {
+    const { data: user } = await db.auth.getUser();
+    if (!user.user) return;
+    if (!myInterests) {
+      const { data } = await db.from('profiles').select('interests').eq('id', user.user.id).maybeSingle();
+      myInterests = data?.interests ?? [];
+    }
+    const { data, error } = await db.rpc('my_matches');
+    if (error) throw error;
+    matches = (data as ServerMatch[]).map((m) => fromServer(m, myInterests!));
+    emit();
+  };
+  const sync = () => refresh().catch(() => {});
+  // Erst lokal zeigen, dann speichern; danach gilt der Stand vom Server.
+  const call = (fn: string, args: object) => {
+    db.rpc(fn, args).then(sync, sync);
+  };
+  const msg = (text: string): Message => ({ id: `local-${Date.now()}`, from: 'me', text, at: new Date() });
+
+  return {
+    list: () => matches,
+    get: (id) => matches.find((m) => m.id === id),
+    subscribe(l) {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    add() {
+      sync();
+    },
+    answer(id, key, text) {
+      local(id, (m) => ({ ...m, answers: { ...m.answers, [key]: { ...m.answers[key], mine: text } } }));
+      call('answer_question', { other: id, question_key: key, answer: text });
+    },
+    send(id, text) {
+      local(id, (m) => ({ ...m, messages: [...m.messages, msg(text)] }));
+      call('send_message', { other: id, body: text });
+    },
+    proposeDate(id, idea, place, when, reserved = false) {
+      local(id, (m) => ({ ...m, date: { idea, place, when, accepted: false, past: false, reserved, mine: true } }));
+      call('propose_date', { other: id, idea, place, when_text: when, reserved });
+    },
+    acceptDate(id) {
+      local(id, (m) => ({ ...m, date: m.date && { ...m.date, accepted: true } }));
+      call('accept_date', { other: id });
+    },
+    markDatePast(id) {
+      call('beta_finish_date', { other: id });
+    },
+    answerAfterDate(id, answer) {
+      local(id, (m) => ({ ...m, afterDate: { ...m.afterDate, mine: answer } }));
+      call('answer_after_date', { other: id, answer });
+    },
+    endKindly(id, text) {
+      local(id, (m) => ({ ...m, ended: true, messages: [...m.messages, msg(text)] }));
+      call('end_match', { other: id, goodbye: text });
+    },
+    reset() {
+      matches = [];
+      myInterests = undefined;
+      emit();
+    },
+    refresh() {
+      sync();
+    },
+    watch() {
+      sync();
+      const timer = setInterval(sync, pollMs);
+      return () => clearInterval(timer);
+    },
+  };
+}
+
+export const matchStore = supabase ? createServerStore(supabase) : createDemoStore();
 
 export function useMatches() {
   return useSyncExternalStore(matchStore.subscribe, matchStore.list);

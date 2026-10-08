@@ -1,5 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { ageOn } from '../domain/onboarding.ts';
 import { activeNearbyBucket } from '../domain/activeNearby.ts';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
@@ -9,6 +8,7 @@ import { rankPicks } from '../domain/ranking.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
 import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
+import { beta, supabase } from './supabase';
 
 export type MyStatus =
   | { status: 'pending_verification' | 'admitted' | 'rejected' }
@@ -18,6 +18,13 @@ export interface Location { lat: number; lng: number }
 
 export interface Backend {
   demo: boolean;
+  /** Testbetrieb mit Server: SMS und Ausweisprüfung werden übersprungen, Beispielprofile antworten selbst. */
+  beta: boolean;
+  /** Nur für Testkonten mit Passwort. */
+  signInWithPassword(email: string, password: string): Promise<void>;
+  signOut(): Promise<void>;
+  /** Testkonto zurück auf den Startzustand mit Beispiel-Matches. */
+  resetTestData(): Promise<void>;
   sendCode(email: string): Promise<void>;
   verifyCode(email: string, code: string): Promise<void>;
   /** Zweite Prüfung: SMS-Code an die Handynummer (E.164). Eine Nummer gehört genau zu einem Konto. */
@@ -46,11 +53,7 @@ export interface Backend {
   reset?(): void;
 }
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
-function supabaseBackend(url: string, key: string): Backend {
-  const db = createClient(url, key, { auth: { storage: AsyncStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
   const ok = <T>({ data, error }: { data: T; error: unknown }) => {
     if (error) throw error;
     return data;
@@ -63,6 +66,18 @@ function supabaseBackend(url: string, key: string): Backend {
 
   return {
     demo: false,
+    beta,
+    async signInWithPassword(email, password) {
+      const { error } = await db.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    async signOut() {
+      const { error } = await db.auth.signOut();
+      if (error) throw error;
+    },
+    async resetTestData() {
+      ok(await db.rpc('beta_reset_me'));
+    },
     async sendCode(email) {
       ok(await db.auth.signInWithOtp({ email }));
     },
@@ -106,6 +121,10 @@ function supabaseBackend(url: string, key: string): Backend {
       else if (error) throw error;
     },
     async startVerification() {
+      if (beta) {
+        ok(await db.rpc('beta_verify'));
+        return { url: null };
+      }
       return ok(await db.functions.invoke<{ url: string }>('verification-start')) ?? { url: null };
     },
     async myStatus() {
@@ -221,6 +240,10 @@ export function demoBackend(delayMs = 300): Backend {
   };
   return {
     demo: true,
+    beta: false,
+    signInWithPassword: wait,
+    signOut: wait,
+    resetTestData: wait,
     sendCode: wait,
     verifyCode: wait,
     sendPhoneCode: wait,
@@ -287,4 +310,4 @@ export function demoBackend(delayMs = 300): Backend {
   };
 }
 
-export const backend: Backend = url && key ? supabaseBackend(url, key) : demoBackend();
+export const backend: Backend = supabase ? supabaseBackend(supabase, beta) : demoBackend();

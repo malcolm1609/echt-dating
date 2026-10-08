@@ -38,6 +38,11 @@ export default function Verify() {
           </View>
         ))}
       </View>
+      {backend.beta && (
+        <View style={s.hint}>
+          <Text style={font.small}>Testbetrieb: Die Ausweisprüfung wird übersprungen, du wirst direkt zugelassen.</Text>
+        </View>
+      )}
       <View style={s.hint}>
         <Text style={font.small}>Wir speichern nur das Ergebnis der Prüfung, keine Bilder von deinem Ausweis oder Gesicht. Die Prüfung macht ein zertifizierter Anbieter.</Text>
       </View>
