@@ -2,34 +2,45 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { afterDateOutcome, DateAnswer, waitingDays } from '../domain/conversation.ts';
 import { dateIdeas } from '../domain/dateIdeas.ts';
+import { PARTNER_DATE_DISCOUNT, readReceiptShown } from '../domain/plus.ts';
 import type { Match } from '../lib/matches';
 import { Button, Chip, s } from './kit';
 import { colors, font } from './theme';
 
-export const PARTNER_CAFES = ['Café Lindner, Kreuzberg', 'Kaffeebar Nord, Prenzlauer Berg', 'Rösterei am Kanal, Neukölln'];
+export const PARTNER_CAFES = [
+  { name: 'Café Lindner, Kreuzberg', km: 1.2 },
+  { name: 'Kaffeebar Nord, Prenzlauer Berg', km: 2.8 },
+  { name: 'Rösterei am Kanal, Neukölln', km: 3.5 },
+];
 const TIMES = ['Samstag, 15 Uhr', 'Sonntag, 11 Uhr', 'Mittwoch, 19 Uhr'];
 
 interface Props {
   match: Match;
   now?: Date;
   send: (text: string) => void;
-  proposeDate: (idea: string, place: string, when: string) => void;
+  proposeDate: (idea: string, place: string, when: string, reserved: boolean) => void;
   markDatePast: () => void;
   answerAfterDate: (a: DateAnswer) => void;
   endKindly: (text: string) => void;
   demo?: boolean;
+  plus?: { active: boolean; readReceipts: boolean };
+  onUpgrade?: () => void;
 }
 
-export function Chat({ match, now = new Date(), send, proposeDate, markDatePast, answerAfterDate, endKindly, demo }: Props) {
+export function Chat({ match, now = new Date(), send, proposeDate, markDatePast, answerAfterDate, endKindly, demo, plus = { active: false, readReceipts: false }, onUpgrade }: Props) {
   const [draft, setDraft] = useState('');
   const [panel, setPanel] = useState<'none' | 'date' | 'end'>('none');
   const ideas = dateIdeas(match.shared ?? []);
   const [idea, setIdea] = useState(ideas[0]);
-  const [place, setPlace] = useState(PARTNER_CAFES[0]);
+  const [place, setPlace] = useState(PARTNER_CAFES[0].name);
+  const [reserve, setReserve] = useState(false);
+  const [checkIn, setCheckIn] = useState(false);
   const [when, setWhen] = useState(TIMES[0]);
   const goodbye = `Hey ${match.name}, danke für die schönen Gespräche. Ich merke, dass es für mich nicht ganz passt, und wollte dir das ehrlich sagen. Alles Gute für dich!`;
   const waiting = waitingDays(match.messages, now);
   const outcome = afterDateOutcome(match.afterDate.mine, match.afterDate.theirs);
+  const lastMine = match.messages.at(-1)?.from === 'me' ? match.messages.at(-1)!.id : undefined;
+  const showRead = readReceiptShown(plus.readReceipts, !!match.readReceipts);
 
   return (
     <View style={{ gap: 16 }}>
@@ -39,12 +50,22 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
           <Text style={[font.body, m.from === 'me' && { color: colors.bg }]}>{m.text}</Text>
         </View>
       ))}
+      {lastMine && showRead && <Text style={[font.small, { alignSelf: 'flex-end', marginTop: -10 }]}>Gelesen</Text>}
 
       {match.date && (
         <View style={s.hint}>
           <Text style={s.label}>Date</Text>
           <Text style={font.body}>{[match.date.idea, match.date.when, `Treffpunkt ${match.date.place}`].filter(Boolean).join(' · ')}</Text>
           <Text style={font.small}>{match.date.accepted ? (match.date.past ? 'Vorbei' : 'Zugesagt') : `Wartet auf ${match.name}`}</Text>
+          {match.date.reserved && <Text style={font.small}>Tisch ist reserviert.</Text>}
+          {PARTNER_CAFES.some((c) => c.name === match.date!.place) && <Text style={font.small}>{`Mit Echt bekommt ihr dort ${PARTNER_DATE_DISCOUNT} % Rabatt.`}</Text>}
+          {!match.date.past && (checkIn ? (
+            <Text style={[font.small, { color: colors.hint, marginTop: 8 }]}>Check-in aktiv: Eine Vertrauensperson sieht während des Dates, wo du bist, und wir fragen nach einer Stunde, ob alles okay ist.</Text>
+          ) : (
+            <View style={{ marginTop: 10 }}>
+              <Button title="Date-Check-in einschalten (kostenlos)" variant="ghost" icon="shield" onPress={() => setCheckIn(true)} />
+            </View>
+          ))}
           {demo && match.date.accepted && !match.date.past && <Button title="Demo: Date ist vorbei" variant="ghost" onPress={markDatePast} />}
         </View>
       )}
@@ -97,16 +118,23 @@ export function Chat({ match, now = new Date(), send, proposeDate, markDatePast,
               <View style={{ flexWrap: 'wrap', flexDirection: 'row', gap: 8 }}>
                 {ideas.map((i) => <Chip key={i} role="radio" label={i} a11y={i} selected={idea === i} onPress={() => setIdea(i)} />)}
               </View>
-              <Text style={s.label}>Treffpunkt (Partner-Cafés)</Text>
+              <Text style={s.label}>{`Treffpunkt · Partner mit ${PARTNER_DATE_DISCOUNT} % Rabatt`}</Text>
               <View style={{ flexWrap: 'wrap', flexDirection: 'row', gap: 8 }}>
-                {PARTNER_CAFES.map((c) => <Chip key={c} label={c} a11y={c} selected={place === c} onPress={() => setPlace(c)} />)}
+                {PARTNER_CAFES.map((c) => <Chip key={c.name} role="radio" label={`${c.name} · ${c.km.toFixed(1).replace('.', ',')} km`} a11y={c.name} selected={place === c.name} onPress={() => setPlace(c.name)} />)}
               </View>
               <Text style={s.label}>Wann</Text>
               <View style={{ flexWrap: 'wrap', flexDirection: 'row', gap: 8 }}>
                 {TIMES.map((t) => <Chip key={t} label={t} a11y={t} selected={when === t} onPress={() => setWhen(t)} />)}
               </View>
+              {plus.active ? (
+                <Chip label="Tisch reservieren" a11y="Tisch reservieren" selected={reserve} onPress={() => setReserve(!reserve)} />
+              ) : (
+                <Pressable accessibilityRole="button" onPress={onUpgrade}>
+                  <Text style={[font.small, { color: colors.hint }]}>Tisch gleich mitreservieren mit Echt Plus ›</Text>
+                </Pressable>
+              )}
               <Text style={font.small}>Fürs erste Treffen: ein öffentlicher Ort und ein eigener Heimweg.</Text>
-              <Button title="Vorschlag senden" onPress={() => { proposeDate(idea, place, when); setPanel('none'); }} />
+              <Button title="Vorschlag senden" onPress={() => { proposeDate(idea, place, when, plus.active && reserve); setPanel('none'); }} />
             </View>
           )}
           {panel !== 'end' && <Button title="Freundlich beenden" variant="ghost" onPress={() => setPanel('end')} />}

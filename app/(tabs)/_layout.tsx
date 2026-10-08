@@ -19,6 +19,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="heute" options={{ title: 'Heute', tabBarIcon: icon('sun') }} />
       <Tabs.Screen name="matches" options={{ title: 'Matches', tabBarIcon: icon('message-circle') }} />
+      <Tabs.Screen name="treffen" options={{ title: 'Treffen', tabBarIcon: icon('users') }} />
       <Tabs.Screen name="ich" options={{ title: 'Profil', tabBarIcon: icon('user') }} />
     </Tabs>
   );

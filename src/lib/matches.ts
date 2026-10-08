@@ -3,7 +3,7 @@ import { Answers, answerKey, DateAnswer, QUESTION_ROUNDS } from '../domain/conve
 import type { ShownPrompt } from '../ui/ProfileDetails';
 
 export interface Message { id: string; from: 'me' | 'them'; text: string; at: Date }
-export interface DateProposal { idea?: string; place: string; when: string; accepted: boolean; past: boolean }
+export interface DateProposal { idea?: string; place: string; when: string; accepted: boolean; past: boolean; reserved?: boolean }
 
 export interface Match {
   id: string;
@@ -18,6 +18,8 @@ export interface Match {
   date?: DateProposal;
   afterDate: { mine?: DateAnswer; theirs?: DateAnswer };
   ended: boolean;
+  /** Hat die andere Person „Gelesen“ eingeschaltet? */
+  readReceipts?: boolean;
 }
 
 export interface MatchStore {
@@ -27,7 +29,7 @@ export interface MatchStore {
   add(person: { id: string; name: string; age: number; opener?: ShownPrompt; shared?: string[] }): void;
   answer(id: string, key: string, text: string): void;
   send(id: string, text: string): void;
-  proposeDate(id: string, idea: string, place: string, when: string): void;
+  proposeDate(id: string, idea: string, place: string, when: string, reserved?: boolean): void;
   markDatePast(id: string): void;
   answerAfterDate(id: string, answer: DateAnswer): void;
   endKindly(id: string, text: string): void;
@@ -50,7 +52,7 @@ const DEMO_OPENER_REPLY = 'Ich habe deine Antworten gelesen und hatte sofort Fra
 export function createDemoStore(delayMs = 1200): MatchStore {
   const initial = (): Match[] => [
     {
-      id: 'mara', name: 'Mara', age: 29, answers: allAnswered(), afterDate: {}, ended: false,
+      id: 'mara', name: 'Mara', age: 29, answers: allAnswered(), afterDate: {}, ended: false, readReceipts: true, shared: ['Kaffee', 'Flohmärkte'],
       messages: [
         { id: 'm1', from: 'me', text: 'Deine Antwort zur Freundschaft hat mich echt berührt.', at: hours(80) },
         { id: 'm2', from: 'them', text: 'Danke! Hast du am Wochenende Zeit für einen Kaffee?', at: hours(60) },
@@ -81,7 +83,7 @@ export function createDemoStore(delayMs = 1200): MatchStore {
     },
     add(p) {
       if (matches.some((m) => m.id === p.id)) return;
-      matches = [{ ...p, answers: {}, messages: [], afterDate: {}, ended: false }, ...matches];
+      matches = [{ ...p, answers: {}, messages: [], afterDate: {}, ended: false, readReceipts: true }, ...matches];
       emit();
     },
     answer(id, key, text) {
@@ -95,8 +97,8 @@ export function createDemoStore(delayMs = 1200): MatchStore {
       const replied = get(id)?.messages.some((m) => m.from === 'them');
       if (!replied) later(() => update(id, (m) => ({ ...m, messages: [...m.messages, msg('them', 'Haha, genau so! Erzähl mir mehr 🙂')] })));
     },
-    proposeDate(id, idea, place, when) {
-      update(id, (m) => ({ ...m, date: { idea, place, when, accepted: false, past: false } }));
+    proposeDate(id, idea, place, when, reserved = false) {
+      update(id, (m) => ({ ...m, date: { idea, place, when, accepted: false, past: false, reserved } }));
       later(() => update(id, (m) => ({ ...m, date: m.date && { ...m.date, accepted: true }, messages: [...m.messages, msg('them', `${when} passt mir super. Bis dann!`)] })));
     },
     markDatePast(id) {
