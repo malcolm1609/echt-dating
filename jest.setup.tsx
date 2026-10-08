@@ -7,3 +7,11 @@ jest.mock('@expo/vector-icons/Feather', () => {
   Feather.glyphMap = {};
   return Feather;
 });
+
+// React Native lädt Animated, Pressable und PanResponder erst beim ersten Zugriff. Ohne Babel-Cache
+// (frischer CI-Lauf) kostet das Übersetzen mehrere Sekunden und fiele in den ersten Test einer Datei,
+// der dann an der 5-Sekunden-Grenze scheitert. Hier geschieht es vor dem Testlauf.
+{
+  const { Animated, Pressable, PanResponder } = require('react-native');
+  void [Animated, Pressable, PanResponder];
+}
