@@ -1,17 +1,17 @@
-// Hell und hochwertig: warmes Hellgrau, weiße Karten mit weichem Schatten, Glas über Fotos, Tannengrün nur für die Hauptaktion.
+// Hell und hochwertig: zartes Rosé-Grau, weiße Karten mit weichem Schatten, Glas über Fotos, Bordeaux nur für die Hauptaktion.
 export const colors = {
-  bg: '#F3F2EE', // Grund, ein warmes Hellgrau, damit weiße Karten und Glas Tiefe bekommen
+  bg: '#F6F1EE', // Grund, ein zartes Rosé-Grau, damit weiße Karten und Glas Tiefe bekommen
   surface: '#FFFFFF', // Karten, Eingabefelder
-  raised: '#E8E7E2', // gedrückt / Hover
-  line: '#E1DFD9',
-  text: '#171717', // Tinte
-  muted: '#66665F', // leise Tinte, AA auf bg und surface
-  accent: '#1E5B43', // Tannengrün, Hauptaktion
-  hint: '#1E5B43', // Hinweise und Fokus im selben Grün, damit es bei einer Akzentfarbe bleibt
+  raised: '#ECE4DF', // gedrückt / Hover
+  line: '#E4DAD4',
+  text: '#1C1416', // Tinte
+  muted: '#6E6064', // leise Tinte, AA auf bg und surface
+  accent: '#8C1D3B', // Bordeaux, Hauptaktion
+  hint: '#8C1D3B', // Hinweise und Fokus im selben Bordeaux, damit es bei einer Akzentfarbe bleibt
   error: '#B3261E',
-  accentPressed: '#174A36', // Hover / gedrückt
-  accentSoft: 'rgba(30,91,67,0.12)', // ausgewählter Tab
-  onAccent: '#FFFFFF', // Text auf Grün
+  accentPressed: '#721630', // Hover / gedrückt
+  accentSoft: 'rgba(140,29,59,0.12)', // ausgewählter Tab
+  onAccent: '#FFFFFF', // Text auf Bordeaux
 };
 
 export const fontFamily = {
