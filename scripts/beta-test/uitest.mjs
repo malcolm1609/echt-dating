@@ -24,6 +24,8 @@ page.on('response', (res) => {
 });
 let shot = 0;
 const snap = (name) => page.screenshot({ path: `${out}/${String(++shot).padStart(2, '0')}-${name}.png` });
+// Der Router lässt frühere Seiten im Hintergrund stehen: immer das sichtbare Element nehmen.
+const vis = (loc) => loc.filter({ visible: true }).first();
 const tab = (name) => page.getByRole('tab', { name: new RegExp(name) }).click();
 
 try {
@@ -99,15 +101,15 @@ try {
     if (!(await page.getByText('Platz sichern').count())) throw new Error('kein buchbares Event');
   });
   await r.check('Platz sichern und Gruppenchat', async () => {
-    await page.getByText('Platz sichern').first().click();
+    await vis(page.getByText('Platz sichern')).click();
     await page.waitForTimeout(2500);
-    await page.getByText(/Gruppenchat/).first().click();
-    await page.getByLabel('Nachricht an die Gruppe').waitFor({ timeout: 10000 });
-    await page.getByLabel('Nachricht an die Gruppe').fill('Bin dabei, bis später!');
-    await page.getByLabel('Senden').click();
+    await vis(page.getByRole('button', { name: /Gruppenchat/ })).click();
+    await vis(page.getByLabel('Nachricht an die Gruppe')).waitFor({ timeout: 10000 });
+    await vis(page.getByLabel('Nachricht an die Gruppe')).fill('Bin dabei, bis später!');
+    await vis(page.getByLabel('Senden')).click();
     await page.waitForTimeout(3000);
     await snap('event-gruppenchat');
-    if (!(await page.getByText('Bin dabei, bis später!').isVisible())) throw new Error('Nachricht fehlt');
+    if (!(await vis(page.getByText('Bin dabei, bis später!')).isVisible())) throw new Error('Nachricht fehlt');
   });
   await r.check('Profil-Tab und Einstellungen', async () => {
     await page.goto(`${site}/ich`, { waitUntil: 'networkidle' });

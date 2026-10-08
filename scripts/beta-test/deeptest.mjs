@@ -62,14 +62,17 @@ try {
     const guest = anon();
     const rows = (await guest.from('profiles').select('id').limit(1)).data ?? [];
     assert(rows.length === 0, 'Profile ohne Anmeldung lesbar');
-    return rejects(guest.rpc('my_matches'), 'my_matches ohne Anmeldung');
+    await rejects(guest.rpc('my_matches'), 'my_matches ohne Anmeldung');
+    return rejects(guest.rpc('beta_prepare_tester', { tester: A.id }), 'Testdaten ohne Anmeldung');
   });
+  await r.check('Server-Helfer sind für Angemeldete gesperrt', () =>
+    rejects(a.rpc('beta_prepare_tester', { tester: B.id }), 'Testdaten für andere anlegen'));
   await r.check('Über-mich-Text und Profilinhalte speichern', async () => {
     ok(await a.from('profiles').update({ bio: 'Neuer Text vom Tiefentest.' }).eq('id', A.id));
     ok(await a.from('profiles').update({ interests: ['Kaffee', 'Kino', 'Radfahren'], goal: 'ernst' }).eq('id', A.id));
   });
   await r.check('Ungültige Profilfragen werden abgelehnt', () =>
-    rejects(a.from('profiles').update({ prompts: [{ prompt_id: 'gibt-es-nicht', answer: 'x' }] }).eq('id', A.id), 'falsche Frage'));
+    rejects(a.from('profiles').update({ prompts: [{ prompt_id: 'alltag-1', answer: '   ' }] }).eq('id', A.id), 'leere Antwort'));
   await r.check('Wünsche (Alter, Umkreis) speichern', async () => {
     ok(await a.from('profiles').update({ age_min: 19, age_max: 35, max_distance_km: 20 }).eq('id', A.id));
     ok(await a.from('profiles').update({ age_min: 18, age_max: 99, max_distance_km: 30 }).eq('id', A.id));
@@ -77,8 +80,8 @@ try {
   await r.check('Unmögliche Wünsche werden abgelehnt', () =>
     rejects(a.from('profiles').update({ age_min: 40, age_max: 20 }).eq('id', A.id), 'Alter verdreht'));
   await r.check('Foto hochladen und im Profil speichern', async () => {
-    const path = `${A.id}/deeptest.png`;
-    ok(await a.storage.from('photos').upload(path, PNG, { contentType: 'image/png', upsert: true }));
+    const path = `${A.id}/deeptest-${run}.png`;
+    ok(await a.storage.from('photos').upload(path, PNG, { contentType: 'image/png' }));
     ok(await a.from('profiles').update({ photos: [path] }).eq('id', A.id));
     const url = a.storage.from('photos').getPublicUrl(path).data.publicUrl;
     const res = await fetch(url);
@@ -325,7 +328,7 @@ try {
   console.error('Abbruch:', e);
 } finally {
   for (const id of created) await svc.auth.admin.deleteUser(id).catch(() => {});
-  await svc.storage.from('photos').remove(created.map((id) => `${id}/deeptest.png`)).catch(() => {});
+  await svc.storage.from('photos').remove(created.map((id) => `${id}/deeptest-${run}.png`)).catch(() => {});
 }
 
 const failed = r.results.filter((x) => !x.ok);

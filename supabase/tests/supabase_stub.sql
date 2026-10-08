@@ -10,3 +10,7 @@ do $$ begin
 end $$;
 grant usage on schema auth to anon, authenticated, service_role;
 grant usage on schema public to anon, authenticated, service_role;
+-- Wie bei Supabase: neue Tabellen und Funktionen sind für anon und authenticated direkt freigegeben;
+-- „revoke … from public“ allein nimmt ihnen das Recht also nicht.
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
