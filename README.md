@@ -11,6 +11,14 @@ npm start       # Expo (ohne .env im Demo-Modus)
 DATABASE_URL=postgres://... supabase/tests/run.sh
 ```
 
+## Beta mit Server
+
+Der Workflow „Beta“ (`.github/workflows/beta.yml`) spielt bei jedem Push auf `main` die Migrationen in Supabase ein, stellt die Anmeldung auf einen 6-stelligen Code um, legt Beispielprofile und Testkonten an (`scripts/beta-seed.mjs`) und veröffentlicht die Web-Version auf GitHub Pages. Welche Secrets er braucht, steht oben in der Datei. Ohne diese Secrets wird er übersprungen.
+
+Testkonten: `test-tom@example.com` und `test-lea@example.com`, Passwort aus dem Secret `BETA_PASSWORD`. Ein erneuter Lauf setzt sie auf den Startzustand zurück.
+
+Testbetrieb abschalten (vor dem echten Start): `update beta_settings set enabled = false;` und die Beispielprofile (`is_sample`) löschen.
+
 ## Handynummer per SMS einrichten
 
 Jedes Konto bestätigt nach der E-Mail eine Handynummer (eine Nummer pro Konto, ohne bestätigte Nummer lässt die Datenbank kein Profil zu). Dafür in Supabase unter Authentication → Providers → Phone einen SMS-Anbieter (z. B. Twilio, MessageBird oder Vonage) eintragen und „Enable phone confirmations“ einschalten. Zugangsdaten nur dort eintragen, nie ins Repo.

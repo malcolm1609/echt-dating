@@ -30,7 +30,7 @@ describe('Chat', () => {
     expect(screen.getByText('Ideen aus euren Gemeinsamkeiten')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Über den Flohmarkt schlendern'));
     fireEvent.press(screen.getByText('Vorschlag senden'));
-    expect(a.proposeDate).toHaveBeenCalledWith('Über den Flohmarkt schlendern', expect.any(String), expect.any(String));
+    expect(a.proposeDate).toHaveBeenCalledWith('Über den Flohmarkt schlendern', expect.any(String), expect.any(String), false);
   });
 
   it('suggests easy classics when nothing is shared', () => {
@@ -47,5 +47,44 @@ describe('Chat', () => {
     expect(screen.getByText('Danke für deine Antwort. Wenn ihr beide Ja sagt, erfahrt ihr es hier.')).toBeTruthy();
     rerender(<Chat match={{ ...past, afterDate: { mine: 'yes', theirs: 'yes' } }} now={now} {...actions()} />);
     expect(screen.getByText('Ihr wollt euch beide wiedersehen 🎉')).toBeTruthy();
+  });
+
+  it('lets Plus members reserve a table, others see the upgrade', () => {
+    const a = actions();
+    const onUpgrade = jest.fn();
+    const { rerender } = render(<Chat match={base} now={now} {...a} onUpgrade={onUpgrade} />);
+    fireEvent.press(screen.getByText('Date vorschlagen'));
+    fireEvent.press(screen.getByText('Tisch gleich mitreservieren mit Echt Plus ›'));
+    expect(onUpgrade).toHaveBeenCalled();
+    rerender(<Chat match={base} now={now} {...a} plus={{ active: true, readReceipts: false }} />);
+    fireEvent.press(screen.getByLabelText('Tisch reservieren'));
+    fireEvent.press(screen.getByText('Vorschlag senden'));
+    expect(a.proposeDate).toHaveBeenCalledWith(expect.any(String), expect.any(String), expect.any(String), true);
+  });
+
+  it('shows "Gelesen" only when both turned it on', () => {
+    const mine = { ...base, messages: [{ id: '2', from: 'me' as const, text: 'Gern!', at: now }] };
+    const { rerender } = render(<Chat match={mine} now={now} {...actions()} plus={{ active: true, readReceipts: true }} />);
+    expect(screen.queryByText('Gelesen')).toBeNull();
+    rerender(<Chat match={{ ...mine, readReceipts: true }} now={now} {...actions()} plus={{ active: true, readReceipts: true }} />);
+    expect(screen.getByText('Gelesen')).toBeTruthy();
+  });
+
+  it('offers a free safety check-in for an upcoming date', () => {
+    const upcoming = { ...base, date: { place: 'Café Lindner, Kreuzberg', when: 'Samstag', accepted: true, past: false } };
+    render(<Chat match={upcoming} now={now} {...actions()} />);
+    fireEvent.press(screen.getByText('Date-Check-in einschalten (kostenlos)'));
+    expect(screen.getByText(/Check-in aktiv/)).toBeTruthy();
+  });
+
+  it('lets the invited person accept a date, but not the one who proposed it', () => {
+    const acceptDate = jest.fn();
+    const date = { place: 'Café', when: 'Samstag, 15 Uhr', accepted: false, past: false };
+    const { rerender } = render(<Chat match={{ ...base, date: { ...date, mine: false } }} now={now} {...actions()} acceptDate={acceptDate} />);
+    fireEvent.press(screen.getByText('Zusagen'));
+    expect(acceptDate).toHaveBeenCalled();
+    rerender(<Chat match={{ ...base, date: { ...date, mine: true } }} now={now} {...actions()} acceptDate={acceptDate} />);
+    expect(screen.queryByText('Zusagen')).toBeNull();
+    expect(screen.getByText('Wartet auf Mara')).toBeTruthy();
   });
 });

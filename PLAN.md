@@ -58,13 +58,29 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Ein Platz für jemanden, der mich schon geliked hat (bleibt verborgen), einer für die diese Woche am seltensten Gezeigten; wer heute 12-mal bewertet wurde, pausiert bis morgen
    - Unter jedem Vorschlag ein Satz, warum er passt; Date-Ideen aus gemeinsamen Interessen (`src/domain/dateIdeas.ts`)
    - Grundlage: Recherche „Algorithmus und Filter für Echt“ (Projektdateien)
-10. **Navigation**: Tabs Heute, Matches, Profil (Profil pausieren)
+10. **„In deiner Nähe sind heute aktiv“** ✅ (`src/domain/activeNearby.ts`, Funktion `active_nearby()`): auf Heute und der Warteliste, erst ab 51 Personen, von der Datenbank schon abgerundet (50er, 100er, 1000er), kein Live-Zähler
+11. **Navigation**: Tabs Heute, Matches, Treffen, Profil (Profil pausieren)
+12. **Treffen, Date-Planer und Echt Plus** ✅ Prototyp (`src/domain/events.ts`, `src/domain/plus.ts`, Demo-Speicher in `src/lib/events.ts` und `src/lib/plus.ts`)
+   - Treffen: kleine Events (8–12 Leute) für verifizierte Mitglieder, Plätze je zur Hälfte für Frauen und Männer, volle Hälfte = Nachrücken
+   - Date-Planer im Chat: Partner-Cafés mit Entfernung und 10 % Rabatt für jedes Echt-Date, Tischreservierung nur mit Plus
+   - Echt Plus für 4,99 €/Monat: Reservierung, „Gelesen“ (nur wenn beide es einschalten), Events einen Tag früher und 20 % günstiger, mehr Filter und Fragen
+   - Immer kostenlos: Verifikation, Date-Check-in, Standort mit Vertrauensperson teilen; keine kaufbaren Likes oder Boosts
+   - Gastgeber: jedes Mitglied kann ein Event anlegen (`app/event-neu.tsx`), nur öffentliche Orte, 8/10/12 Plätze, 0–50 €, „Offen“ oder „Auf Einladung“ (freie Plätze später in die offene Liste)
+   - Kein Feed: Gastgeber-Karte mit Sternen, Anzahl Events und Bewertungen von Leuten, die wirklich da waren
+   - Nach dem Event (`app/rueckblick/[id].tsx`): Sterne, ein Satz, „Wen möchtest du wiedersehen?“; nur gegenseitige Wünsche werden zu Matches
+   - Wer 2-mal ohne Absage fehlt, kann eine Zeit lang nicht buchen
+   - Noch offen: echte Zahlung (In-App-Kauf), Partner-Verträge, Event-Tabellen in Supabase, Benachrichtigungen bei passenden Interessen
 
-Matches, Fragenrunde, Chat und Date laufen bisher nur im Demo-Modus (`src/lib/matches.ts`, im Speicher, die andere Seite antwortet automatisch).
-Noch offen: Tabellen und Zugriffsregeln dafür in Supabase und die echte Anbindung.
+13. **Beta mit Server** ✅ (Migration `20261008100000_conversations.sql`, `src/lib/matches.ts`, `scripts/beta-seed.mjs`, Workflow `beta.yml`)
+   - Matches, Fragenrunde, Chat, Date, Check danach und „Freundlich beenden“ liegen in Supabase; die App liest über `my_matches()` und schreibt nur über Funktionen, die die Regeln prüfen
+   - Testbetrieb (`beta_settings.enabled`): SMS- und Ausweisprüfung überspringbar, Teststandort Gießen, Beispielprofile (`is_sample`) antworten selbst und bleiben aktiv
+   - 20 Beispielprofile aus Gießen und 2 Testkonten mit Passwort (`supabase/seed/beta-profiles.json`), „Testdaten zurücksetzen“ in den Einstellungen
+   - Web-Version auf GitHub Pages, am Handy im Browser zu öffnen
+   - Vor dem echten Start: Testbetrieb abschalten, Beispielprofile löschen
+   - Treffen, Events, Campus und Echt Plus laufen weiter nur im Demo-Speicher
 
 Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --output-dir dist && node scripts/prototype-html.mjs dist`
 
 ## Offene Punkte
-- Monetarisierung (Werbung + werbefreies Abo 3–6 €/Monat ist nur ein erster Gedanke)
+- Monetarisierung: Echt Plus (4,99 €/Monat) plus Einnahmen von Partner-Cafés und Events, im Prototyp nur als Demo ohne Zahlung
 - Geschlechter jenseits von f/m und wer wen sucht: die Verhältnisregel muss das später abbilden

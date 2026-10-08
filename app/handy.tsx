@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
 import { backend } from '../src/lib/backend';
-import { Screen, StepHeader, s } from '../src/ui/kit';
+import { Button, Screen, StepHeader, s } from '../src/ui/kit';
 import { PhoneVerify } from '../src/ui/PhoneVerify';
 import { font } from '../src/ui/theme';
 
@@ -12,6 +12,12 @@ export default function Handy() {
       {backend.demo && (
         <View style={s.hint}>
           <Text style={font.small}>Demo: Es wird keine SMS verschickt, jeder 6-stellige Code passt.</Text>
+        </View>
+      )}
+      {backend.beta && (
+        <View style={[s.hint, { gap: 10 }]}>
+          <Text style={font.small}>Testbetrieb: Es ist noch kein SMS-Anbieter eingerichtet. Du kannst diesen Schritt überspringen.</Text>
+          <Button title="Überspringen" variant="ghost" onPress={() => router.replace('/profil')} />
         </View>
       )}
       <PhoneVerify onSend={backend.sendPhoneCode} onVerify={backend.verifyPhoneCode} onDone={() => router.replace('/profil')} />

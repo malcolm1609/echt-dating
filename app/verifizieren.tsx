@@ -29,15 +29,20 @@ export default function Verify() {
   return (
     <Screen>
       <StepHeader step={6} total={6} name="Ausweis" />
-      <Text style={font.display}>Zeig, dass{'\n'}du echt bist<Text style={{ color: colors.accent }}>.</Text></Text>
+      <Text style={font.display}>Zeig, dass{'\n'}du echt bist</Text>
       <View style={{ gap: 16 }}>
         {STEPS.map((step, i) => (
           <View key={step} style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-            <Text style={{ color: colors.accent, fontFamily: fontFamily.display, fontSize: 28, width: 26 }}>{i + 1}</Text>
+            <Text style={{ color: colors.accent, fontFamily: fontFamily.semibold, fontSize: 17, width: 20 }}>{i + 1}</Text>
             <Text style={[font.body, { flex: 1 }]}>{step}</Text>
           </View>
         ))}
       </View>
+      {backend.beta && (
+        <View style={s.hint}>
+          <Text style={font.small}>Testbetrieb: Die Ausweisprüfung wird übersprungen, du wirst direkt zugelassen.</Text>
+        </View>
+      )}
       <View style={s.hint}>
         <Text style={font.small}>Wir speichern nur das Ergebnis der Prüfung, keine Bilder von deinem Ausweis oder Gesicht. Die Prüfung macht ein zertifizierter Anbieter.</Text>
       </View>
