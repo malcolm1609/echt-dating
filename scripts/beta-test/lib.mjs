@@ -155,27 +155,37 @@ export function meter() {
 // Erwartete Fehler, die zur App gehören (z. B. Tageslimit erreicht, Event voll), zählen nicht als Störung.
 export const expected = (e) => /daily limit|full|half|no seats|already|duplicate|not visible|row-level security|violates check|chat closed|round locked/i.test(e?.message ?? '');
 
-// Eine Person benutzt die App bis zum Zeitpunkt `until` wie im echten Leben, mit kurzen Pausen.
-export async function useApp(u, m, eventId, until) {
+// Eine Person benutzt die App bis zum Zeitpunkt `until` wie im echten Leben: Beim Öffnen lädt die App
+// Aktivität, Vorschläge und Zähler, danach wird entschieden, in Matches und Treffen geschaut und geschrieben,
+// mit Pausen zum Lesen. `think` streckt die Pausen (1 = sehr eilig, 6 ≈ wie ein Mensch am Handy).
+export async function useApp(u, m, eventId, until, { think = 1 } = {}) {
+  const pause = (min, spread) => sleep((min + Math.random() * spread) * think);
+  let picks = [];
+  let opened = 0;
   while (Date.now() < until) {
-    // App öffnen: Aktivität, Vorschläge, Zähler
-    await m.time('App öffnen (touch_activity)', () => u.db.rpc('touch_activity'));
-    const [picks] = await Promise.all([
-      m.time('Vorschläge (todays_picks)', () => u.db.rpc('todays_picks')),
-      m.time('Zähler (my_picks_today)', () => u.db.from('my_picks_today').select('used').single()),
-    ]);
-    const pick = picks?.data?.[Math.floor(Math.random() * (picks.data.length || 1))];
+    // App öffnen (zu Beginn und wieder nach einer Weile)
+    if (!opened || Date.now() - opened > 60000 * think) {
+      opened = Date.now();
+      await m.time('App öffnen (touch_activity)', () => u.db.rpc('touch_activity'));
+      const [res] = await Promise.all([
+        m.time('Vorschläge (todays_picks)', () => u.db.rpc('todays_picks')),
+        m.time('Zähler (my_picks_today)', () => u.db.from('my_picks_today').select('used').single()),
+      ]);
+      picks = [...(res?.data ?? [])];
+      await pause(300, 900);
+    }
+    const pick = picks.shift();
     if (pick) {
       await m.time('Entscheiden (likes)', () => u.db.from('likes').insert({ from_id: u.id, to_id: pick.id, decision: Math.random() < 0.6 ? 'like' : 'pass' }), expected);
+      await pause(300, 900);
     }
-    await sleep(300 + Math.random() * 900);
     const matches = await m.time('Matches (my_matches)', () => u.db.rpc('my_matches'));
     const open = matches?.data?.find((x) => !x.answers?.['0-0']);
     if (open) await m.time('Fragenrunde (answer_question)', () => u.db.rpc('answer_question', { other: open.id, question_key: '0-0', answer: 'Antwort aus dem Stresstest' }), expected);
-    await sleep(300 + Math.random() * 900);
+    await pause(300, 900);
     const evs = await m.time('Treffen (my_events)', () => u.db.rpc('my_events'));
     const ev = evs?.data?.events?.find((e) => e.id === eventId);
     if (ev?.mine) await m.time('Gruppenchat (send_event_message)', () => u.db.rpc('send_event_message', { event_id: eventId, body: 'Bin dabei!' }), expected);
-    await sleep(500 + Math.random() * 1500);
+    await pause(500, 1500);
   }
 }

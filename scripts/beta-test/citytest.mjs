@@ -19,9 +19,11 @@ const USERS = Number(process.env.CITY_USERS ?? 10000);
 const SHARDS = Number(process.env.SHARDS ?? 8);
 const PHASES = (process.env.CITY_PHASES ?? '250,500,1000,2000').split(',').map(Number).filter((n) => n > 0);
 const SECONDS = Number(process.env.CITY_SECONDS ?? 60);
-const GAP = 20;
+const GAP = 30;
 const HISTORY = Number(process.env.CITY_HISTORY ?? 8);
-const LOGIN_MINUTES = Number(process.env.CITY_LOGIN_MINUTES ?? 9);
+const LOGIN_MINUTES = Number(process.env.CITY_LOGIN_MINUTES ?? 11);
+// Pausen wie bei Menschen am Handy: eine Person macht so etwa alle 3 bis 4 Sekunden eine Anfrage.
+const THINK = Number(process.env.CITY_THINK ?? 6);
 
 const [mode, arg, outArg] = process.argv.slice(2);
 const out = (mode === 'run' ? outArg : arg) ?? 'city-results';
@@ -38,17 +40,14 @@ const areaName = (c) => `Lasttest ${CITIES[c].name} ${run}`;
 const secs = (t) => +((performance.now() - t) / 1000).toFixed(1);
 const output = (k, v) => process.env.GITHUB_OUTPUT && appendFileSync(process.env.GITHUB_OUTPUT, `${k}=${v}\n`);
 
-async function areaIds() {
-  const rows = ok(await svc.from('areas').select('id, name').like('name', `Lasttest % ${run}`));
-  return CITIES.map((_, c) => rows.find((r) => r.name === areaName(c))?.id);
-}
-
 // Alle Konten dieses Laufs über die Anmeldeverwaltung finden (auch die, deren Profil nie angelegt wurde).
-async function runUserIds() {
+// Mit `all` auch Reste abgebrochener früherer Läufe.
+async function runUserIds(all = false) {
+  const prefix = all ? 'city-' : `city-${run}-`;
   const ids = [];
   for (let page = 1; ; page++) {
     const { users } = ok(await svc.auth.admin.listUsers({ page, perPage: 1000 }));
-    ids.push(...users.filter((u) => u.email?.startsWith(`city-${run}-`)).map((u) => u.id));
+    ids.push(...users.filter((u) => u.email?.startsWith(prefix)).map((u) => u.id));
     if (users.length < 1000) return ids;
   }
 }
@@ -171,24 +170,29 @@ async function shard(n) {
     starts_at: new Date(Date.now() + 3 * 3600e3).toISOString(), seats: 8, price: 0, access: 'open', campus: null, tonight: true, invitees: [],
   }));
   report.eventId = eventId;
+  // Wettlauf um die Plätze noch vor den Stufen, damit er die Messung nicht verschiebt.
+  const joins = await Promise.all(users.filter((u) => u !== host).map((u) => u.db.rpc('join_event', { event_id: eventId })));
+  report.joins = { ok: joins.filter((x) => !x.error).length, rejected: joins.filter((x) => x.error).length };
   await sleep(Math.max(0, t0 - Date.now()));
-  await Promise.all(users.filter((u) => u !== host).map((u) => u.db.rpc('join_event', { event_id: eventId })));
 
   for (const [k, total] of PHASES.entries()) {
-    const start = t0 + k * (SECONDS + GAP) * 1000;
-    const until = start + SECONDS * 1000;
-    await sleep(Math.max(0, start - Date.now()));
+    // Läuft eine Stufe über (z. B. weil der Server hängt), beginnt die nächste sofort danach.
+    await sleep(Math.max(0, t0 + k * (SECONDS + GAP) * 1000 - Date.now()));
+    const began = Date.now();
+    const until = began + SECONDS * 1000;
     const m = meter();
     const active = users.slice(0, Math.ceil(total / SHARDS));
     console.log(`  Stufe ${total} gleichzeitig (hier ${active.length}) …`);
     await Promise.all(active.map(async (u) => {
-      await sleep(Math.random() * 2000);
-      await useApp(u, m, eventId, until);
+      // Nicht alle öffnen die App in derselben Sekunde.
+      await sleep(Math.random() * 10000);
+      await useApp(u, m, eventId, until, { think: THINK });
     }));
-    report.phases.push({ concurrent: total, here: active.length, stats: m.stats });
+    report.phases.push({ concurrent: total, here: active.length, seconds: (Date.now() - began) / 1000, stats: m.stats });
     const all = Object.values(m.stats).flatMap((s) => s.times).sort((a, b) => a - b);
     const errors = Object.values(m.stats).reduce((a, s) => a + Object.values(s.errors).reduce((x, y) => x + y, 0), 0);
-    console.log(`    ${all.length} Anfragen, ${errors} Fehler, Median ${pct(all, 50)} ms, 95 % unter ${pct(all, 95)} ms`);
+    console.log(`    ${all.length} Anfragen, ${errors} Fehler, Median ${pct(all, 50)} ms, 95 % unter ${pct(all, 95)} ms, Dauer ${((Date.now() - began) / 1000).toFixed(0)} s`);
+    for (const [name, x] of Object.entries(m.stats)) if (Object.keys(x.errors).length) console.log(`      ${name}: ${JSON.stringify(x.errors)}`);
   }
   writeFileSync(`${out}/shard-${n}.json`, JSON.stringify(report));
 }
@@ -204,10 +208,12 @@ async function finish() {
     for (const [k, total] of PHASES.entries()) {
       const stats = {};
       let here = 0;
+      let seconds = SECONDS;
       for (const s of shards) {
         const p = s.phases[k];
         if (!p) continue;
         here += p.here;
+        seconds = Math.max(seconds, p.seconds ?? SECONDS);
         for (const [name, x] of Object.entries(p.stats)) {
           const into = (stats[name] ??= { times: [], errors: {}, expected: 0 });
           into.times.push(...x.times);
@@ -215,10 +221,10 @@ async function finish() {
           for (const [e, cnt] of Object.entries(x.errors)) into.errors[e] = (into.errors[e] ?? 0) + cnt;
         }
       }
-      const ops = summarize(stats, SECONDS);
+      const ops = summarize(stats, seconds);
       const all = Object.values(stats).flatMap((s) => s.times).sort((a, b) => a - b);
       const errors = ops.reduce((a, o) => a + o.errors, 0);
-      report.phases.push({ concurrent: total, active: here, requests: all.length, perSecond: +(all.length / SECONDS).toFixed(1), errors,
+      report.phases.push({ concurrent: total, active: here, seconds: Math.round(seconds), requests: all.length, perSecond: +(all.length / seconds).toFixed(1), errors,
         errorRate: +((100 * errors) / (all.length || 1)).toFixed(2), p50: pct(all, 50), p95: pct(all, 95), p99: pct(all, 99), ops });
     }
 
@@ -261,10 +267,10 @@ async function finish() {
   return bad ? 1 : 0;
 }
 
-// Alles dieses Laufs löschen: Konten (mit Profilen, Likes, Matches, Events) und die Test-Städte.
+// Alles dieses und früherer abgebrochener Läufe löschen: Konten (mit Profilen, Likes, Matches, Events) und die Test-Städte.
 async function cleanup() {
   const t = performance.now();
-  const ids = await runUserIds();
+  const ids = await runUserIds(true);
   let failed = 0;
   await pool(ids, 20, async (id) => {
     for (let k = 0; k < 3; k++) {
@@ -274,7 +280,7 @@ async function cleanup() {
     }
     failed++;
   });
-  const areas = (await areaIds()).filter(Boolean);
+  const areas = ok(await svc.from('areas').select('id').like('name', 'Lasttest %')).map((a) => a.id);
   if (areas.length) await svc.from('areas').delete().in('id', areas);
   console.log(`Aufgeräumt: ${ids.length - failed} Konten und ${areas.length} Test-Städte gelöscht in ${secs(t)} s${failed ? `, ${failed} Konten blieben übrig` : ''}`);
   return failed ? 1 : 0;

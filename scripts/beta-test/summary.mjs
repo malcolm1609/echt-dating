@@ -46,9 +46,14 @@ if (city) {
   lines.push(`Angemeldet: ${city.shards.reduce((a, x) => a + (x.loggedIn ?? 0), 0)} von ${city.shards.reduce((a, x) => a + (x.wanted ?? 0), 0)}.\n`);
   lines.push('| Gleichzeitig | Anfragen/s | Fehler | Median | 95 % unter | 99 % unter |', '|---|---|---|---|---|---|');
   for (const p of city.phases) lines.push(`| ${p.active} | ${p.perSecond} | ${p.errorRate} % | ${p.p50} ms | ${p.p95} ms | ${p.p99} ms |`);
+  for (const p of city.phases.filter((x) => x.errors)) {
+    const kinds = {};
+    p.ops.forEach((o) => Object.entries(o.errorTypes ?? {}).forEach(([k, n]) => (kinds[k] = (kinds[k] ?? 0) + n)));
+    lines.push(`\nFehlerarten bei ${p.active} gleichzeitig: ${Object.entries(kinds).map(([k, n]) => `${n}× ${k}`).join(', ')}`);
+  }
   lines.push('\n**Regeln**\n');
   for (const x of city.invariants) lines.push(`- ${x.ok ? '✅' : '❌'} ${x.name}: ${x.detail}`);
-  const last = city.phases.at(-1);
+  const last = city.phases.filter((p) => p.requests).at(-1);
   if (last) {
     lines.push(`\n**Einzelne Aufrufe bei ${last.active} gleichzeitig**\n`, '| Aufruf | Anzahl | Median | 95 % unter | Fehler |', '|---|---|---|---|---|');
     for (const o of last.ops) lines.push(`| ${o.name} | ${o.count} | ${o.p50} ms | ${o.p95} ms | ${o.errors ? `${o.errors} ${JSON.stringify(o.errorTypes)}` : '0'} |`);
