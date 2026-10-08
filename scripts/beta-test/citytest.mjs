@@ -120,8 +120,14 @@ async function setup() {
         created_at: new Date(Date.now() - (1 + Math.floor(Math.random() * 14)) * 86400e3 - Math.random() * 36e5).toISOString() });
     }
   }
-  await pool(Array.from({ length: Math.ceil(likes.length / 1000) }, (_, k) => likes.slice(k * 1000, (k + 1) * 1000)), 4, async (part) => {
-    ok(await svc.from('likes').insert(part));
+  // Kleine Pakete: jede Zeile löst die Prüfungen für Tageslimit und Match aus.
+  await pool(Array.from({ length: Math.ceil(likes.length / 250) }, (_, k) => likes.slice(k * 250, (k + 1) * 250)), 3, async (part) => {
+    for (let k = 0; ; k++) {
+      const { error } = await svc.from('likes').upsert(part, { onConflict: 'from_id,to_id', ignoreDuplicates: true });
+      if (!error) return;
+      if (k >= 3) throw new Error(error.message);
+      await sleep(3000 * (k + 1));
+    }
   });
   report.historyLikes = likes.length;
   report.historySeconds = secs(t);
