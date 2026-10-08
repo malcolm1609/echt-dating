@@ -65,10 +65,12 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
     if (error) throw error;
     return data;
   };
+  // Die Kennung kommt aus der gespeicherten Sitzung, ohne Anfrage an den Server: Supabase begrenzt
+  // Anfragen an /user je Adresse, und im Uni-WLAN teilen sich viele eine Adresse.
   const uid = async () => {
-    const { data } = await db.auth.getUser();
-    if (!data.user) throw new Error('Nicht angemeldet');
-    return data.user.id;
+    const { data } = await db.auth.getSession();
+    if (!data.session) throw new Error('Nicht angemeldet');
+    return data.session.user.id;
   };
 
   return {

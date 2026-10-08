@@ -1,0 +1,116 @@
+# Tiefentest, Stresstest und Klicktest gegen den Beta-Server (nutzt dieselben Secrets wie „Beta“).
+# Startet von Hand unter Actions → Beta-Test → Run workflow, oder bei einem Push, dessen Commit-Nachricht
+# „[betatest]“ enthält. Mit „[betatest db]“ werden vorher die Tabellen-Änderungen dieses Zweigs eingespielt.
+# Alle Testkonten werden am Ende wieder gelöscht. Die Ergebnisse stehen in der Zusammenfassung des Laufs.
+name: Beta-Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      users:
+        description: Testkonten im Stresstest
+        default: '100'
+      phases:
+        description: Stufen (gleichzeitig aktive Konten)
+        default: '10,25,50,100'
+      seconds:
+        description: Sekunden je Stufe
+        default: '60'
+      migrate:
+        description: Tabellen-Änderungen dieses Zweigs vorher einspielen
+        type: boolean
+        default: false
+  push:
+    branches: ['claude/**']
+
+concurrency:
+  group: beta-test
+  cancel-in-progress: false
+
+jobs:
+  test:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[betatest')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+      SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      LOAD_USERS: ${{ inputs.users || '100' }}
+      LOAD_PHASES: ${{ inputs.phases || '10,25,50,100' }}
+      LOAD_SECONDS: ${{ inputs.seconds || '60' }}
+      OUT: beta-test-results
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tabellen-Änderungen einspielen
+        if: inputs.migrate || contains(github.event.head_commit.message, '[betatest db]')
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - if: inputs.migrate || contains(github.event.head_commit.message, '[betatest db]')
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push
+
+      - name: Schlüssel holen
+        id: keys
+        run: |
+          keys=$(curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/api-keys?reveal=true")
+          anon=$(jq -r '(map(select(.type == "publishable"))[0].api_key) // (map(select(.name == "anon"))[0].api_key)' <<< "$keys")
+          service=$(jq -r '(map(select(.type == "secret"))[0].api_key) // (map(select(.name == "service_role"))[0].api_key)' <<< "$keys")
+          echo "::add-mask::$service"
+          echo "anon=$anon" >> "$GITHUB_OUTPUT"
+          echo "service=$service" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: mkdir -p "$OUT"
+
+      - name: Tiefentest (alle Funktionen)
+        id: deep
+        continue-on-error: true
+        env:
+          SUPABASE_ANON_KEY: ${{ steps.keys.outputs.anon }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.service }}
+        run: node scripts/beta-test/deeptest.mjs "$OUT/tiefentest.json"
+
+      - name: Klicktest im Browser
+        id: ui
+        continue-on-error: true
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.service }}
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+          node scripts/beta-test/uitest.mjs "$OUT/klicktest"
+
+      - name: Stresstest (viele gleichzeitig)
+        id: load
+        continue-on-error: true
+        env:
+          SUPABASE_ANON_KEY: ${{ steps.keys.outputs.anon }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.service }}
+        run: node scripts/beta-test/loadtest.mjs "$OUT/stresstest.json"
+
+      - name: Zusammenfassung
+        if: always()
+        run: node scripts/beta-test/summary.mjs "$OUT" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: beta-test-results
+          path: beta-test-results
+
+      - name: Ergebnis
+        if: steps.deep.outcome != 'success' || steps.ui.outcome != 'success' || steps.load.outcome != 'success'
+        run: |
+          echo "::error::Tiefentest ${{ steps.deep.outcome }}, Klicktest ${{ steps.ui.outcome }}, Stresstest ${{ steps.load.outcome }}"
+          exit 1
