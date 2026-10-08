@@ -8,6 +8,7 @@ import { eventStore, useEvents } from '../../src/lib/events';
 import { useCampus } from '../../src/lib/campus';
 import { usePlus } from '../../src/lib/plus';
 import { Button, Chip, Screen, s } from '../../src/ui/kit';
+import { PlaceLink } from '../../src/ui/PlaceLink';
 import { colors, font, fontFamily, shadow } from '../../src/ui/theme';
 
 type Filter = 'alle' | 'heute' | 'campus';
@@ -117,8 +118,8 @@ export default function Treffen() {
                 <Text style={s.label}>{`${e.kind} · ${e.seats} Leute${e.access === 'invite' ? ' · Auf Einladung' : ''}`}</Text>
                 <Text style={font.title}>{e.title}</Text>
                 <Text style={font.body}>{e.when}</Text>
-                <Text style={font.small}>{e.place}</Text>
               </View>
+              <PlaceLink place={e.place} address={e.address} />
               <HostLine e={e} />
               <Seats e={e} />
               <Text style={font.small}>

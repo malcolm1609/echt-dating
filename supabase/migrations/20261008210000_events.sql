@@ -11,6 +11,8 @@ create table events (
   title text not null check (length(trim(title)) between 3 and 80),
   kind text not null check (kind in ('Feiern', 'Essen & Trinken', 'Sport', 'Spiele', 'Kultur', 'Draußen')),
   place text not null check (length(trim(place)) between 1 and 120),
+  -- Straße und Hausnummer; Name und Adresse zusammen öffnen den Ort in der Karten-App.
+  address text not null default '' check (length(address) <= 120),
   when_text text not null,
   starts_at timestamptz not null,
   seats int not null,
@@ -130,7 +132,7 @@ language sql stable security definer set search_path = public as $$
     'events', (
       select coalesce(jsonb_agg(jsonb_build_object(
         'id', e.id::text, 'title', e.title, 'kind', e.kind, 'when', e.when_text, 'starts_at', e.starts_at,
-        'place', e.place, 'seats', e.seats, 'price', e.price, 'access', e.access, 'campus', e.campus, 'tonight', e.tonight,
+        'place', e.place, 'address', e.address, 'seats', e.seats, 'price', e.price, 'access', e.access, 'campus', e.campus, 'tonight', e.tonight,
         'joined', jsonb_build_object(
           'f', (select count(*) from event_attendees where event_id = e.id and gender = 'f'),
           'm', (select count(*) from event_attendees where event_id = e.id and gender = 'm')),
@@ -152,7 +154,7 @@ language sql stable security definer set search_path = public as $$
       where e.area_id = me.area_id and not event_over(e) and not blocked_between(me.id, e.host_id)),
     'past', (
       select coalesce(jsonb_agg(jsonb_build_object(
-        'id', e.id::text, 'title', e.title, 'when', e.when_text, 'place', e.place,
+        'id', e.id::text, 'title', e.title, 'when', e.when_text, 'place', e.place, 'address', e.address,
         'host', (select display_name from profiles where id = e.host_id),
         'attendees', event_people(e.id),
         'review', (select jsonb_build_object('stars', r.stars, 'text', r.body, 'mutual', (
@@ -169,7 +171,8 @@ $$;
 -- Schreiben --------------------------------------------------------------------
 
 create function create_event(title text, kind text, place text, when_text text, starts_at timestamptz, seats int,
-                             price numeric, access text, campus text, tonight boolean, invitees uuid[]) returns text
+                             price numeric, access text, campus text, tonight boolean, invitees uuid[],
+                             address text default '') returns text
 language plpgsql security definer set search_path = public as $$
 declare
   me profiles;
@@ -180,8 +183,8 @@ begin
   if starts_at < now() - interval '1 hour' or starts_at > now() + interval '60 days' then
     raise exception 'bad time' using errcode = 'check_violation';
   end if;
-  insert into events (host_id, area_id, title, kind, place, when_text, starts_at, seats, price, access, campus, tonight)
-    values (me.id, me.area_id, trim(title), kind, trim(place), when_text, starts_at, seats, price, access, campus, tonight)
+  insert into events (host_id, area_id, title, kind, place, address, when_text, starts_at, seats, price, access, campus, tonight)
+    values (me.id, me.area_id, trim(title), kind, trim(place), trim(coalesce(address, '')), when_text, starts_at, seats, price, access, campus, tonight)
     returning id into new_id;
   insert into event_attendees (event_id, user_id, gender) values (new_id, me.id, me.gender);
   -- Einladen kann man nur eigene Matches.
@@ -292,35 +295,35 @@ begin
   host_f := case when me.gender = 'f' then same[1] else other[1] end;
   host_m := case when me.gender = 'm' then same[1] else other[1] end;
 
-  insert into events (host_id, area_id, title, kind, place, when_text, starts_at, seats, tonight)
-    values (host_f, me.area_id, 'Kneipentour, wer kommt mit?', 'Feiern', 'Start an der Bar am Seltersweg',
+  insert into events (host_id, area_id, title, kind, place, address, when_text, starts_at, seats, tonight)
+    values (host_f, me.area_id, 'Kneipentour, wer kommt mit?', 'Feiern', 'Treffpunkt am Elefantenklo', 'Selterstor, 35390 Gießen',
             event_when_label(tonight_at), tonight_at, 8, true) returning id into ev;
   insert into event_attendees (event_id, user_id, gender) select ev, id, gender from profiles
     where id in (host_f, other[2], same[2]) on conflict do nothing;
 
-  insert into events (host_id, area_id, title, kind, place, when_text, starts_at, seats)
-    values (host_m, me.area_id, 'Pub-Quiz mit Fremden', 'Spiele', 'Irish Pub am Kirchenplatz',
+  insert into events (host_id, area_id, title, kind, place, address, when_text, starts_at, seats)
+    values (host_m, me.area_id, 'Pub-Quiz mit Fremden', 'Spiele', 'Irish Pub am Kirchenplatz', 'Kirchenplatz, 35390 Gießen',
             event_when_label((tomorrow + time '19:30') at time zone 'Europe/Berlin'), (tomorrow + time '19:30') at time zone 'Europe/Berlin', 12)
     returning id into ev;
   insert into event_attendees (event_id, user_id, gender) select ev, id, gender from profiles
     where id in (host_m, other[3], other[4], same[3]) on conflict do nothing;
 
-  insert into events (host_id, area_id, title, kind, place, when_text, starts_at, seats, campus)
-    values (host_f, me.area_id, 'Mittag in der Mensa mit Fremden', 'Essen & Trinken', 'Mensa Otto-Behaghel-Straße, Tisch mit Echt-Schild',
+  insert into events (host_id, area_id, title, kind, place, address, when_text, starts_at, seats, campus)
+    values (host_f, me.area_id, 'Mittag in der Mensa mit Fremden', 'Essen & Trinken', 'Mensa Philosophikum, Tisch mit Echt-Schild', 'Otto-Behaghel-Straße 29, 35394 Gießen',
             event_when_label((tomorrow + time '12:30') at time zone 'Europe/Berlin'), (tomorrow + time '12:30') at time zone 'Europe/Berlin', 8, 'JLU Gießen')
     returning id into ev;
   insert into event_attendees (event_id, user_id, gender) select ev, id, gender from profiles
     where id in (host_f, other[5]) on conflict do nothing;
 
-  insert into events (host_id, area_id, title, kind, place, when_text, starts_at, seats, price)
-    values (host_m, me.area_id, 'Bouldern für Anfänger', 'Sport', 'Boulderhalle in der Weststadt',
+  insert into events (host_id, area_id, title, kind, place, address, when_text, starts_at, seats, price)
+    values (host_m, me.area_id, 'Bouldern für Anfänger', 'Sport', 'Boulderhalle in der Weststadt', 'Rodheimer Straße, 35398 Gießen',
             event_when_label((tomorrow + 2 + time '14:00') at time zone 'Europe/Berlin'), (tomorrow + 2 + time '14:00') at time zone 'Europe/Berlin', 8, 12)
     returning id into ev;
   insert into event_attendees (event_id, user_id, gender) select ev, id, gender from profiles
     where id in (host_m, same[4]) on conflict do nothing;
 
-  insert into events (host_id, area_id, title, kind, place, when_text, starts_at, seats, created_at)
-    values (host_m, me.area_id, 'Brettspielabend', 'Spiele', 'Spielecafé in der Innenstadt', 'Vorgestern, 19:00 Uhr',
+  insert into events (host_id, area_id, title, kind, place, address, when_text, starts_at, seats, created_at)
+    values (host_m, me.area_id, 'Brettspielabend', 'Spiele', 'Spielecafé in der Innenstadt', 'Seltersweg, 35390 Gießen', 'Vorgestern, 19:00 Uhr',
             now() - interval '2 days', 10, now() - interval '5 days')
     returning id into past_id;
   insert into event_attendees (event_id, user_id, gender) select past_id, id, gender from profiles

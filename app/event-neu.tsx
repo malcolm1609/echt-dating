@@ -19,8 +19,8 @@ export default function NewEvent() {
   const [time, setTime] = useState(tonight ? '22:00' : '19:00');
   const [d, setD] = useState<EventDraft>(
     tonight
-      ? { title: '', kind: 'Feiern', place: '', when: '', seats: 6, price: 0, access: 'open', tonight: true }
-      : { title: '', kind: EVENT_KINDS[1], place: '', when: '', seats: 10, price: 0, access: 'open' },
+      ? { title: '', kind: 'Feiern', place: '', address: '', when: '', seats: 6, price: 0, access: 'open', tonight: true }
+      : { title: '', kind: EVENT_KINDS[1], place: '', address: '', when: '', seats: 10, price: 0, access: 'open' },
   );
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -63,7 +63,8 @@ export default function NewEvent() {
             {EVENT_KINDS.map((k) => <Chip key={k} role="radio" label={k} a11y={k} selected={d.kind === k} onPress={() => set({ kind: k })} />)}
           </View>
         </View>
-        <Field label={d.tonight ? 'Treffpunkt' : 'Ort'} value={d.place} onChangeText={(place) => set({ place })} placeholder={d.tonight ? 'z. B. Marktplatz, dann zusammen weiter' : 'Bar, Café oder Park'} error={tried ? errors.place : undefined} />
+        <Field label={d.tonight ? 'Treffpunkt' : 'Ort'} value={d.place} onChangeText={(place) => set({ place })} placeholder={d.tonight ? 'z. B. Elefantenklo' : 'Name der Bar, des Cafés oder Parks'} error={tried ? errors.place : undefined} />
+        <Field label="Straße und Hausnummer" value={d.address} onChangeText={(address) => set({ address })} placeholder="z. B. Seltersweg 12" error={tried ? errors.address : undefined} />
         <Text style={[font.small, { marginTop: -12 }]}>Nur öffentliche Orte, keine Privatwohnung.</Text>
         <View style={{ gap: 8 }}>
           <Text style={s.label}>Wann</Text>

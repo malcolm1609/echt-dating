@@ -10,6 +10,8 @@ export interface MeetupEvent {
   kind: string;
   when: string;
   place: string;
+  /** Straße und Hausnummer, damit man den Ort in der Karten-App findet. */
+  address?: string;
   seats: number;
   joined: Record<Gender, number>;
   /** Preis in Euro, 0 = kostenlos. */
@@ -63,13 +65,14 @@ export const euro = (n: number) => (n === 0 ? 'Kostenlos' : `${n.toFixed(2).repl
 
 export const averageRating = (h: Host) => (h.ratings.length ? Math.round((h.ratings.reduce((a, b) => a + b, 0) / h.ratings.length) * 10) / 10 : null);
 
-export interface EventDraft { title: string; kind: string; place: string; when: string; startsAt?: Date; seats: number; price: number; access: 'open' | 'invite'; campus?: string; tonight?: boolean }
+export interface EventDraft { title: string; kind: string; place: string; address?: string; when: string; startsAt?: Date; seats: number; price: number; access: 'open' | 'invite'; campus?: string; tonight?: boolean }
 
 export function validateEvent(d: EventDraft): Partial<Record<keyof EventDraft, string>> {
   const errors: Partial<Record<keyof EventDraft, string>> = {};
   if (d.title.trim().length < 3) errors.title = 'Gib dem Event einen kurzen Namen.';
   if (!EVENT_KINDS.includes(d.kind)) errors.kind = 'Wähle eine Art.';
   if (!d.place.trim()) errors.place = 'Wo trefft ihr euch? Nur öffentliche Orte, keine Privatwohnung.';
+  if (d.address !== undefined && !d.address.trim()) errors.address = 'Straße und Hausnummer, damit alle hinfinden.';
   if (!d.when.trim()) errors.when = 'Wann findet es statt?';
   else if (d.startsAt && d.startsAt.getTime() < Date.now()) errors.when = 'Der Zeitpunkt ist schon vorbei.';
   const seats = seatOptions(d.tonight);

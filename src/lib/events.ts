@@ -11,6 +11,7 @@ export interface PastEvent {
   title: string;
   when: string;
   place: string;
+  address?: string;
   host: string;
   attendees: Attendee[];
   /** Demo: wer mich wiedersehen möchte (bleibt verborgen, bis es gegenseitig ist). */
@@ -38,13 +39,13 @@ export interface EventStore {
 
 const jonas = { name: 'Jonas', events: 6, ratings: [5, 5, 4, 5], reviews: ['Lockere Runde, Jonas hat alle gut eingebunden.', 'Schwere Fragen, aber super Stimmung.'] };
 const DEMO_EVENTS: MeetupEvent[] = [
-  { id: 'quiz', title: 'Pub-Quiz mit Fremden', kind: 'Spiele', when: 'Donnerstag, 19:30 Uhr', place: 'Irish Pub am Kirchenplatz', seats: 12, joined: { f: 4, m: 6 }, price: 0, plusFirst: false, access: 'open', host: jonas },
-  { id: 'kochen', title: 'Pasta-Kochabend', kind: 'Essen & Trinken', when: 'Freitag, 19:00 Uhr', place: 'Kochschule in der Innenstadt', seats: 10, joined: { f: 3, m: 3 }, price: 25, plusFirst: false, access: 'open', host: { name: 'Kochschule', events: 14, ratings: [5, 4, 5, 5, 4], reviews: ['Man kocht in Zweierteams, da kommt man sofort ins Gespräch.'] } },
-  { id: 'bouldern', title: 'Bouldern für Anfänger', kind: 'Sport', when: 'Samstag, 14:00 Uhr', place: 'Boulderhalle in der Weststadt', seats: 8, joined: { f: 2, m: 1 }, price: 15, plusFirst: true, access: 'open', host: { name: 'Selin', events: 2, ratings: [5, 5], reviews: ['Selin erklärt super geduldig.'] } },
-  { id: 'semesterparty', title: 'Zusammen zur Semesterparty', kind: 'Feiern', when: 'Heute, 22:30 Uhr', place: 'Treffpunkt Marktplatz, dann zusammen weiter', seats: 6, joined: { f: 1, m: 2 }, price: 0, plusFirst: false, access: 'open', tonight: true, campus: 'JLU Gießen', host: { name: 'Lena', events: 3, ratings: [5, 5, 4], reviews: ['Mit Lena war man nie allein auf der Tanzfläche.'] } },
-  { id: 'kneipentour', title: 'Kneipentour, wer kommt mit?', kind: 'Feiern', when: 'Heute, 21:00 Uhr', place: 'Start an der Bar am Seltersweg', seats: 8, joined: { f: 2, m: 2 }, price: 0, plusFirst: false, access: 'open', tonight: true, host: { name: 'Tom', events: 1, ratings: [4], reviews: ['Entspannt, keiner musste trinken.'] } },
-  { id: 'mensa', title: 'Mittag in der Mensa mit Fremden', kind: 'Essen & Trinken', when: 'Morgen, 12:30 Uhr', place: 'Mensa Otto-Behaghel-Straße', seats: 8, joined: { f: 2, m: 3 }, price: 0, plusFirst: false, access: 'open', campus: 'JLU Gießen', host: { name: 'Studierendenwerk', events: 9, ratings: [5, 4, 5], reviews: ['Fester Tisch mit Schild, man findet sich sofort.'] } },
-  { id: 'picknick', title: 'Picknick an der Lahn', kind: 'Draußen', when: 'Sonntag, 13:00 Uhr', place: 'Lahnwiesen beim Bootshaus', seats: 10, joined: { f: 2, m: 3 }, price: 0, plusFirst: false, access: 'invite', host: { name: 'Mara', events: 1, ratings: [], reviews: [] } },
+  { id: 'quiz', title: 'Pub-Quiz mit Fremden', kind: 'Spiele', when: 'Donnerstag, 19:30 Uhr', place: 'Irish Pub am Kirchenplatz', address: 'Kirchenplatz, 35390 Gießen', seats: 12, joined: { f: 4, m: 6 }, price: 0, plusFirst: false, access: 'open', host: jonas },
+  { id: 'kochen', title: 'Pasta-Kochabend', kind: 'Essen & Trinken', when: 'Freitag, 19:00 Uhr', place: 'Kochschule in der Innenstadt', address: 'Neustadt, 35390 Gießen', seats: 10, joined: { f: 3, m: 3 }, price: 25, plusFirst: false, access: 'open', host: { name: 'Kochschule', events: 14, ratings: [5, 4, 5, 5, 4], reviews: ['Man kocht in Zweierteams, da kommt man sofort ins Gespräch.'] } },
+  { id: 'bouldern', title: 'Bouldern für Anfänger', kind: 'Sport', when: 'Samstag, 14:00 Uhr', place: 'Boulderhalle in der Weststadt', address: 'Rodheimer Straße, 35398 Gießen', seats: 8, joined: { f: 2, m: 1 }, price: 15, plusFirst: true, access: 'open', host: { name: 'Selin', events: 2, ratings: [5, 5], reviews: ['Selin erklärt super geduldig.'] } },
+  { id: 'semesterparty', title: 'Zusammen zur Semesterparty', kind: 'Feiern', when: 'Heute, 22:30 Uhr', place: 'Treffpunkt Marktplatz, dann zusammen weiter', address: 'Marktplatz, 35390 Gießen', seats: 6, joined: { f: 1, m: 2 }, price: 0, plusFirst: false, access: 'open', tonight: true, campus: 'JLU Gießen', host: { name: 'Lena', events: 3, ratings: [5, 5, 4], reviews: ['Mit Lena war man nie allein auf der Tanzfläche.'] } },
+  { id: 'kneipentour', title: 'Kneipentour, wer kommt mit?', kind: 'Feiern', when: 'Heute, 21:00 Uhr', place: 'Treffpunkt am Elefantenklo', address: 'Selterstor, 35390 Gießen', seats: 8, joined: { f: 2, m: 2 }, price: 0, plusFirst: false, access: 'open', tonight: true, host: { name: 'Tom', events: 1, ratings: [4], reviews: ['Entspannt, keiner musste trinken.'] } },
+  { id: 'mensa', title: 'Mittag in der Mensa mit Fremden', kind: 'Essen & Trinken', when: 'Morgen, 12:30 Uhr', place: 'Mensa Philosophikum', address: 'Otto-Behaghel-Straße 29, 35394 Gießen', seats: 8, joined: { f: 2, m: 3 }, price: 0, plusFirst: false, access: 'open', campus: 'JLU Gießen', host: { name: 'Studierendenwerk', events: 9, ratings: [5, 4, 5], reviews: ['Fester Tisch mit Schild, man findet sich sofort.'] } },
+  { id: 'picknick', title: 'Picknick an der Lahn', kind: 'Draußen', when: 'Sonntag, 13:00 Uhr', place: 'Lahnwiesen beim Bootshaus', address: 'Uferweg, 35398 Gießen', seats: 10, joined: { f: 2, m: 3 }, price: 0, plusFirst: false, access: 'invite', host: { name: 'Mara', events: 1, ratings: [], reviews: [] } },
 ];
 // Wer bei einem Demo-Event schon dabei ist; ich sehe sie, sobald ich mich anmelde.
 const DEMO_PEOPLE: Record<string, EventPerson[]> = {
@@ -53,7 +54,7 @@ const DEMO_PEOPLE: Record<string, EventPerson[]> = {
 };
 const DEMO_PAST: PastEvent[] = [
   {
-    id: 'spiele', title: 'Brettspielabend', when: 'Letzten Sonntag', place: 'Spielecafé in der Innenstadt', host: 'Jonas',
+    id: 'spiele', title: 'Brettspielabend', when: 'Letzten Sonntag', place: 'Spielecafé in der Innenstadt', address: 'Seltersweg, 35390 Gießen', host: 'Jonas',
     attendees: [
       { id: 'lena', name: 'Lena', age: 27, gender: 'f' }, { id: 'sophie', name: 'Sophie', age: 30, gender: 'f' }, { id: 'jule', name: 'Jule', age: 28, gender: 'f' },
       { id: 'kai', name: 'Kai', age: 31, gender: 'm' }, { id: 'tom', name: 'Tom', age: 29, gender: 'm' }, { id: 'ben', name: 'Ben', age: 33, gender: 'm' },
@@ -110,7 +111,7 @@ export function createEventStore(delayMs = 1200): EventStore {
     async create(d, host, invitees = []) {
       const id = `eigen-${Date.now()}`;
       const e: MeetupEvent = {
-        ...d, id, title: d.title.trim(), place: d.place.trim(), when: d.when.trim(), plusFirst: false, joined: { f: 0, m: 0, [host.gender]: 1 },
+        ...d, id, title: d.title.trim(), place: d.place.trim(), address: d.address?.trim(), when: d.when.trim(), plusFirst: false, joined: { f: 0, m: 0, [host.gender]: 1 },
         host: { name: host.name, events: 0, ratings: [], reviews: [] }, isHost: true, people: [], messages: [],
         invitees: d.access === 'invite' ? invitees.map((i) => i.name) : undefined,
       };
@@ -154,17 +155,17 @@ export function createEventStore(delayMs = 1200): EventStore {
 }
 
 interface ServerEvent {
-  id: string; title: string; kind: string; when: string; starts_at: string; place: string; seats: number; price: number | string;
+  id: string; title: string; kind: string; when: string; starts_at: string; place: string; address: string; seats: number; price: number | string;
   access: 'open' | 'invite'; campus: string | null; tonight: boolean; joined: Record<Gender, number>;
   host: { name: string; events: number; ratings: number[]; reviews: string[] };
   is_host: boolean; mine: boolean; invited: boolean; invitees: string[] | null; people: EventPerson[] | null;
   messages: { id: number; mine: boolean; name: string; text: string; at: string }[] | null;
 }
-interface ServerPast { id: string; title: string; when: string; place: string; host: string; attendees: EventPerson[]; review: PastEvent['review'] | null }
+interface ServerPast { id: string; title: string; when: string; place: string; address: string; host: string; attendees: EventPerson[]; review: PastEvent['review'] | null }
 
 export function eventFromServer(e: ServerEvent): MeetupEvent {
   return {
-    id: e.id, title: e.title, kind: e.kind, when: e.when, place: e.place, seats: e.seats, joined: e.joined, price: Number(e.price),
+    id: e.id, title: e.title, kind: e.kind, when: e.when, place: e.place, address: e.address || undefined, seats: e.seats, joined: e.joined, price: Number(e.price),
     plusFirst: false, access: e.access, host: e.host, campus: e.campus ?? undefined, tonight: e.tonight, isHost: e.is_host,
     invitees: e.invitees ?? undefined, people: e.people ?? undefined,
     messages: e.messages?.map((m) => ({ id: String(m.id), mine: m.mine, name: m.name, text: m.text, at: new Date(m.at) })),
@@ -213,7 +214,7 @@ export function createServerEventStore(db: SupabaseClient): EventStore {
     },
     async create(d, _host, invitees = []) {
       return (await call('create_event', {
-        title: d.title, kind: d.kind, place: d.place, when_text: d.when, starts_at: (d.startsAt ?? new Date()).toISOString(), seats: d.seats,
+        title: d.title, kind: d.kind, place: d.place, address: d.address ?? '', when_text: d.when, starts_at: (d.startsAt ?? new Date()).toISOString(), seats: d.seats,
         price: d.tonight ? 0 : d.price, access: d.access, campus: d.campus ?? null, tonight: !!d.tonight,
         invitees: d.access === 'invite' ? invitees.map((i) => i.id) : [],
       })) as string;

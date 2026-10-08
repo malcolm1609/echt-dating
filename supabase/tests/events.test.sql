@@ -126,6 +126,8 @@ select beta_reset_me();
 select pg_temp.assert((select count(*) from jsonb_array_elements(my_events()->'events') e where (e->>'tonight')::boolean) = 1,
   'ein Event für heute Abend, auch nach zweimal Zurücksetzen');
 select pg_temp.assert(jsonb_array_length(my_events()->'past') = 1, 'ein vergangener Abend zum Bewerten');
+select pg_temp.assert((select bool_and(e->>'address' <> '') from jsonb_array_elements(my_events()->'events') e where e->'host'->>'name' like 'Probe%'),
+  'jedes Beispiel-Event hat eine Adresse für die Karten-App');
 select pg_temp.assert(jsonb_array_length(review_event(my_events()->'past'->0->>'id', 5, '',
   array(select (p->>'id')::uuid from jsonb_array_elements(my_events()->'past'->0->'attendees') p where p->>'gender' = 'f'))) = 2,
   'zwei Beispielprofile möchten die Testperson wiedersehen');
