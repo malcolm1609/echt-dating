@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Animated, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, ScrollView, Text, View } from 'react-native';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import type { MusicLink } from '../domain/music.ts';
 import type { GoalId } from '../domain/profileContent.ts';
@@ -7,6 +7,7 @@ import { pickReason } from '../domain/ranking.ts';
 import type { ShownPrompt } from './ProfileDetails';
 import { Glass } from './Glass';
 import { Button, s } from './kit';
+import { LikeKnob } from './LikeKnob';
 import { useEntrance, usePulse } from './motion';
 import { ProfileDetails } from './ProfileDetails';
 import { ReportPanel } from './ReportPanel';
@@ -59,7 +60,6 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   const enterCard = useEntrance(current?.id);
   const enterMatch = useEntrance(match?.id);
   const like = usePulse();
-  const roomy = useWindowDimensions().width >= 360;
 
   const decide = async (decision: Decision) => {
     setBusy(true);
@@ -142,15 +142,11 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
         </ScrollView>
       </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}
-      {/* Die Entscheidung schwebt als Glasleiste über dem Profil, damit das Foto bis unten durchscheint. */}
-      <Glass interactive style={{ position: 'absolute', left: 0, right: 0, bottom: 4, borderRadius: 999, padding: 6, flexDirection: 'row', gap: 6 }}>
-        <View style={{ flex: 1 }}>
-          <Button title="Weiter" variant="clear" disabled={busy} onPress={() => decide('pass')} />
-        </View>
-        <Animated.View style={[{ flex: 1.4 }, like.style]}>
-          <Button title="Gefällt mir" icon={roomy ? 'heart' : undefined} disabled={busy} onPress={() => decide('like')} />
-        </Animated.View>
-      </Glass>
+      {/* Die Entscheidung schwebt als Glasleiste über dem Profil, damit das Foto bis unten durchscheint.
+          Ein Knopf: antippen = Gefällt mir, nach links ziehen = Weiter. */}
+      <Animated.View style={[{ position: 'absolute', left: 0, right: 0, bottom: 4 }, like.style]}>
+        <LikeKnob disabled={busy} onLike={() => decide('like')} onPass={() => decide('pass')} />
+      </Animated.View>
     </View>
   );
 }

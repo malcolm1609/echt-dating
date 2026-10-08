@@ -1,6 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { TodayDeck, Pick } from './TodayDeck';
 
+// „Weiter“ ist Ziehen nach links; im Test über dieselbe Aktion, die auch Screenreader anbieten.
+const pass = () => fireEvent(screen.getByRole('button', { name: 'Gefällt mir' }), 'accessibilityAction', { nativeEvent: { actionName: 'pass' } });
+
 const picks: Pick[] = [
   { id: 'a', displayName: 'Ben', age: 30, bio: 'Kocht gern.', distanceKm: 3 },
   { id: 'b', displayName: 'Kai', age: 28, bio: '', distanceKm: 12, goal: 'fest', interests: ['Kochen', 'Kino'],
@@ -32,7 +35,7 @@ describe('TodayDeck', () => {
   it('records the decision and moves on to the next person', async () => {
     const onDecide = jest.fn().mockResolvedValue({ matched: false });
     render(<TodayDeck picks={picks} usedBefore={0} onDecide={onDecide} />);
-    fireEvent.press(screen.getByText('Weiter'));
+    pass();
     expect(onDecide).toHaveBeenCalledWith('a', 'pass');
     expect(await screen.findByText('Kai, 28')).toBeTruthy();
   });
@@ -50,14 +53,14 @@ describe('TodayDeck', () => {
     const onDecide = jest.fn().mockResolvedValue({ matched: false });
     render(<TodayDeck picks={picks.slice(0, 1)} usedBefore={5} onDecide={onDecide} />);
     expect(screen.getByLabelText('6 von 6 Vorschlägen')).toBeTruthy();
-    fireEvent.press(screen.getByText('Weiter'));
+    pass();
     expect(await screen.findByText(/Das war’s für heute/)).toBeTruthy();
   });
 
   it('starts at the first suggestion again when the list is reloaded', async () => {
     const onDecide = jest.fn().mockResolvedValue({ matched: false });
     const { rerender } = render(<TodayDeck picks={picks} usedBefore={0} onDecide={onDecide} />);
-    fireEvent.press(screen.getByText('Weiter'));
+    pass();
     await screen.findByText('Kai, 28');
     // Nach dem Neuladen liefert der Server nur noch die offenen Vorschläge.
     rerender(<TodayDeck picks={picks.slice(1)} usedBefore={1} onDecide={onDecide} />);
@@ -76,7 +79,7 @@ describe('TodayDeck', () => {
   it('shows answers, goal and shared interests of the person', async () => {
     const onDecide = jest.fn().mockResolvedValue({ matched: false });
     render(<TodayDeck picks={picks} usedBefore={0} myInterests={['Kino']} onDecide={onDecide} />);
-    fireEvent.press(screen.getByText('Weiter'));
+    pass();
     expect(await screen.findByText('Das Kino am Hermannplatz.')).toBeTruthy();
     expect(screen.getByText('Sucht: Feste Beziehung')).toBeTruthy();
     expect(screen.getByLabelText('Kino, gemeinsam')).toBeTruthy();
