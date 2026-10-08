@@ -98,7 +98,7 @@ export const s = StyleSheet.create({
   inner: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 20 },
   button: { minHeight: 54, flexDirection: 'row', gap: 10, backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.accent },
   primaryHover: { backgroundColor: colors.accentPressed, borderColor: colors.accentPressed },
-  ghost: { backgroundColor: colors.surface, borderColor: colors.surface },
+  ghost: { backgroundColor: colors.surface, borderColor: colors.line },
   clear: { backgroundColor: 'transparent', borderColor: 'transparent' },
   off: { backgroundColor: colors.surface, borderColor: colors.surface },
   ghostHover: { backgroundColor: colors.raised, borderColor: colors.raised },
