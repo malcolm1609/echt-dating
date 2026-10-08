@@ -71,7 +71,7 @@ describe('Chat', () => {
   });
 
   it('offers a free safety check-in for an upcoming date', () => {
-    const upcoming = { ...base, date: { place: 'Café Lindner, Kreuzberg', when: 'Samstag', accepted: true, past: false } };
+    const upcoming = { ...base, date: { place: 'Café am Kirchenplatz', when: 'Samstag', accepted: true, past: false } };
     render(<Chat match={upcoming} now={now} {...actions()} />);
     fireEvent.press(screen.getByText('Date-Check-in einschalten (kostenlos)'));
     expect(screen.getByText(/Check-in aktiv/)).toBeTruthy();

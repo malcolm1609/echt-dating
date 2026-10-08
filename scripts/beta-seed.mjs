@@ -53,6 +53,9 @@ ok(await db.from('verifications').upsert(people.map((p) => ({
   user_id: ids.get(p.email), provider: 'beta', provider_ref: 'seed', id_check: 'passed', selfie_match: 'passed', decided_at: now,
 }))));
 
-for (const t of data.testers) ok(await db.rpc('beta_prepare_tester', { tester: ids.get(t.email) }));
+for (const t of data.testers) {
+  ok(await db.rpc('beta_prepare_tester', { tester: ids.get(t.email) }));
+  ok(await db.rpc('beta_prepare_events', { tester: ids.get(t.email) }));
+}
 
 console.log(`Beta bereit: ${data.samples.length} Beispielprofile, Testkonten ${data.testers.map((t) => t.email).join(', ')}`);

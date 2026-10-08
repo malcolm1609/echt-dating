@@ -8,9 +8,9 @@ import { Button, Chip, s } from './kit';
 import { colors, font, fontFamily } from './theme';
 
 export const PARTNER_CAFES = [
-  { name: 'Café Lindner, Kreuzberg', km: 1.2 },
-  { name: 'Kaffeebar Nord, Prenzlauer Berg', km: 2.8 },
-  { name: 'Rösterei am Kanal, Neukölln', km: 3.5 },
+  { name: 'Café am Kirchenplatz', km: 0.8 },
+  { name: 'Kaffeebar Seltersweg', km: 1.1 },
+  { name: 'Rösterei an der Lahn', km: 2.3 },
 ];
 const TIMES = ['Samstag, 15 Uhr', 'Sonntag, 11 Uhr', 'Mittwoch, 19 Uhr'];
 

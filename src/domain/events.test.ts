@@ -1,4 +1,4 @@
-import { averageRating, EventDraft, eventPrice, joinState, MeetupEvent, mutualPicks, seatsLeft, validateEvent } from './events.ts';
+import { averageRating, dayOptions, EventDraft, eventPrice, joinState, MeetupEvent, mutualPicks, seatsLeft, startsAt, validateEvent, whenLabel } from './events.ts';
 
 const host = { name: 'Jonas', events: 6, ratings: [5, 4, 5], reviews: ['Lockere Runde.'] };
 const quiz: MeetupEvent = {
@@ -68,5 +68,24 @@ describe('events', () => {
     const tonight: EventDraft = { title: 'Zur Semesterparty', kind: 'Feiern', place: 'Marktplatz', when: 'Heute, 22 Uhr', seats: 6, price: 0, access: 'open', tonight: true };
     expect(validateEvent(tonight)).toEqual({});
     expect(validateEvent({ ...tonight, seats: 12 }).seats).toBe('Wähle 4, 6 oder 8 Plätze.');
+  });
+});
+
+describe('event time', () => {
+  const now = new Date(2026, 9, 8, 18, 0); // Donnerstag
+  it('names today, tomorrow and then weekdays', () => {
+    expect(whenLabel(startsAt(now, '21:00'), now)).toBe('Heute, 21:00 Uhr');
+    expect(whenLabel(startsAt(dayOptions(now)[1], '12:00'), now)).toBe('Morgen, 12:00 Uhr');
+    expect(whenLabel(startsAt(dayOptions(now)[2], '19:00'), now)).toBe('Samstag, 19:00 Uhr');
+  });
+
+  it('offers a week ahead', () => {
+    expect(dayOptions(now)).toHaveLength(7);
+    expect(dayOptions(now)[0].getDate()).toBe(8);
+  });
+
+  it('rejects a start in the past', () => {
+    const draft: EventDraft = { title: 'Quiz', kind: 'Spiele', place: 'Pub', when: 'Heute', startsAt: new Date(Date.now() - 60_000), seats: 8, price: 0, access: 'open' };
+    expect(validateEvent(draft).when).toBeTruthy();
   });
 });

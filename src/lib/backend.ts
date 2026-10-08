@@ -23,6 +23,8 @@ export interface Backend {
   /** Nur für Testkonten mit Passwort. */
   signInWithPassword(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
+  /** Löscht das Konto mit allen Daten endgültig und meldet ab. */
+  deleteAccount(): Promise<void>;
   /** Testkonto zurück auf den Startzustand mit Beispiel-Matches. */
   resetTestData(): Promise<void>;
   sendCode(email: string): Promise<void>;
@@ -74,6 +76,10 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
     async signOut() {
       const { error } = await db.auth.signOut();
       if (error) throw error;
+    },
+    async deleteAccount() {
+      ok(await db.rpc('delete_my_account'));
+      await db.auth.signOut({ scope: 'local' });
     },
     async resetTestData() {
       ok(await db.rpc('beta_reset_me'));
@@ -243,6 +249,7 @@ export function demoBackend(delayMs = 300): Backend {
     beta: false,
     signInWithPassword: wait,
     signOut: wait,
+    deleteAccount: wait,
     resetTestData: wait,
     sendCode: wait,
     verifyCode: wait,

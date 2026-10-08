@@ -35,9 +35,25 @@ export default function Settings() {
     router.replace('/');
   };
 
+  const [deleting, setDeleting] = useState<'ask' | 'busy'>();
+  const deleteAccount = async () => {
+    setDeleting('busy');
+    try {
+      await backend.deleteAccount();
+      if (backend.demo) return restartDemo();
+      matchStore.reset();
+      eventStore.reset();
+      router.replace('/');
+    } catch {
+      setDeleting('ask');
+      setError('Löschen hat nicht geklappt. Bitte versuch es noch einmal.');
+    }
+  };
+
   const signOut = async () => {
     await backend.signOut().catch(() => {});
     matchStore.reset();
+    eventStore.reset();
     router.replace('/');
   };
 
@@ -86,6 +102,16 @@ export default function Settings() {
         {backend.demo && <Button title="Demo neu starten" variant="ghost" onPress={restartDemo} />}
         {backend.beta && <Button title="Testdaten zurücksetzen" variant="ghost" icon="rotate-ccw" onPress={resetTestData} />}
         {!backend.demo && <Button title="Abmelden" variant="ghost" icon="log-out" onPress={signOut} />}
+        {deleting ? (
+          <View style={[s.hint, { gap: 12 }]}>
+            <Text style={font.title}>Konto wirklich löschen?</Text>
+            <Text style={font.small}>Dein Profil, deine Matches, Nachrichten und Events werden sofort und endgültig gelöscht. Das lässt sich nicht rückgängig machen.</Text>
+            <Button title="Endgültig löschen" icon="trash-2" busy={deleting === 'busy'} onPress={deleteAccount} />
+            <Button title="Abbrechen" variant="clear" disabled={deleting === 'busy'} onPress={() => setDeleting(undefined)} />
+          </View>
+        ) : (
+          <Button title="Konto löschen" variant="clear" onPress={() => setDeleting('ask')} />
+        )}
       </ScrollView>
     </Screen>
   );

@@ -84,7 +84,7 @@ export function createDemoStore(delayMs = 1200): MatchStore {
     {
       id: 'noah', name: 'Noah', age: 32, answers: allAnswered(), afterDate: {}, ended: false,
       messages: [{ id: 'n1', from: 'them', text: 'Bis Samstag, ich freu mich!', at: hours(30) }],
-      date: { place: 'Café Partner, Kreuzberg', when: 'Samstag, 15 Uhr', accepted: true, past: true },
+      date: { place: 'Café am Kirchenplatz', when: 'Samstag, 15 Uhr', accepted: true, past: true },
     },
   ];
   let matches = initial();

@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { EVENT_KINDS, EventDraft, seatOptions, validateEvent } from '../src/domain/events.ts';
+import { dayLabel, dayOptions, EVENT_KINDS, EventDraft, seatOptions, startsAt, TIME_OPTIONS, TONIGHT_TIME_OPTIONS, validateEvent, whenLabel } from '../src/domain/events.ts';
 import { backend } from '../src/lib/backend';
 import { useCampus } from '../src/lib/campus';
 import { eventStore } from '../src/lib/events';
@@ -13,24 +13,39 @@ export default function NewEvent() {
   const matches = useMatches().filter((m) => !m.ended);
   const tonight = useLocalSearchParams<{ heute?: string }>().heute === '1';
   const campus = useCampus();
+  const [days] = useState(() => (tonight ? dayOptions().slice(0, 1) : dayOptions()));
+  const times = tonight ? TONIGHT_TIME_OPTIONS : TIME_OPTIONS;
+  const [day, setDay] = useState(tonight ? 0 : 1);
+  const [time, setTime] = useState(tonight ? '22:00' : '19:00');
   const [d, setD] = useState<EventDraft>(
     tonight
-      ? { title: '', kind: 'Feiern', place: '', when: 'Heute, 22 Uhr', seats: 6, price: 0, access: 'open', tonight: true }
+      ? { title: '', kind: 'Feiern', place: '', when: '', seats: 6, price: 0, access: 'open', tonight: true }
       : { title: '', kind: EVENT_KINDS[1], place: '', when: '', seats: 10, price: 0, access: 'open' },
   );
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [priceText, setPriceText] = useState('0');
   const [invite, setInvite] = useState<string[]>([]);
   const [tried, setTried] = useState(false);
-  const errors = validateEvent(d);
+  const at = startsAt(days[day], time);
+  const full = { ...d, startsAt: at, when: whenLabel(at) };
+  const errors = validateEvent(full);
   const set = (p: Partial<EventDraft>) => setD({ ...d, ...p });
   const back = () => (router.canGoBack() ? router.back() : router.replace('/treffen'));
 
   const publish = async () => {
     setTried(true);
     if (Object.keys(errors).length) return;
-    const me = await backend.myProfile();
-    eventStore.create(d, { name: me.displayName, gender: me.gender }, matches.filter((m) => invite.includes(m.id)).map((m) => m.name));
-    back();
+    setBusy(true);
+    setFailed(false);
+    try {
+      const me = await backend.myProfile();
+      const id = await eventStore.create(full, { name: me.displayName, gender: me.gender }, matches.filter((m) => invite.includes(m.id)).map((m) => ({ id: m.id, name: m.name })));
+      router.replace(`/event/${id}`);
+    } catch {
+      setFailed(true);
+      setBusy(false);
+    }
   };
 
   return (
@@ -50,7 +65,18 @@ export default function NewEvent() {
         </View>
         <Field label={d.tonight ? 'Treffpunkt' : 'Ort'} value={d.place} onChangeText={(place) => set({ place })} placeholder={d.tonight ? 'z. B. Marktplatz, dann zusammen weiter' : 'Bar, Café oder Park'} error={tried ? errors.place : undefined} />
         <Text style={[font.small, { marginTop: -12 }]}>Nur öffentliche Orte, keine Privatwohnung.</Text>
-        <Field label="Wann" value={d.when} onChangeText={(when) => set({ when })} placeholder="z. B. Freitag, 19 Uhr" error={tried ? errors.when : undefined} />
+        <View style={{ gap: 8 }}>
+          <Text style={s.label}>Wann</Text>
+          {days.length > 1 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {days.map((x, i) => <Chip key={i} role="radio" label={dayLabel(x)} a11y={dayLabel(x)} selected={day === i} onPress={() => setDay(i)} />)}
+            </View>
+          )}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {times.map((t) => <Chip key={t} role="radio" label={t} a11y={`${t} Uhr`} selected={time === t} onPress={() => setTime(t)} />)}
+          </View>
+          {tried && errors.when && <Text style={s.error}>{errors.when}</Text>}
+        </View>
         <View style={{ gap: 8 }}>
           <Text style={s.label}>Plätze (halb Frauen, halb Männer)</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -97,7 +123,8 @@ export default function NewEvent() {
             </View>
           )}
         </View>
-        <Button title="Event veröffentlichen" onPress={publish} />
+        {failed && <Text style={s.error}>Das hat nicht geklappt. Bitte versuch es noch einmal.</Text>}
+        <Button title="Event veröffentlichen" busy={busy} onPress={publish} />
         <Text style={font.small}>Nach dem Event bewerten dich nur die Leute, die wirklich da waren. Bei schlechten Bewertungen kannst du keine Events mehr anlegen.</Text>
       </ScrollView>
     </Screen>
