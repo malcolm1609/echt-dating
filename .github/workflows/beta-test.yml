@@ -59,33 +59,18 @@ jobs:
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase db push
 
-      - name: Schlüssel holen
-        id: keys
-        run: |
-          keys=$(curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/api-keys?reveal=true")
-          anon=$(jq -r '(map(select(.type == "publishable"))[0].api_key) // (map(select(.name == "anon"))[0].api_key)' <<< "$keys")
-          service=$(jq -r '(map(select(.type == "secret"))[0].api_key) // (map(select(.name == "service_role"))[0].api_key)' <<< "$keys")
-          echo "::add-mask::$service"
-          echo "anon=$anon" >> "$GITHUB_OUTPUT"
-          echo "service=$service" >> "$GITHUB_OUTPUT"
-
+      - run: scripts/beta-test/keys.sh
       - run: npm ci
       - run: mkdir -p "$OUT"
 
       - name: Tiefentest (alle Funktionen)
         id: deep
         continue-on-error: true
-        env:
-          SUPABASE_ANON_KEY: ${{ steps.keys.outputs.anon }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.service }}
         run: node scripts/beta-test/deeptest.mjs "$OUT/tiefentest.json"
 
       - name: Klicktest im Browser
         id: ui
         continue-on-error: true
-        env:
-          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.service }}
         run: |
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
@@ -94,9 +79,6 @@ jobs:
       - name: Stresstest (viele gleichzeitig)
         id: load
         continue-on-error: true
-        env:
-          SUPABASE_ANON_KEY: ${{ steps.keys.outputs.anon }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.service }}
         run: node scripts/beta-test/loadtest.mjs "$OUT/stresstest.json"
 
       - name: Zusammenfassung
