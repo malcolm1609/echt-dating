@@ -23,7 +23,7 @@ export default function Me() {
   };
 
   return (
-    <Screen>
+    <Screen tabs>
       <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: 12 }} keyboardShouldPersistTaps="handled">
         <Text style={font.display}>Du</Text>
         {!profile && !error && <Text style={font.small}>Lädt …</Text>}

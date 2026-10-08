@@ -24,7 +24,7 @@ export default function Today() {
   useFocusEffect(load);
 
   return (
-    <Screen>
+    <Screen tabs>
       {(!data || paused) && <Text accessibilityRole="header" style={font.display}>Heute</Text>}
       {failed && (
         <>

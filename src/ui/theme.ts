@@ -1,9 +1,9 @@
-// Hell und zurückhaltend wie eine fertige App: Weiß, dunkle Tinte, Tannengrün nur für die Hauptaktion.
+// Hell und hochwertig: warmes Hellgrau, weiße Karten mit weichem Schatten, Glas über Fotos, Tannengrün nur für die Hauptaktion.
 export const colors = {
-  bg: '#FFFFFF', // Grund
-  surface: '#F4F4F1', // Karten, Eingabefelder
-  raised: '#E9E9E5', // gedrückt / Hover
-  line: '#E2E2DE',
+  bg: '#F3F2EE', // Grund, ein warmes Hellgrau, damit weiße Karten und Glas Tiefe bekommen
+  surface: '#FFFFFF', // Karten, Eingabefelder
+  raised: '#E8E7E2', // gedrückt / Hover
+  line: '#E1DFD9',
   text: '#171717', // Tinte
   muted: '#66665F', // leise Tinte, AA auf bg und surface
   accent: '#1E5B43', // Tannengrün, Hauptaktion
@@ -26,6 +26,15 @@ export const font = {
   body: { fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 24, color: colors.text },
   small: { fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 20, color: colors.muted },
   label: { fontFamily: fontFamily.semibold, fontSize: 14, lineHeight: 20, color: colors.muted },
+};
+
+// Weicher, tiefer Schatten für Karten.
+export const shadow = {
+  shadowColor: '#2A2620',
+  shadowOpacity: 0.08,
+  shadowRadius: 24,
+  shadowOffset: { width: 0, height: 10 },
+  elevation: 3,
 };
 
 export const motion = { fast: 160, base: 260 };

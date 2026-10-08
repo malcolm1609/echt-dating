@@ -5,10 +5,11 @@ import type { MusicLink } from '../domain/music.ts';
 import type { GoalId } from '../domain/profileContent.ts';
 import { pickReason } from '../domain/ranking.ts';
 import type { ShownPrompt } from './ProfileDetails';
+import { Glass } from './Glass';
 import { Button, s } from './kit';
 import { useEntrance, usePulse } from './motion';
 import { ProfileDetails } from './ProfileDetails';
-import { colors, font } from './theme';
+import { colors, font, fontFamily } from './theme';
 
 export interface Pick {
   id: string;
@@ -92,13 +93,14 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   const reason = pickReason({ goal: myGoal, interests: myInterests }, { goal: current.goal, interests: current.interests ?? [] });
   return (
     <View style={{ flex: 1, gap: 16 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         {title && <Text accessibilityRole="header" style={font.display}>{title}</Text>}
-        <Text accessibilityLabel={`${position} von ${DAILY_LIMIT} Vorschlägen`} style={font.small}>{`${position} von ${DAILY_LIMIT}`}</Text>
+        <Glass style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+          <Text accessibilityLabel={`${position} von ${DAILY_LIMIT} Vorschlägen`} style={[font.small, { fontFamily: fontFamily.semibold, color: colors.text }]}>{`${position} von ${DAILY_LIMIT}`}</Text>
+        </Glass>
       </View>
       <Animated.View style={[{ flex: 1 }, enterCard]}>
-        <ScrollView key={current.id} contentContainerStyle={{ paddingBottom: 8 }} showsVerticalScrollIndicator={false}>
-          
+        <ScrollView key={current.id} contentContainerStyle={{ paddingBottom: 96, paddingTop: 4, paddingHorizontal: 2 }} showsVerticalScrollIndicator={false}>
           <ProfileDetails
             name={current.displayName}
             age={current.age}
@@ -114,14 +116,15 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
         </ScrollView>
       </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}
-      <View style={{ flexDirection: 'row', gap: 12 }}>
+      {/* Die Entscheidung schwebt als Glasleiste über dem Profil, damit das Foto bis unten durchscheint. */}
+      <Glass interactive style={{ position: 'absolute', left: 0, right: 0, bottom: 4, borderRadius: 999, padding: 6, flexDirection: 'row', gap: 6 }}>
         <View style={{ flex: 1 }}>
-          <Button title="Weiter" variant="ghost" disabled={busy} onPress={() => decide('pass')} />
+          <Button title="Weiter" variant="clear" disabled={busy} onPress={() => decide('pass')} />
         </View>
         <Animated.View style={[{ flex: 1.4 }, like.style]}>
           <Button title="Gefällt mir" icon={roomy ? 'heart' : undefined} disabled={busy} onPress={() => decide('like')} />
         </Animated.View>
-      </View>
+      </Glass>
     </View>
   );
 }

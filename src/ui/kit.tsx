@@ -13,15 +13,18 @@ const soft = Platform.select({
 });
 const ring = (on?: boolean) => (on ? (Platform.select({ web: { boxShadow: `0 0 0 3px ${colors.bg}, 0 0 0 5px ${colors.hint}` } as object, default: { borderColor: colors.hint } })) : null);
 
-export function Screen({ children }: { children: ReactNode }) {
+// Im Browser schwebt die Tab-Leiste über dem Inhalt, deshalb dort unten Platz lassen.
+const tabBarSpace = Platform.OS === 'web' ? 92 : 24;
+
+export function Screen({ children, tabs }: { children: ReactNode; tabs?: boolean }) {
   return (
     <SafeAreaView style={s.screen}>
-      <View style={s.inner}>{children}</View>
+      <View style={[s.inner, tabs && { paddingBottom: tabBarSpace }]}>{children}</View>
     </SafeAreaView>
   );
 }
 
-export function Button({ title, onPress, disabled, busy, variant = 'primary', icon }: { title: string; onPress: () => void; disabled?: boolean; busy?: boolean; variant?: 'primary' | 'ghost'; icon?: keyof typeof Feather.glyphMap }) {
+export function Button({ title, onPress, disabled, busy, variant = 'primary', icon }: { title: string; onPress: () => void; disabled?: boolean; busy?: boolean; variant?: 'primary' | 'ghost' | 'clear'; icon?: keyof typeof Feather.glyphMap }) {
   const primary = variant === 'primary';
   return (
     <Pressable
@@ -32,7 +35,7 @@ export function Button({ title, onPress, disabled, busy, variant = 'primary', ic
       style={({ pressed, hovered, focused }: State) => [
         s.button,
         soft,
-        !primary && s.ghost,
+        !primary && (variant === 'clear' ? s.clear : s.ghost),
         hovered && (primary ? s.primaryHover : s.ghostHover),
         pressed && { transform: [{ scale: 0.97 }] },
         ring(focused),
@@ -93,19 +96,20 @@ export function StepHeader({ step, total, name }: { step: number; total: number;
 export const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   inner: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 20 },
-  button: { minHeight: 54, flexDirection: 'row', gap: 10, backgroundColor: colors.accent, borderRadius: 14, paddingHorizontal: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.accent },
+  button: { minHeight: 54, flexDirection: 'row', gap: 10, backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.accent },
   primaryHover: { backgroundColor: '#174A36', borderColor: '#174A36' },
   ghost: { backgroundColor: colors.surface, borderColor: colors.surface },
+  clear: { backgroundColor: 'transparent', borderColor: 'transparent' },
   off: { backgroundColor: colors.surface, borderColor: colors.surface },
   ghostHover: { backgroundColor: colors.raised, borderColor: colors.raised },
   buttonText: { color: colors.onAccent, fontSize: 16, fontFamily: fontFamily.semibold },
   field: { gap: 8 },
   label: font.label,
-  input: { minHeight: 52, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.line, borderRadius: 12, fontFamily: fontFamily.regular, paddingHorizontal: 16, paddingVertical: 14, color: colors.text, fontSize: 17 },
+  input: { minHeight: 52, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 12, fontFamily: fontFamily.regular, paddingHorizontal: 16, paddingVertical: 14, color: colors.text, fontSize: 17 },
   error: { color: colors.error, fontSize: 13, lineHeight: 18 },
   chip: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 18 },
   chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
   chipText: { color: colors.text, fontFamily: fontFamily.medium, fontSize: 15 },
-  option: { minHeight: 52, justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.surface },
+  option: { minHeight: 52, justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.surface },
   hint: { backgroundColor: colors.surface, borderRadius: 12, padding: 14 },
 });
