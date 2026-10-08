@@ -34,7 +34,7 @@ const tinted = (color: string) =>
   Platform.select<ViewStyle>({
     web: {
       backgroundColor: color,
-      backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0) 55%)',
+      backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.04) 60%)',
       boxShadow: `0 8px 22px ${color}55, inset 0 1px 0 rgba(255,255,255,0.45)`,
     } as ViewStyle,
     default: { backgroundColor: color, elevation: 6, shadowColor: color, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },

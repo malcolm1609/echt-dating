@@ -95,7 +95,7 @@ export function LikeKnob({ disabled, onLike, onPass }: Props) {
             style={{ flex: 1 }}
           >
             {({ pressed }) => (
-              <Glass interactive tint={armed || pressed ? colors.accentPressed : colors.accent} style={{ flex: 1, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: disabled ? 0.7 : 1 }}>
+              <Glass interactive tint={armed || pressed ? colors.accent : colors.accentLight} style={{ flex: 1, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: disabled ? 0.7 : 1 }}>
                 <Feather name={armed ? 'chevrons-left' : 'heart'} size={18} color={colors.onAccent} />
                 <Text style={{ fontFamily: fontFamily.semibold, fontSize: 16, color: colors.onAccent }}>{armed ? 'Weiter' : 'Gefällt mir'}</Text>
               </Glass>
