@@ -10,10 +10,11 @@ const me: MyProfile = { displayName: 'Anna', age: 28, bio: 'Läuft gern am Kanal
   ],
   interests: ['Kochen', 'Lesen'],
   preferences: { ageMin: 22, ageMax: 36, maxDistanceKm: 30 },
+  photos: [],
 };
 
 const setup = (over: Partial<Parameters<typeof ProfileView>[0]> = {}) => {
-  const props = { profile: me, onSaveBio: jest.fn().mockResolvedValue(undefined), onSaveContent: jest.fn().mockResolvedValue(undefined), ...over };
+  const props = { profile: me, onSaveBio: jest.fn().mockResolvedValue(undefined), onSaveContent: jest.fn().mockResolvedValue(undefined), onUploadPhoto: jest.fn().mockResolvedValue('u-1/neu.jpg'), onSavePhotos: jest.fn().mockResolvedValue(undefined), ...over };
   render(<ProfileView {...props} />);
   return props;
 };

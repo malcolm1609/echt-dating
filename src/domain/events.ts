@@ -10,6 +10,8 @@ export interface MeetupEvent {
   kind: string;
   when: string;
   place: string;
+  /** Straße und Hausnummer, damit man den Ort in der Karten-App findet. */
+  address?: string;
   seats: number;
   joined: Record<Gender, number>;
   /** Preis in Euro, 0 = kostenlos. */
@@ -24,7 +26,15 @@ export interface MeetupEvent {
   campus?: string;
   /** Spontan für heute Abend, z. B. zusammen feiern gehen. Kleine Gruppe, verschwindet am nächsten Morgen. */
   tonight?: boolean;
+  isHost?: boolean;
+  /** Wer außer mir dabei ist; nur sichtbar, wenn ich selbst dabei bin. */
+  people?: EventPerson[];
+  /** Gruppenchat; nur sichtbar, wenn ich selbst dabei bin. */
+  messages?: EventMessage[];
 }
+
+export interface EventPerson { id: string; name: string; age: number; gender: Gender; photo?: string | null }
+export interface EventMessage { id: string; mine: boolean; name: string; text: string; at: Date }
 
 export type JoinState = 'joined' | 'open' | 'full' | 'plus_first' | 'invite_only' | 'campus_only' | 'blocked';
 
@@ -55,14 +65,16 @@ export const euro = (n: number) => (n === 0 ? 'Kostenlos' : `${n.toFixed(2).repl
 
 export const averageRating = (h: Host) => (h.ratings.length ? Math.round((h.ratings.reduce((a, b) => a + b, 0) / h.ratings.length) * 10) / 10 : null);
 
-export interface EventDraft { title: string; kind: string; place: string; when: string; seats: number; price: number; access: 'open' | 'invite'; campus?: string; tonight?: boolean }
+export interface EventDraft { title: string; kind: string; place: string; address?: string; when: string; startsAt?: Date; seats: number; price: number; access: 'open' | 'invite'; campus?: string; tonight?: boolean }
 
 export function validateEvent(d: EventDraft): Partial<Record<keyof EventDraft, string>> {
   const errors: Partial<Record<keyof EventDraft, string>> = {};
   if (d.title.trim().length < 3) errors.title = 'Gib dem Event einen kurzen Namen.';
   if (!EVENT_KINDS.includes(d.kind)) errors.kind = 'Wähle eine Art.';
   if (!d.place.trim()) errors.place = 'Wo trefft ihr euch? Nur öffentliche Orte, keine Privatwohnung.';
+  if (d.address !== undefined && !d.address.trim()) errors.address = 'Straße und Hausnummer, damit alle hinfinden.';
   if (!d.when.trim()) errors.when = 'Wann findet es statt?';
+  else if (d.startsAt && d.startsAt.getTime() < Date.now()) errors.when = 'Der Zeitpunkt ist schon vorbei.';
   const seats = seatOptions(d.tonight);
   if (!seats.includes(d.seats)) errors.seats = `Wähle ${seats.slice(0, -1).join(', ')} oder ${seats.at(-1)} Plätze.`;
   if (!(d.price >= 0 && d.price <= MAX_PRICE)) errors.price = `Der Preis liegt zwischen 0 und ${MAX_PRICE} €.`;
@@ -71,3 +83,28 @@ export function validateEvent(d: EventDraft): Partial<Record<keyof EventDraft, s
 
 /** Nach dem Event: ein Wiedersehen gibt es nur, wenn beide sich gewählt haben. */
 export const mutualPicks = (mine: string[], wantMe: string[]) => mine.filter((id) => wantMe.includes(id));
+
+const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+const dayDiff = (a: Date, b: Date) =>
+  Math.round((new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime() - new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime()) / 86_400_000);
+
+/** „Heute“, „Morgen“ oder der Wochentag, wie in der Datenbank (event_when_label). */
+export const dayLabel = (d: Date, now = new Date()) => {
+  const diff = dayDiff(d, now);
+  return diff === 0 ? 'Heute' : diff === 1 ? 'Morgen' : WEEKDAYS[d.getDay()];
+};
+
+export const whenLabel = (d: Date, now = new Date()) =>
+  `${dayLabel(d, now)}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} Uhr`;
+
+/** Die nächsten 7 Tage zur Auswahl, heute zuerst. */
+export const dayOptions = (now = new Date()) =>
+  Array.from({ length: 7 }, (_, i) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + i));
+
+export const TIME_OPTIONS = ['12:00', '14:00', '17:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+export const TONIGHT_TIME_OPTIONS = ['20:00', '21:00', '22:00', '22:30', '23:00', '23:30'];
+
+export function startsAt(day: Date, time: string) {
+  const [h, m] = time.split(':').map(Number);
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m);
+}

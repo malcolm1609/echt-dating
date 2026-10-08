@@ -79,6 +79,29 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Vor dem echten Start: Testbetrieb abschalten, Beispielprofile löschen
    - Treffen, Events, Campus und Echt Plus laufen weiter nur im Demo-Speicher
 
+14. **Neu-Hinweise, Melden und Blockieren** ✅ (Migration `20261008200000_safety_and_unread.sql`, `src/domain/safety.ts`, `src/ui/ReportPanel.tsx`)
+   - Roter Punkt am Match und Zahl am Matches-Tab, wenn ein Match neu ist oder die andere Person geschrieben, geantwortet oder ein Date vorgeschlagen hat; Ansehen setzt es zurück (`mark_read()`)
+   - Melden im Match (Fahne oben rechts) und in den Vorschlägen („… melden“, verbraucht keinen der 6); feste Gründe, Melden blockiert immer mit, ab 3 offenen Meldungen gesperrt
+   - Blockieren wirkt in beide Richtungen: kein Vorschlag, kein Match, keine Nachrichten mehr
+   - Noch offen: echte Push-Benachrichtigungen aufs Handy (braucht App-Build), Prüfung der Meldungen durch einen Menschen
+
+15. **Treffen auf dem Server** ✅ (Migration `20261008210000_events.sql`, `src/lib/events.ts`, `app/event/[id].tsx`)
+   - Events liegen in Supabase: alle im Gebiet sehen sie, Plätze je zur Hälfte (gesperrt gegen gleichzeitiges Buchen), Einladungen nur an eigene Matches
+   - Nach dem Anmelden: Event-Seite mit allen, die dabei sind, und Gruppenchat; Gastgeber kann nicht absagen
+   - Zeit wird per Tag und Uhrzeit gewählt (`starts_at`), 3 Stunden nach Beginn kommt der Rückblick; gegenseitige Wiedersehen-Wünsche werden zu Matches
+   - Testbetrieb: Beispielprofile legen Events an (einer für heute Abend, Mensa auf dem Campus, ein vergangener Brettspielabend zum Bewerten)
+   - Orte in Demo und Date-Planer auf Gießen umgestellt
+   - Noch offen: Plus-Vorrang und Campus-Bestätigung auf dem Server, Nicht-Erscheinen zählen, Gastgeber sagt Event ab
+
+16. **Konto löschen** ✅ (`delete_my_account()`, Einstellungen): löscht das Anmeldekonto, alles andere hängt per „on delete cascade“ daran
+
+17. **Profilfotos** ✅ (Migration `20261008150000_photos.sql`, `src/ui/PhotoEditor.tsx`, `src/lib/photos.ts`)
+   - 1 bis 6 Fotos im 4:5-Format, im Profil-Tab hochladen, antippen macht eins zum Hauptfoto; Dateien im Supabase-Bucket „photos“ im eigenen Ordner, in `profiles.photos` nur die Reihenfolge
+   - Hauptfoto auf der Karte, weitere zwischen den Antworten; Fotos in Vorschlägen, Matches, Event-Teilnehmenden
+   - Im Match lässt sich das ganze Profil der anderen Person öffnen
+   - Beispielprofile bekommen gezeichnete Platzhalter (DiceBear) statt fremder Gesichter
+   - Noch offen: Hauptfoto mit dem Ausweis-Selfie abgleichen, Foto als Pflicht für die Vorschläge, privater Bucket mit signierten Adressen
+
 Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --output-dir dist && node scripts/prototype-html.mjs dist`
 
 ## Offene Punkte

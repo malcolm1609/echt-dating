@@ -5,12 +5,13 @@ import { dateIdeas } from '../domain/dateIdeas.ts';
 import { PARTNER_DATE_DISCOUNT, readReceiptShown } from '../domain/plus.ts';
 import type { Match } from '../lib/matches';
 import { Button, Chip, s } from './kit';
+import { PlaceLink } from './PlaceLink';
 import { colors, font, fontFamily } from './theme';
 
 export const PARTNER_CAFES = [
-  { name: 'Café Lindner, Kreuzberg', km: 1.2 },
-  { name: 'Kaffeebar Nord, Prenzlauer Berg', km: 2.8 },
-  { name: 'Rösterei am Kanal, Neukölln', km: 3.5 },
+  { name: 'Café am Kirchenplatz', address: 'Kirchenplatz, 35390 Gießen', km: 0.8 },
+  { name: 'Kaffeebar Seltersweg', address: 'Seltersweg, 35390 Gießen', km: 1.1 },
+  { name: 'Rösterei an der Lahn', address: 'Lahnstraße, 35398 Gießen', km: 2.3 },
 ];
 const TIMES = ['Samstag, 15 Uhr', 'Sonntag, 11 Uhr', 'Mittwoch, 19 Uhr'];
 
@@ -57,7 +58,10 @@ export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, m
       {match.date && (
         <View style={s.hint}>
           <Text style={s.label}>Date</Text>
-          <Text style={font.body}>{[match.date.idea, match.date.when, `Treffpunkt ${match.date.place}`].filter(Boolean).join(' · ')}</Text>
+          <Text style={font.body}>{[match.date.idea, match.date.when].filter(Boolean).join(' · ')}</Text>
+          <View style={{ marginVertical: 8 }}>
+            <PlaceLink place={match.date.place} address={PARTNER_CAFES.find((c) => c.name === match.date!.place)?.address} />
+          </View>
           <Text style={font.small}>{match.date.accepted ? (match.date.past ? 'Vorbei' : 'Zugesagt') : match.date.mine === false ? `${match.name} schlägt das vor` : `Wartet auf ${match.name}`}</Text>
           {!match.date.accepted && match.date.mine === false && acceptDate && <Button title="Zusagen" onPress={acceptDate} />}
           {match.date.reserved && <Text style={font.small}>Tisch ist reserviert.</Text>}

@@ -48,10 +48,11 @@ export default function Today() {
           onDecide={async (id, decision) => {
             const result = await backend.decide(id, decision);
             const pick = data.picks.find((p) => p.id === id);
-            if (result.matched && pick) matchStore.add({ id: pick.id, name: pick.displayName, age: pick.age, opener: openerFor(pick.prompts), shared: sharedInterests(me.interests, pick.interests ?? []) });
+            if (result.matched && pick) matchStore.add({ id: pick.id, name: pick.displayName, age: pick.age, opener: openerFor(pick.prompts), shared: sharedInterests(me.interests, pick.interests ?? []), photos: pick.photos, profile: { bio: pick.bio, goal: pick.goal, prompts: pick.prompts ?? [], interests: pick.interests ?? [], music: pick.music } });
             return result;
           }}
           onOpenMatch={(pick) => router.push(`/match/${pick.id}`)}
+          onReport={(id, reason) => matchStore.report(id, reason)}
         />
       )}
     </Screen>

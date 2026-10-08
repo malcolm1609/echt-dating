@@ -53,6 +53,15 @@ ok(await db.from('verifications').upsert(people.map((p) => ({
   user_id: ids.get(p.email), provider: 'beta', provider_ref: 'seed', id_check: 'passed', selfie_match: 'passed', decided_at: now,
 }))));
 
-for (const t of data.testers) ok(await db.rpc('beta_prepare_tester', { tester: ids.get(t.email) }));
+// Platzhalter statt echter Gesichter: gezeichnete Figuren, zwei pro Beispielprofil.
+const placeholder = (seed) => `https://api.dicebear.com/9.x/notionists/png?size=256&seed=${encodeURIComponent(seed)}&backgroundColor=e8ddd6,d9e2d5,dcd6e4,d5dfe6`;
+for (const p of data.samples) {
+  ok(await db.from('profiles').update({ photos: [placeholder(p.display_name), placeholder(`${p.display_name}-2`)] }).eq('id', ids.get(p.email)));
+}
+
+for (const t of data.testers) {
+  ok(await db.rpc('beta_prepare_tester', { tester: ids.get(t.email) }));
+  ok(await db.rpc('beta_prepare_events', { tester: ids.get(t.email) }));
+}
 
 console.log(`Beta bereit: ${data.samples.length} Beispielprofile, Testkonten ${data.testers.map((t) => t.email).join(', ')}`);

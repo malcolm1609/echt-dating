@@ -10,6 +10,7 @@ export const colors = {
   hint: '#8C1D3B', // Hinweise und Fokus im selben Bordeaux, damit es bei einer Akzentfarbe bleibt
   error: '#B3261E',
   accentPressed: '#721630', // Hover / gedrückt
+  accentGlass: 'rgba(140,29,59,0.2)', // blasses Bordeaux-Glas für den Gefällt-mir-Knopf, Schrift darauf in Bordeaux
   accentSoft: 'rgba(140,29,59,0.12)', // ausgewählter Tab
   onAccent: '#FFFFFF', // Text auf Bordeaux
 };

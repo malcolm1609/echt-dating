@@ -6,6 +6,8 @@ import { GoalId, ProfileContent, PromptAnswer, promptText } from '../domain/prof
 import type { Preferences } from '../domain/preferences.ts';
 import { Button, Field, s } from './kit';
 import { ProfileContentForm } from './ProfileContentForm';
+import { photoUrls } from '../lib/photos';
+import { PhotoEditor } from './PhotoEditor';
 import { ProfileDetails } from './ProfileDetails';
 import { colors, font, fontFamily, shadow } from './theme';
 
@@ -24,16 +26,21 @@ export interface MyProfile {
   interests: string[];
   music?: MusicLink;
   preferences: Preferences;
+  /** Speicherpfade, das erste ist das Hauptfoto. */
+  photos: string[];
 }
 
 interface Props {
   profile: MyProfile;
   onSaveBio: (bio: string) => Promise<void>;
   onSaveContent: (content: ProfileContent) => Promise<void>;
+  onUploadPhoto: (uri: string, mimeType?: string) => Promise<string>;
+  onSavePhotos: (photos: string[]) => Promise<void>;
 }
 
 // Das eigene Profil: Vorschau, wie andere es sehen, und darunter alles zum Bearbeiten. Einstellungen liegen separat.
-export function ProfileView({ profile, onSaveBio, onSaveContent }: Props) {
+export function ProfileView({ profile, onSaveBio, onSaveContent, onUploadPhoto, onSavePhotos }: Props) {
+  const [photos, setPhotos] = useState(profile.photos);
   const [saved, setSaved] = useState(profile.bio);
   const [content, setContent] = useState<ProfileContent>({ prompts: profile.prompts, goal: profile.goal, interests: profile.interests, music: profile.music });
   const [editing, setEditing] = useState(false);
@@ -61,6 +68,7 @@ export function ProfileView({ profile, onSaveBio, onSaveContent }: Props) {
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: profile.paused ? colors.muted : colors.accent }} />
           <Text style={[font.small, { flex: 1 }]}>{profile.paused ? 'Pausiert: du wirst gerade niemandem gezeigt.' : 'Aktiv: du wirst heute vorgeschlagen.'}</Text>
         </View>
+        {photos.length === 0 && <Text style={[font.small, { color: colors.hint }]}>Noch ohne Foto. Füg unten eins hinzu, damit man dich erkennt.</Text>}
         <Text style={[font.label, { color: colors.hint }]}>So sehen dich andere</Text>
         <ProfileDetails
           name={profile.displayName}
@@ -71,12 +79,14 @@ export function ProfileView({ profile, onSaveBio, onSaveContent }: Props) {
           prompts={content.prompts.map((p) => ({ question: promptText(p.promptId) ?? '', answer: p.answer }))}
           interests={content.interests}
           music={content.music}
+          photos={photoUrls(photos)}
           dimmed={profile.paused}
         />
       </View>
 
       <View style={[{ backgroundColor: colors.surface, borderRadius: 24, padding: 18, gap: 12 }, shadow]}>
         <Text style={font.title}>Bearbeiten</Text>
+        <PhotoEditor photos={photos} onUpload={onUploadPhoto} onChange={async (p) => { await onSavePhotos(p); setPhotos(p); }} />
         <Field label="Über mich" value={bio} onChangeText={setBio} multiline maxLength={BIO_MAX} placeholder="Was sollte man über dich wissen, bevor man dich trifft?" style={{ minHeight: 96, textAlignVertical: 'top' }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <Text style={font.small}>{`${bio.length} / ${BIO_MAX}`}</Text>

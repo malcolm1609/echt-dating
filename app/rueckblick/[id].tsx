@@ -14,6 +14,8 @@ export default function Rueckblick() {
   const [stars, setStars] = useState(0);
   const [text, setText] = useState('');
   const [picks, setPicks] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     backend.myProfile().then((p) => setSeeking(p.seeking), () => {});
   }, []);
@@ -39,7 +41,7 @@ export default function Rueckblick() {
         <View style={{ gap: 4 }}>
           <Text style={s.label}>{`${event.when} · Gastgeber ${event.host}`}</Text>
           <Text style={font.title}>{event.title}</Text>
-          <Text style={font.small}>{event.place}</Text>
+          <Text style={font.small}>{[event.place, event.address].filter(Boolean).join(' · ')}</Text>
         </View>
 
         {event.review ? (
@@ -76,7 +78,17 @@ export default function Rueckblick() {
                 ))}
               </View>
             </View>
-            <Button title="Absenden" disabled={stars === 0} onPress={() => eventStore.review(event.id, stars, text, picks)} />
+            {failed && <Text style={s.error}>Das hat nicht geklappt. Bitte versuch es noch einmal.</Text>}
+            <Button
+              title="Absenden"
+              disabled={stars === 0}
+              busy={busy}
+              onPress={() => {
+                setBusy(true);
+                setFailed(false);
+                eventStore.review(event.id, stars, text, picks).catch(() => setFailed(true)).finally(() => setBusy(false));
+              }}
+            />
           </>
         )}
       </ScrollView>

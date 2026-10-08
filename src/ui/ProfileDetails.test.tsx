@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Linking } from 'react-native';
+import { Image, Linking } from 'react-native';
 import { ProfileDetails } from './ProfileDetails';
 
 const person = {
@@ -9,6 +9,12 @@ const person = {
 };
 
 describe('ProfileDetails', () => {
+  it('puts the main photo on the card and the others between the answers', () => {
+    render(<ProfileDetails {...person} photos={['https://x/1.jpg', 'https://x/2.jpg', 'https://x/3.jpg']} />);
+    const shown = screen.UNSAFE_getAllByType(Image).map((n) => n.props.source.uri);
+    expect(shown).toEqual(['https://x/1.jpg', 'https://x/2.jpg', 'https://x/3.jpg']);
+  });
+
   it('shows goal, answered questions and interests', () => {
     render(<ProfileDetails {...person} />);
     expect(screen.getByText('Elif, 28')).toBeTruthy();

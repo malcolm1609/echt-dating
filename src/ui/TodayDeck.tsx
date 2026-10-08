@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Animated, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, ScrollView, Text, View } from 'react-native';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import type { MusicLink } from '../domain/music.ts';
 import type { GoalId } from '../domain/profileContent.ts';
@@ -7,8 +7,11 @@ import { pickReason } from '../domain/ranking.ts';
 import type { ShownPrompt } from './ProfileDetails';
 import { Glass } from './Glass';
 import { Button, s } from './kit';
+import { LikeKnob } from './LikeKnob';
 import { useEntrance, usePulse } from './motion';
 import { ProfileDetails } from './ProfileDetails';
+import { ReportPanel } from './ReportPanel';
+import type { ReportReason } from '../domain/safety.ts';
 import { colors, font, fontFamily } from './theme';
 
 export interface Pick {
@@ -21,6 +24,8 @@ export interface Pick {
   prompts?: ShownPrompt[];
   interests?: string[];
   music?: MusicLink;
+  /** Bild-Adressen, das erste ist das Hauptfoto. */
+  photos?: string[];
 }
 
 export type Decision = 'like' | 'pass';
@@ -33,9 +38,11 @@ interface Props {
   myInterests?: string[];
   myGoal?: GoalId;
   title?: string;
+  /** Meldet und blendet die Person aus, ohne einen der Vorschläge zu verbrauchen. */
+  onReport?: (id: string, reason: ReportReason) => Promise<void>;
 }
 
-export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests = [], myGoal, title }: Props) {
+export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterests = [], myGoal, title, onReport }: Props) {
   const [index, setIndex] = useState(0);
   // Neu geladene Vorschläge enthalten nur noch offene Personen: dann wieder vorne anfangen.
   const [shownPicks, setShownPicks] = useState(picks);
@@ -46,11 +53,13 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   const [match, setMatch] = useState<Pick | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [reporting, setReporting] = useState(false);
+  // Gemeldete zählen nicht als Vorschlag: der Zähler oben läuft nur über echte Entscheidungen.
+  const [reported, setReported] = useState(0);
   const current = picks[index];
   const enterCard = useEntrance(current?.id);
   const enterMatch = useEntrance(match?.id);
   const like = usePulse();
-  const roomy = useWindowDimensions().width >= 360;
 
   const decide = async (decision: Decision) => {
     setBusy(true);
@@ -89,7 +98,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
     );
   }
 
-  const position = usedBefore + index + 1;
+  const position = usedBefore + index - reported + 1;
   const reason = pickReason({ goal: myGoal, interests: myInterests }, { goal: current.goal, interests: current.interests ?? [] });
   return (
     <View style={{ flex: 1, gap: 16 }}>
@@ -111,20 +120,33 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
             interests={current.interests ?? []}
             myInterests={myInterests}
             music={current.music}
+            photos={current.photos}
           />
           {reason && <Text style={[font.label, { color: colors.accent, marginTop: 14 }]}>{reason}</Text>}
+          {onReport && (reporting ? (
+            <View style={{ marginTop: 20 }}>
+              <ReportPanel
+                name={current.displayName}
+                onReport={async (r) => {
+                  await onReport(current.id, r);
+                  setReporting(false);
+                  setReported((n) => n + 1);
+                  setIndex((i) => i + 1);
+                }}
+                onCancel={() => setReporting(false)}
+              />
+            </View>
+          ) : (
+            <Text accessibilityRole="button" onPress={() => setReporting(true)} style={[font.small, { marginTop: 20, textDecorationLine: 'underline' }]}>{`${current.displayName} melden`}</Text>
+          ))}
         </ScrollView>
       </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}
-      {/* Die Entscheidung schwebt als Glasleiste über dem Profil, damit das Foto bis unten durchscheint. */}
-      <Glass interactive style={{ position: 'absolute', left: 0, right: 0, bottom: 4, borderRadius: 999, padding: 6, flexDirection: 'row', gap: 6 }}>
-        <View style={{ flex: 1 }}>
-          <Button title="Weiter" variant="clear" disabled={busy} onPress={() => decide('pass')} />
-        </View>
-        <Animated.View style={[{ flex: 1.4 }, like.style]}>
-          <Button title="Gefällt mir" icon={roomy ? 'heart' : undefined} disabled={busy} onPress={() => decide('like')} />
-        </Animated.View>
-      </Glass>
+      {/* Die Entscheidung schwebt als Glasleiste über dem Profil, damit das Foto bis unten durchscheint.
+          Ein Knopf: antippen = Gefällt mir, nach links ziehen = Weiter. */}
+      <Animated.View style={[{ position: 'absolute', left: 0, right: 0, bottom: 4 }, like.style]}>
+        <LikeKnob disabled={busy} onLike={() => decide('like')} onPass={() => decide('pass')} />
+      </Animated.View>
     </View>
   );
 }

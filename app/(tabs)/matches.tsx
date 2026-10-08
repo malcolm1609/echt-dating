@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { chatUnlocked, QUESTION_ROUNDS, roundState } from '../../src/domain/conversation.ts';
 import { Match, matchStore, useMatches } from '../../src/lib/matches';
 import { Screen } from '../../src/ui/kit';
-import { photoTone } from '../../src/ui/ProfileCard';
+import { Avatar } from '../../src/ui/ProfileCard';
 import { colors, font, fontFamily, shadow } from '../../src/ui/theme';
 
 function stageOf(m: Match): string {
@@ -27,13 +27,12 @@ export default function Matches() {
         <View style={[{ backgroundColor: colors.surface, borderRadius: 24, paddingHorizontal: 16 }, shadow]}>
         {matches.map((m, i) => (
           <Pressable key={m.id} accessibilityRole="button" onPress={() => router.push(`/match/${m.id}`)} style={({ pressed }) => ({ flexDirection: 'row', gap: 14, alignItems: 'center', paddingVertical: 14, borderTopWidth: i ? 1 : 0, borderTopColor: colors.line, opacity: pressed ? 0.6 : 1 })}>
-            <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: photoTone(m.name), alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#FFFFFF', fontFamily: fontFamily.semibold, fontSize: 20 }}>{m.name[0]}</Text>
-            </View>
+            <Avatar name={m.name} photo={m.photos?.[0]} />
             <View style={{ flex: 1 }}>
               <Text style={[font.body, { fontFamily: fontFamily.semibold }]}>{`${m.name}, ${m.age}`}</Text>
-              <Text style={font.small} numberOfLines={1}>{stageOf(m)}</Text>
+              <Text style={[font.small, m.unread && { color: colors.text, fontFamily: fontFamily.semibold }]} numberOfLines={1}>{stageOf(m)}</Text>
             </View>
+            {m.unread && !m.ended && <View accessibilityLabel="Neu" style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent }} />}
           </Pressable>
         ))}
         </View>

@@ -8,6 +8,7 @@ import { eventStore, useEvents } from '../../src/lib/events';
 import { useCampus } from '../../src/lib/campus';
 import { usePlus } from '../../src/lib/plus';
 import { Button, Chip, Screen, s } from '../../src/ui/kit';
+import { PlaceLink } from '../../src/ui/PlaceLink';
 import { colors, font, fontFamily, shadow } from '../../src/ui/theme';
 
 type Filter = 'alle' | 'heute' | 'campus';
@@ -55,9 +56,15 @@ export default function Treffen() {
   const campus = useCampus();
   const [filter, setFilter] = useState<Filter>('alle');
   const [gender, setGender] = useState<Gender>('f');
+  const [failed, setFailed] = useState<string>();
   useFocusEffect(useCallback(() => {
     backend.myProfile().then((p) => setGender(p.gender), () => {});
+    eventStore.refresh();
   }, []));
+  const join = (id: string) => {
+    setFailed(undefined);
+    eventStore.join(id, gender, plus.active, campus.uni).then(() => router.push(`/event/${id}`), () => setFailed(id));
+  };
   const toReview = past.filter((p) => !p.review);
   // Spontanes für heute Abend zuerst, Campus-Events nur zeigen, wenn man dazugehört oder danach filtert.
   const shown = events
@@ -111,8 +118,8 @@ export default function Treffen() {
                 <Text style={s.label}>{`${e.kind} · ${e.seats} Leute${e.access === 'invite' ? ' · Auf Einladung' : ''}`}</Text>
                 <Text style={font.title}>{e.title}</Text>
                 <Text style={font.body}>{e.when}</Text>
-                <Text style={font.small}>{e.place}</Text>
               </View>
+              <PlaceLink place={e.place} address={e.address} />
               <HostLine e={e} />
               <Seats e={e} />
               <Text style={font.small}>
@@ -121,11 +128,12 @@ export default function Treffen() {
               </Text>
               {e.invitees?.length ? <Text style={[font.small, { color: colors.hint }]}>{`Eingeladen: ${e.invitees.join(', ')}`}</Text> : null}
               {state === 'open' && e.access === 'invite' && <Text style={[font.small, { color: colors.hint }]}>{`${e.host.name} hat dich eingeladen.`}</Text>}
-              {state === 'open' && <Button title="Platz sichern" onPress={() => eventStore.join(e.id, gender, plus.active, campus.uni)} />}
+              {failed === e.id && <Text style={s.error}>Das hat nicht geklappt. Vielleicht war jemand schneller, schau auf die Plätze.</Text>}
+              {state === 'open' && <Button title="Platz sichern" onPress={() => join(e.id)} />}
               {state === 'joined' && (
                 <>
-                  <Text style={[font.body, { color: colors.accent }]}>Du bist dabei. Wir erinnern dich am Vortag.</Text>
-                  <Button title="Doch absagen" variant="ghost" onPress={() => eventStore.leave(e.id, gender)} />
+                  <Text style={[font.body, { color: colors.accent }]}>{e.isHost ? 'Dein Event. Du bist Gastgeber.' : 'Du bist dabei. Wir erinnern dich am Vortag.'}</Text>
+                  <Button title="Wer kommt mit? · Gruppenchat" icon="message-circle" onPress={() => router.push(`/event/${e.id}`)} />
                 </>
               )}
               {state === 'full' && <Text style={font.small}>Deine Hälfte ist voll. Sobald jemand absagt, rückst du nach.</Text>}

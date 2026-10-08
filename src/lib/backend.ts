@@ -8,6 +8,7 @@ import { rankPicks } from '../domain/ranking.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
 import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
+import { photoUrls, placeholderPhoto } from './photos';
 import { beta, supabase } from './supabase';
 
 export type MyStatus =
@@ -23,6 +24,8 @@ export interface Backend {
   /** Nur für Testkonten mit Passwort. */
   signInWithPassword(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
+  /** Löscht das Konto mit allen Daten endgültig und meldet ab. */
+  deleteAccount(): Promise<void>;
   /** Testkonto zurück auf den Startzustand mit Beispiel-Matches. */
   resetTestData(): Promise<void>;
   sendCode(email: string): Promise<void>;
@@ -32,6 +35,10 @@ export interface Backend {
   verifyPhoneCode(phone: string, code: string): Promise<void>;
   myProfile(): Promise<MyProfile>;
   saveBio(bio: string): Promise<void>;
+  /** Lädt ein Bild hoch und gibt den Pfad zurück; sichtbar wird es erst mit savePhotos. */
+  uploadPhoto(uri: string, mimeType?: string): Promise<string>;
+  /** Reihenfolge der Fotos, das erste ist das Hauptfoto. */
+  savePhotos(paths: string[]): Promise<void>;
   /** Fragen mit Antworten, Beziehungsziel und Interessen. */
   saveContent(content: ProfileContent): Promise<void>;
   /** Alter und Entfernung: gelten beidseitig. */
@@ -75,6 +82,10 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       const { error } = await db.auth.signOut();
       if (error) throw error;
     },
+    async deleteAccount() {
+      ok(await db.rpc('delete_my_account'));
+      await db.auth.signOut({ scope: 'local' });
+    },
     async resetTestData() {
       ok(await db.rpc('beta_reset_me'));
     },
@@ -94,16 +105,26 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
     async myProfile() {
       const { data } = await db.auth.getUser();
       if (!data.user) throw new Error('Nicht angemeldet');
-      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused, goal, prompts, interests, music, age_min, age_max, max_distance_km').eq('id', data.user.id).single())!;
+      const p = ok(await db.from('profiles').select('display_name, birthdate, bio, gender, seeking, paused, goal, prompts, interests, music, photos, age_min, age_max, max_distance_km').eq('id', data.user.id).single())!;
       const phone = data.user.phone ? `+${data.user.phone.replace(/^\+/, '')}` : null;
       return {
         displayName: p.display_name, age: ageOn(p.birthdate, new Date()), bio: p.bio, gender: p.gender, seeking: p.seeking, phone, paused: p.paused,
         goal: p.goal ?? undefined, interests: p.interests, music: p.music ?? undefined, prompts: p.prompts.map((x: any) => ({ promptId: x.prompt_id, answer: x.answer })),
-        preferences: { ageMin: p.age_min, ageMax: p.age_max, maxDistanceKm: p.max_distance_km },
+        preferences: { ageMin: p.age_min, ageMax: p.age_max, maxDistanceKm: p.max_distance_km }, photos: p.photos ?? [],
       };
     },
     async saveBio(bio) {
       ok(await db.from('profiles').update({ bio }).eq('id', await uid()));
+    },
+    async uploadPhoto(uri, mimeType = 'image/jpeg') {
+      const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+      const path = `${await uid()}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+      const body = await (await fetch(uri)).arrayBuffer();
+      ok(await db.storage.from('photos').upload(path, body, { contentType: mimeType }));
+      return path;
+    },
+    async savePhotos(photos) {
+      ok(await db.from('profiles').update({ photos }).eq('id', await uid()));
     },
     async saveContent(c) {
       ok(await db.from('profiles').update(contentColumns(c)).eq('id', await uid()));
@@ -140,7 +161,7 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
     async todaysPicks() {
       const [rows, today] = await Promise.all([db.rpc('todays_picks'), db.from('my_picks_today').select('used').single()]);
       const picks = (ok(rows) ?? []).map((r: any) => ({
-        id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km, goal: r.goal ?? undefined, interests: r.interests, music: r.music ?? undefined,
+        id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km, goal: r.goal ?? undefined, interests: r.interests, music: r.music ?? undefined, photos: photoUrls(r.photos),
         prompts: r.prompts.map((x: any) => ({ question: promptText(x.prompt_id) ?? '', answer: x.answer })),
       }));
       return { picks, used: ok(today)?.used ?? 0 };
@@ -178,7 +199,7 @@ const shown = (...pairs: [string, string][]) => pairs.map(([id, answer]) => ({ q
 
 const DEMO_PICKS: Pick[] = [
   {
-    id: 'demo-1', displayName: 'Jonas', age: 31, bio: 'Baut Fahrräder, kocht lieber als er bestellt.', distanceKm: 4, goal: 'fest',
+    id: 'demo-1', displayName: 'Jonas', age: 31, photos: [placeholderPhoto('Jonas'), placeholderPhoto('Jonas-2')], bio: 'Baut Fahrräder, kocht lieber als er bestellt.', distanceKm: 4, goal: 'fest',
     interests: ['Radfahren', 'Kochen', 'Brettspiele'],
     music: { provider: 'spotify', kind: 'track', url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody – Queen' },
     prompts: shown(
@@ -188,19 +209,19 @@ const DEMO_PICKS: Pick[] = [
     ),
   },
   {
-    id: 'demo-2', displayName: 'Elif', age: 28, bio: 'Sonntags auf dem Flohmarkt, unter der Woche im Labor.', distanceKm: 7, goal: 'ernst',
+    id: 'demo-2', displayName: 'Elif', age: 28, photos: [placeholderPhoto('Elif'), placeholderPhoto('Elif-2')], bio: 'Sonntags auf dem Flohmarkt, unter der Woche im Labor.', distanceKm: 7, goal: 'ernst',
     interests: ['Flohmärkte', 'Wissenschaft', 'Kochen', 'Konzerte'],
     prompts: shown(
-      ['anknuepfen-1', 'Der Flohmarkt am Mauerpark, sonntags um neun, bevor alle kommen.'],
+      ['anknuepfen-1', 'Der Flohmarkt auf dem Brandplatz, samstags um neun, bevor alle kommen.'],
       ['alltag-8', 'Warum Hefe beim Backen eigentlich tut, was sie tut.'],
       ['werte-1', 'Wenn wir zusammen schweigen können und es nicht komisch ist.'],
     ),
   },
   {
-    id: 'demo-3', displayName: 'Sam', age: 33, bio: 'Sucht jemanden für lange Spaziergänge und kurze Nachrichten.', distanceKm: 2, goal: 'offen',
+    id: 'demo-3', displayName: 'Sam', age: 33, photos: [placeholderPhoto('Sam')], bio: 'Sucht jemanden für lange Spaziergänge und kurze Nachrichten.', distanceKm: 2, goal: 'offen',
     interests: ['Wandern', 'Podcasts', 'Fotografie'],
     prompts: shown(
-      ['alltag-1', 'Bäcker um die Ecke, dann raus an den Schlachtensee, egal bei welchem Wetter.'],
+      ['alltag-1', 'Bäcker um die Ecke, dann raus an die Lahn, egal bei welchem Wetter.'],
       ['anknuepfen-2', 'Der Podcast „Hotel Matze“. Die Folge mit der Hebamme.'],
       ['werte-8', 'Über Ordnung. Früher fand ich sie spießig, heute beruhigt sie mich.'],
     ),
@@ -216,10 +237,11 @@ export function demoBackend(delayMs = 300): Backend {
   let decided: string[] = [];
   let phone: string | null = null;
   let profile: CompleteProfile = { displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] };
-  let bio = 'Läuft gern am Kanal, liest lieber Papier als Bildschirm.';
+  let bio = 'Läuft gern an der Lahn, liest lieber Papier als Bildschirm.';
+  let photos: string[] = [];
   let content: ProfileContent = {
     prompts: [
-      { promptId: 'alltag-1', answer: 'Lange frühstücken, dann mit dem Rad raus an den Müggelsee.' },
+      { promptId: 'alltag-1', answer: 'Lange frühstücken, dann mit dem Rad raus an den Dutenhofener See.' },
       { promptId: 'anknuepfen-2', answer: '„Normal People“ von Sally Rooney. Danach brauchte ich einen Spaziergang.' },
       { promptId: 'werte-2', answer: 'Wir uns Dinge sagen, bevor sie groß werden.' },
     ],
@@ -243,6 +265,7 @@ export function demoBackend(delayMs = 300): Backend {
     beta: false,
     signInWithPassword: wait,
     signOut: wait,
+    deleteAccount: wait,
     resetTestData: wait,
     sendCode: wait,
     verifyCode: wait,
@@ -267,11 +290,19 @@ export function demoBackend(delayMs = 300): Backend {
     },
     async myProfile() {
       await wait();
-      return { displayName: profile.displayName, age: ageOn(profile.birthdate, new Date()), bio, gender: profile.gender, seeking: profile.seeking, phone, paused, preferences, ...content };
+      return { displayName: profile.displayName, age: ageOn(profile.birthdate, new Date()), bio, gender: profile.gender, seeking: profile.seeking, phone, paused, preferences, photos, ...content };
     },
     async saveBio(b) {
       await wait();
       bio = b;
+    },
+    async uploadPhoto(uri) {
+      await wait();
+      return uri;
+    },
+    async savePhotos(p) {
+      await wait();
+      photos = p;
     },
     async startVerification() {
       await wait();

@@ -37,7 +37,7 @@ export default function Me() {
             <Button title="Noch einmal" variant="ghost" onPress={load} />
           </View>
         )}
-        {profile && <ProfileView key={profile.displayName} profile={profile} onSaveBio={backend.saveBio} onSaveContent={backend.saveContent} />}
+        {profile && <ProfileView key={profile.displayName} profile={profile} onSaveBio={backend.saveBio} onSaveContent={backend.saveContent} onUploadPhoto={backend.uploadPhoto} onSavePhotos={backend.savePhotos} />}
       </ScrollView>
     </Screen>
   );

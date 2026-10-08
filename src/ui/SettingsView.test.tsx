@@ -3,7 +3,7 @@ import type { MyProfile } from './ProfileView';
 import { SettingsView } from './SettingsView';
 
 const me: MyProfile = { displayName: 'Anna', age: 28, bio: '', gender: 'f', seeking: ['m'], phone: '+4915123456789', paused: false,
-  prompts: [], interests: [], preferences: { ageMin: 22, ageMax: 36, maxDistanceKm: 30 } };
+  prompts: [], interests: [], preferences: { ageMin: 22, ageMax: 36, maxDistanceKm: 30 }, photos: [] };
 
 const setup = (over: Partial<Parameters<typeof SettingsView>[0]> = {}) => {
   const props = { profile: me, onSavePreferences: jest.fn().mockResolvedValue(undefined), onTogglePause: jest.fn().mockResolvedValue(undefined), ...over };

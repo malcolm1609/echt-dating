@@ -29,13 +29,28 @@ const dark = Platform.select<ViewStyle>({
   default: { backgroundColor: 'rgba(20,20,20,0.4)' },
 });
 
-export function Glass({ children, style, tone = 'light', interactive }: { children?: ReactNode; style?: StyleProp<ViewStyle>; tone?: 'light' | 'dark'; interactive?: boolean }) {
+// Farbiges Glas (z. B. der Bordeaux-Knopf): Ohne Liquid Glass eine deckende Fläche mit Lichtkante.
+const tinted = (color: string) =>
+  Platform.select<ViewStyle>({
+    web: {
+      // Milchiger Grund unter der Farbe, damit Text dahinter nicht durchscheint.
+      backgroundColor: 'rgba(255,255,255,0.85)',
+      backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.05) 60%), linear-gradient(${color}, ${color})`,
+      backdropFilter: 'blur(20px) saturate(180%)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.6)',
+      boxShadow: '0 6px 18px rgba(140,29,59,0.18), inset 0 1px 0 rgba(255,255,255,0.7)',
+    } as ViewStyle,
+    default: { backgroundColor: color, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)' },
+  });
+
+export function Glass({ children, style, tone = 'light', interactive, tint }: { children?: ReactNode; style?: StyleProp<ViewStyle>; tone?: 'light' | 'dark'; interactive?: boolean; tint?: string }) {
   if (liquid) {
     return (
-      <GlassView style={style} glassEffectStyle={tone === 'dark' ? 'clear' : 'regular'} colorScheme={tone === 'dark' ? 'dark' : 'light'} isInteractive={interactive}>
+      <GlassView style={style} glassEffectStyle={tone === 'dark' ? 'clear' : 'regular'} colorScheme={tone === 'dark' ? 'dark' : 'light'} isInteractive={interactive} tintColor={tint}>
         {children}
       </GlassView>
     );
   }
-  return <View style={[tone === 'dark' ? dark : fallback, style]}>{children}</View>;
+  return <View style={[tint ? tinted(tint) : tone === 'dark' ? dark : fallback, style]}>{children}</View>;
 }
