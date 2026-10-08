@@ -27,7 +27,7 @@ function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                 if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
               }}
-              style={({ pressed }) => ({ minWidth: 72, alignItems: 'center', gap: 3, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: focused ? 'rgba(30,91,67,0.12)' : 'transparent', transform: [{ scale: pressed ? 0.94 : 1 }] })}
+              style={({ pressed }) => ({ minWidth: 72, alignItems: 'center', gap: 3, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: focused ? colors.accentSoft : 'transparent', transform: [{ scale: pressed ? 0.94 : 1 }] })}
             >
               <Feather name={ICONS[route.name] ?? 'circle'} size={20} color={focused ? colors.accent : colors.text} />
               <Text style={{ fontFamily: focused ? fontFamily.semibold : fontFamily.medium, fontSize: 11, color: focused ? colors.accent : colors.text }}>{title}</Text>

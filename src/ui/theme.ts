@@ -9,6 +9,8 @@ export const colors = {
   accent: '#1E5B43', // Tannengrün, Hauptaktion
   hint: '#1E5B43', // Hinweise und Fokus im selben Grün, damit es bei einer Akzentfarbe bleibt
   error: '#B3261E',
+  accentPressed: '#174A36', // Hover / gedrückt
+  accentSoft: 'rgba(30,91,67,0.12)', // ausgewählter Tab
   onAccent: '#FFFFFF', // Text auf Grün
 };
 
