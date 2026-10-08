@@ -3,7 +3,10 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { backend } from '../src/lib/backend';
+import { PLUS_PRICE } from '../src/domain/plus.ts';
+import { eventStore } from '../src/lib/events';
 import { matchStore } from '../src/lib/matches';
+import { plusStore, usePlus } from '../src/lib/plus';
 import { Button, Screen, s } from '../src/ui/kit';
 import type { MyProfile } from '../src/ui/ProfileView';
 import { SettingsView } from '../src/ui/SettingsView';
@@ -12,6 +15,7 @@ import { colors, font } from '../src/ui/theme';
 export default function Settings() {
   const [profile, setProfile] = useState<MyProfile>();
   const [error, setError] = useState<string>();
+  const plus = usePlus();
   const load = useCallback(() => {
     setError(undefined);
     backend.myProfile().then(setProfile, () => setError('Deine Einstellungen konnten nicht geladen werden.'));
@@ -22,6 +26,8 @@ export default function Settings() {
   const restartDemo = () => {
     backend.reset?.();
     matchStore.reset();
+    eventStore.reset();
+    plusStore.reset();
     router.replace('/');
   };
 
@@ -55,6 +61,7 @@ export default function Settings() {
             }}
           />
         )}
+        <Button title={plus.active ? 'Echt Plus ist aktiv' : `Echt Plus · ${PLUS_PRICE}`} variant="ghost" icon="star" onPress={() => router.push('/plus')} />
         {backend.demo && <Button title="Demo neu starten" variant="ghost" onPress={restartDemo} />}
       </ScrollView>
     </Screen>

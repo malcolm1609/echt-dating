@@ -44,6 +44,7 @@ export default function TabsLayout() {
     <Tabs tabBar={(props) => <GlassTabBar {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}>
       <Tabs.Screen name="heute" options={{ title: 'Heute' }} />
       <Tabs.Screen name="matches" options={{ title: 'Matches' }} />
+      <Tabs.Screen name="treffen" options={{ title: 'Treffen' }} />
       <Tabs.Screen name="ich" options={{ title: 'Profil' }} />
     </Tabs>
   );

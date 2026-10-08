@@ -13,6 +13,10 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>Matches</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left', selected: 'bubble.left.fill' }} md="chat_bubble" />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="treffen">
+        <NativeTabs.Trigger.Label>Treffen</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} md="group" />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="ich">
         <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} md="person" />
