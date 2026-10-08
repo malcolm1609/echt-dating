@@ -33,8 +33,9 @@ const dark = Platform.select<ViewStyle>({
 const tinted = (color: string) =>
   Platform.select<ViewStyle>({
     web: {
-      backgroundColor: color,
-      backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.05) 60%)',
+      // Milchiger Grund unter der Farbe, damit Text dahinter nicht durchscheint.
+      backgroundColor: 'rgba(255,255,255,0.85)',
+      backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.05) 60%), linear-gradient(${color}, ${color})`,
       backdropFilter: 'blur(20px) saturate(180%)',
       borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.6)',
