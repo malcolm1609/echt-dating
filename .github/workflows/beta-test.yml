@@ -23,8 +23,9 @@ on:
   push:
     branches: ['claude/**']
 
+# Übersprungene Läufe (ohne Markierung) landen in einer eigenen Gruppe und verdrängen keinen echten Test.
 concurrency:
-  group: beta-test
+  group: beta-test-${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[betatest') }}
   cancel-in-progress: false
 
 jobs:

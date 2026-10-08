@@ -20,8 +20,9 @@ on:
   push:
     branches: ['claude/**']
 
+# Eigene Gruppe: Läufe ohne Test-Markierung (übersprungen) dürfen einen wartenden Stadttest nicht verdrängen.
 concurrency:
-  group: beta-test
+  group: city-test-${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[stadttest') }}
   cancel-in-progress: false
 
 env:
