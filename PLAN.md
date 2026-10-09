@@ -104,6 +104,12 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
 
 Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --output-dir dist && node scripts/prototype-html.mjs dist`
 
+## Tests gegen die Beta
+
+- **Beta-Test** (`.github/workflows/beta-test.yml`, Commit-Markierung `[betatest]`): Tiefentest aller Funktionen, Klicktest im Browser, Stresstest mit 100 Konten.
+- **Stadttest** (`.github/workflows/city-test.yml`, Markierung `[stadttest]`, Probelauf `[stadttest klein]`): 10.000 Testpersonen in Gießen, Marburg, Frankfurt und Mainz, in Stufen bis 2.000 gleichzeitig, verteilt auf 8 Lastrechner.
+- Mit `db` in der Markierung (`[betatest db]`, `[stadttest db]`) werden vorher die Tabellen-Änderungen des Zweigs auf die Beta gespielt. Alle Testkonten werden danach gelöscht.
+
 ## Offene Punkte
 - Monetarisierung: Echt Plus (4,99 €/Monat) plus Einnahmen von Partner-Cafés und Events, im Prototyp nur als Demo ohne Zahlung
 - Geschlechter jenseits von f/m und wer wen sucht: die Verhältnisregel muss das später abbilden
