@@ -41,7 +41,14 @@
         {
           "photosPermission": "Echt braucht Zugriff auf deine Fotos, damit du Bilder für dein Profil auswählen kannst.",
           "cameraPermission": false,
-          "microphonePermission": false
+          "microphonePermission": "Echt braucht das Mikrofon, damit du im Chat Sprachmemos aufnehmen kannst."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Echt braucht das Mikrofon, damit du im Chat Sprachmemos aufnehmen kannst.",
+          "enableBackgroundPlayback": false
         }
       ],
       "expo-notifications"

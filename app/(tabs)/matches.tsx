@@ -10,7 +10,10 @@ function stageOf(m: Match): string {
   if (m.ended) return 'Beendet';
   if (m.date?.past) return 'Nach dem Date';
   if (m.date) return `Date: ${m.date.when}`;
-  if (chatUnlocked(m.answers)) return m.messages.at(-1)?.text ?? 'Chat offen';
+  if (chatUnlocked(m.answers)) {
+    const last = m.messages.at(-1);
+    return last?.audio ? 'Sprachmemo' : (last?.text ?? 'Chat offen');
+  }
   const open = QUESTION_ROUNDS.findIndex((_, r) => roundState(m.answers, r) !== 'done');
   return `Fragenrunde ${open + 1} von ${QUESTION_ROUNDS.length}`;
 }

@@ -43,6 +43,7 @@ export const PRIVACY_POLICY: PrivacySection[] = [
       'Standort: dein ungefährer Standort per GPS, damit wir dir Menschen in deiner Nähe vorschlagen. Andere sehen nur die Entfernung, nie deinen genauen Ort. Aus dem Standort ermitteln wir außerdem deinen Landkreis, denn dort gelten Zulassung und Warteliste.',
       'Prüfung: Bei der Ausweis- und Selfie-Prüfung gleicht unser Anbieter dein Ausweisfoto mit einem Live-Selfie ab. Wir erhalten nur das Ergebnis (bestanden oder nicht), keine Kopie deines Ausweises.',
       'Date-Check (nur wenn du ihn einschaltest): Name und Handynummer deiner Vertrauensperson und während des Dates dein genauer Standort. Den Standort sieht nur deine Vertrauensperson über ihren privaten Link. Er wird gelöscht, sobald du den Check beendest, spätestens nach 12 Stunden.',
+      'Sprachmemos (nur wenn du welche aufnimmst): die Aufnahme, höchstens eine Minute lang. Sie liegt in einem geschützten Speicher und kann nur von dir und deinem Match abgespielt werden, solange ihr den Chat nicht beendet habt und niemand blockiert hat. Mit deinem Konto wird sie gelöscht.',
       'Nutzung: deine Entscheidungen bei den Vorschlägen, Matches, Antworten in der Fragenrunde, Nachrichten, Verabredungen, Treffen und Events, Meldungen und Blockierungen sowie wann du zuletzt aktiv warst.',
     ],
   },

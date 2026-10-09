@@ -89,6 +89,8 @@ export default function MatchScreen() {
             markDatePast={() => matchStore.markDatePast(id)}
             answerAfterDate={(a) => matchStore.answerAfterDate(id, a)}
             endKindly={(t) => matchStore.endKindly(id, t)}
+            sendVoice={(uri, ms) => matchStore.sendVoice(id, uri, ms)}
+            voiceUrl={(p) => matchStore.voiceUrl(p)}
             dateCheck={<DateCheckPanel other={id} name={match.name} />}
           />
         ) : (

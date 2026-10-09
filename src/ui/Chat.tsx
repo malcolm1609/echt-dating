@@ -6,6 +6,7 @@ import { PARTNER_DATE_DISCOUNT, readReceiptShown } from '../domain/plus.ts';
 import type { Match } from '../lib/matches';
 import { Button, Chip, s } from './kit';
 import { PlaceLink } from './PlaceLink';
+import { VoiceBubble, VoiceRecorder } from './Voice';
 import { colors, font, fontFamily } from './theme';
 
 export const PARTNER_CAFES = [
@@ -30,10 +31,14 @@ interface Props {
   onUpgrade?: () => void;
   /** Date-Check für ein zugesagtes, kommendes Date. */
   dateCheck?: ReactNode;
+  /** Sprachmemo senden; ohne diese Funktion gibt es kein Mikrofon. */
+  sendVoice?: (uri: string, durationMs: number) => Promise<void>;
+  voiceUrl?: (path: string) => Promise<string>;
 }
 
-export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, markDatePast, answerAfterDate, endKindly, testTools, plus = { active: false, readReceipts: false }, onUpgrade, dateCheck }: Props) {
+export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, markDatePast, answerAfterDate, endKindly, testTools, plus = { active: false, readReceipts: false }, onUpgrade, dateCheck, sendVoice, voiceUrl = async (p) => p }: Props) {
   const [draft, setDraft] = useState('');
+  const [recording, setRecording] = useState(false);
   const [panel, setPanel] = useState<'none' | 'date' | 'end'>('none');
   const ideas = dateIdeas(match.shared ?? []);
   const [idea, setIdea] = useState(ideas[0]);
@@ -51,7 +56,11 @@ export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, m
       {match.messages.length === 0 && <Text style={font.small}>{`Fragenrunde geschafft. Schreib ${match.name} etwas zu einer Antwort, die dich neugierig gemacht hat.`}</Text>}
       {match.messages.map((m) => (
         <View key={m.id} style={{ alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start', maxWidth: '82%', backgroundColor: m.from === 'me' ? colors.accent : colors.surface, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 14 }}>
-          <Text style={[font.body, m.from === 'me' && { color: colors.onAccent }]}>{m.text}</Text>
+          {m.audio ? (
+            <VoiceBubble memo={m.audio} mine={m.from === 'me'} getUrl={voiceUrl} />
+          ) : (
+            <Text style={[font.body, m.from === 'me' && { color: colors.onAccent }]}>{m.text}</Text>
+          )}
         </View>
       ))}
       {lastMine && showRead && <Text style={[font.small, { alignSelf: 'flex-end', marginTop: -10 }]}>Gelesen</Text>}
@@ -99,19 +108,23 @@ export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, m
         <>
           {waiting !== null && <Text style={[font.small, { color: colors.hint }]}>{`${match.name} wartet seit ${waiting} Tagen auf deine Antwort.`}</Text>}
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
-            <TextInput accessibilityLabel="Nachricht" value={draft} onChangeText={setDraft} placeholder="Nachricht" placeholderTextColor={colors.muted} multiline style={[s.input, { flex: 1 }]} />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Senden"
-              disabled={!draft.trim()}
-              onPress={() => {
-                send(draft.trim());
-                setDraft('');
-              }}
-              style={{ backgroundColor: colors.accent, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, opacity: draft.trim() ? 1 : 0.5 }}
-            >
-              <Text style={{ color: colors.onAccent, fontFamily: fontFamily.semibold }}>Senden</Text>
-            </Pressable>
+            {!recording && <TextInput accessibilityLabel="Nachricht" value={draft} onChangeText={setDraft} placeholder="Nachricht" placeholderTextColor={colors.muted} multiline style={[s.input, { flex: 1 }]} />}
+            {sendVoice && !draft.trim() ? (
+              <VoiceRecorder onSend={sendVoice} onRecording={setRecording} />
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Senden"
+                disabled={!draft.trim()}
+                onPress={() => {
+                  send(draft.trim());
+                  setDraft('');
+                }}
+                style={{ backgroundColor: colors.accent, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, opacity: draft.trim() ? 1 : 0.5 }}
+              >
+                <Text style={{ color: colors.onAccent, fontFamily: fontFamily.semibold }}>Senden</Text>
+              </Pressable>
+            )}
           </View>
           {!match.date && panel !== 'date' && <Button title="Date vorschlagen" variant="ghost" onPress={() => setPanel('date')} />}
           {panel === 'date' && (
