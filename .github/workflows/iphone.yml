@@ -1,0 +1,69 @@
+# iPhone-App über Expo (EAS) bauen und zu TestFlight schicken.
+# „einrichten“ legt das Projekt bei Expo an und hinterlegt dort die Adresse des Beta-Servers.
+# „bauen“ baut die App in der Cloud von Expo und schickt sie zu TestFlight. Das geht erst, wenn der
+# erste Build einmal am Computer gelaufen ist (dort entstehen die Apple-Zertifikate).
+# Start: Actions → iPhone-App → Run workflow, oder „[iphone einrichten]“ / „[iphone]“ in der Commit-Nachricht.
+name: iPhone-App
+
+on:
+  workflow_dispatch:
+    inputs:
+      aufgabe:
+        description: einrichten oder bauen
+        type: choice
+        options: [bauen, einrichten]
+        default: bauen
+  push:
+    branches: [main, 'claude/**']
+
+jobs:
+  ios:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[iphone')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SETUP: ${{ inputs.aufgabe == 'einrichten' || contains(github.event.head_commit.message, '[iphone einrichten]') }}
+    steps:
+      - name: Expo-Schlüssel vorhanden?
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Das GitHub-Secret EXPO_TOKEN fehlt (Zugangsschlüssel von expo.dev)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Projekt bei Expo anlegen
+        if: env.SETUP == 'true'
+        run: |
+          # eas init schreibt die Projekt-ID nur in app.json; app.config.js liest sie von dort.
+          mv app.config.js /tmp/app.config.js
+          npx eas-cli@latest init --non-interactive --force
+          mv /tmp/app.config.js app.config.js
+          echo "Projekt-ID: $(jq -r .expo.extra.eas.projectId app.json)"
+          echo "Besitzer: $(jq -r '.expo.owner // "(Konto des Schlüssels)"' app.json)"
+          {
+            echo "### Expo-Projekt"
+            echo "Projekt-ID: \`$(jq -r .expo.extra.eas.projectId app.json)\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Adresse des Beta-Servers bei Expo hinterlegen
+        if: env.SETUP == 'true'
+        run: |
+          scripts/beta-test/keys.sh
+          set -a; . <(grep '^SUPABASE_ANON_KEY=' "$GITHUB_ENV"); set +a
+          eas() { npx eas-cli@latest "$@"; }
+          eas env:set production --name EXPO_PUBLIC_SUPABASE_URL --value "https://$SUPABASE_PROJECT_REF.supabase.co" --visibility plaintext --non-interactive
+          eas env:set production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "$SUPABASE_ANON_KEY" --visibility plaintext --non-interactive
+          eas env:set production --name EXPO_PUBLIC_BETA --value 1 --visibility plaintext --non-interactive
+
+      - name: In der Expo-Cloud bauen und zu TestFlight schicken
+        if: env.SETUP != 'true'
+        run: npx eas-cli@latest build --platform ios --profile production --auto-submit --non-interactive --no-wait
