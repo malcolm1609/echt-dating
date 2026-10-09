@@ -6,6 +6,7 @@
 #   SUPABASE_PROJECT_REF   Projekt-ID (steht in der Projekt-Adresse, z. B. abcdefghijklmnop)
 #   SUPABASE_DB_PASSWORD   Datenbank-Passwort, das beim Anlegen des Projekts vergeben wurde
 #   BETA_PASSWORD          frei gewähltes Passwort für die Testkonten
+#   SIGHTENGINE_API_USER / SIGHTENGINE_API_SECRET  (optional) Zugang für die Fotoprüfung, von sightengine.com
 # und unter Settings → Pages als Quelle „GitHub Actions“ wählen.
 name: Beta
 
@@ -64,6 +65,20 @@ jobs:
         run: |
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase db push
+
+      # Fotoprüfung (Sightengine). Ohne die beiden Secrets lässt sie im Testbetrieb alles ungeprüft durch.
+      - name: Fotoprüfung einrichten
+        env:
+          SIGHTENGINE_API_USER: ${{ secrets.SIGHTENGINE_API_USER }}
+          SIGHTENGINE_API_SECRET: ${{ secrets.SIGHTENGINE_API_SECRET }}
+        run: |
+          if [ -n "$SIGHTENGINE_API_USER" ] && [ -n "$SIGHTENGINE_API_SECRET" ]; then
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+              SIGHTENGINE_API_USER="$SIGHTENGINE_API_USER" SIGHTENGINE_API_SECRET="$SIGHTENGINE_API_SECRET"
+          else
+            echo "::notice::Fotoprüfung ohne Sightengine: SIGHTENGINE_API_USER und SIGHTENGINE_API_SECRET fehlen."
+          fi
+          supabase functions deploy photo-check --project-ref "$SUPABASE_PROJECT_REF" --use-api
 
       - name: Schlüssel holen
         id: keys

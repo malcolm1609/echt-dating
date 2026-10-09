@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { cleanPhoto } from '../lib/cleanPhoto';
+import { photoErrorText } from '../lib/photoErrors';
 import { MAX_PHOTOS, photoUrl } from '../lib/photos';
 import { s } from './kit';
 import { colors, font } from './theme';
@@ -22,8 +23,8 @@ export function PhotoEditor({ photos, onUpload, onChange }: Props) {
     setError(undefined);
     try {
       await fn();
-    } catch {
-      setError('Das hat nicht geklappt. Bitte versuch es noch einmal.');
+    } catch (e) {
+      setError(photoErrorText(e) ?? 'Das hat nicht geklappt. Bitte versuch es noch einmal.');
     } finally {
       setBusy(false);
     }
@@ -40,7 +41,7 @@ export function PhotoEditor({ photos, onUpload, onChange }: Props) {
   return (
     <View style={{ gap: 10 }}>
       <Text style={[font.body, { fontWeight: '600' }]}>Fotos</Text>
-      <Text style={font.small}>{photos.length ? 'Antippen macht ein Foto zum Hauptfoto.' : 'Zeig dich, wie du wirklich aussiehst. Das erste Foto gleichen wir mit deinem Ausweis-Selfie ab.'}</Text>
+      <Text style={font.small}>{photos.length ? 'Antippen macht ein Foto zum Hauptfoto.' : 'Zeig dich, wie du wirklich aussiehst: Auf jedem Foto muss man dein Gesicht klar erkennen, ohne starke Filter. Höchstens ein Gruppenfoto.'}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {photos.map((p, i) => (
           <View key={p} style={tile}>

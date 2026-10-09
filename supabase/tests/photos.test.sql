@@ -16,7 +16,20 @@ exception when others then
   return true;
 end $$;
 
+insert into approved_photos (path, user_id, group_photo, checked_by) values
+  ('00000000-0000-0000-0000-0000000000e2/a1b2.jpg', '00000000-0000-0000-0000-0000000000e2', false, 'test'),
+  ('00000000-0000-0000-0000-0000000000e2/c3d4.png', '00000000-0000-0000-0000-0000000000e2', false, 'test'),
+  ('00000000-0000-0000-0000-0000000000e2/gruppe1.jpg', '00000000-0000-0000-0000-0000000000e2', true, 'test'),
+  ('00000000-0000-0000-0000-0000000000e2/gruppe2.jpg', '00000000-0000-0000-0000-0000000000e2', true, 'test');
+
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000e2');
+select pg_temp.assert(pg_temp.fails($$update profiles set photos = array['00000000-0000-0000-0000-0000000000e2/ungeprueft.jpg'] where id = auth.uid()$$),
+  'nur geprüfte Fotos');
+select pg_temp.assert(pg_temp.fails($$update profiles set photos = array['00000000-0000-0000-0000-0000000000e2/a1b2.jpg', '00000000-0000-0000-0000-0000000000e2/gruppe1.jpg', '00000000-0000-0000-0000-0000000000e2/gruppe2.jpg'] where id = auth.uid()$$),
+  'höchstens ein Gruppenfoto');
+select pg_temp.assert(pg_temp.fails($$update profiles set photos = array['00000000-0000-0000-0000-0000000000e2/gruppe1.jpg', '00000000-0000-0000-0000-0000000000e2/a1b2.jpg'] where id = auth.uid()$$),
+  'Hauptfoto ist kein Gruppenfoto');
+update profiles set photos = array['00000000-0000-0000-0000-0000000000e2/a1b2.jpg', '00000000-0000-0000-0000-0000000000e2/gruppe1.jpg'] where id = auth.uid();
 update profiles set photos = array['00000000-0000-0000-0000-0000000000e2/a1b2.jpg', '00000000-0000-0000-0000-0000000000e2/c3d4.png'] where id = auth.uid();
 select pg_temp.assert(pg_temp.fails($$update profiles set photos = array['00000000-0000-0000-0000-0000000000e1/fremd.jpg'] where id = auth.uid()$$),
   'nur Fotos aus dem eigenen Ordner');

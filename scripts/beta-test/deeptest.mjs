@@ -79,17 +79,28 @@ try {
   });
   await r.check('Unmögliche Wünsche werden abgelehnt', () =>
     rejects(a.from('profiles').update({ age_min: 40, age_max: 20 }).eq('id', A.id), 'Alter verdreht'));
-  await r.check('Foto hochladen und im Profil speichern', async () => {
+  await r.check('Foto hochladen, prüfen lassen und im Profil speichern', async () => {
     const path = `${A.id}/deeptest-${run}.png`;
-    ok(await a.storage.from('photos').upload(path, PNG, { contentType: 'image/png' }));
+    ok(await a.storage.from('photo-uploads').upload(path, PNG, { contentType: 'image/png' }));
+    const { data, error } = await a.functions.invoke('photo-check', { body: { path } });
+    assert(!error, `Fotoprüfung nicht erreichbar (${error?.message})`);
+    // Mit Sightengine hat das Testbild kein Gesicht und muss abgelehnt werden; ohne lässt der Testbetrieb es durch.
+    if (!data.ok) {
+      assert(data.reason === 'no_face', `unerwarteter Grund ${data.reason}`);
+      return 'Bild ohne Gesicht abgelehnt';
+    }
     ok(await a.from('profiles').update({ photos: [path] }).eq('id', A.id));
-    const url = a.storage.from('photos').getPublicUrl(path).data.publicUrl;
-    const res = await fetch(url);
+    const res = await fetch(a.storage.from('photos').getPublicUrl(path).data.publicUrl);
     assert(res.ok, `Foto nicht abrufbar (${res.status})`);
-    return 'öffentlich abrufbar';
+    return 'ungeprüft freigegeben (Testbetrieb ohne Sightengine), öffentlich abrufbar';
+  });
+  await r.check('Foto direkt veröffentlichen, ohne Prüfung, wird abgelehnt', async () => {
+    const { error } = await a.storage.from('photos').upload(`${A.id}/direkt-${run}.png`, PNG, { contentType: 'image/png' });
+    assert(error, 'Upload an der Prüfung vorbei ging durch');
+    return rejects(a.from('profiles').update({ photos: [`${A.id}/ungeprueft-${run}.png`] }).eq('id', A.id), 'ungeprüftes Foto im Profil');
   });
   await r.check('Foto in fremden Ordner hochladen wird abgelehnt', async () => {
-    const { error } = await a.storage.from('photos').upload(`${B.id}/fremd.png`, PNG, { contentType: 'image/png' });
+    const { error } = await a.storage.from('photo-uploads').upload(`${B.id}/fremd.png`, PNG, { contentType: 'image/png' });
     assert(error, 'Upload in fremden Ordner ging durch');
     return 'abgelehnt';
   });

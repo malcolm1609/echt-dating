@@ -11,6 +11,7 @@ import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
 import { photoUrls, placeholderPhoto } from './photos';
 import { beta, supabase } from './supabase';
+import { PhotoRejected } from './photoErrors';
 
 export type MyStatus =
   | { status: 'pending_verification' | 'admitted' | 'rejected' }
@@ -132,7 +133,10 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
       const path = `${await uid()}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
       const body = await (await fetch(uri)).arrayBuffer();
-      ok(await db.storage.from('photos').upload(path, body, { contentType: mimeType }));
+      // Erst in den privaten Prüfordner; öffentlich wird das Foto nur, wenn die Prüfung es freigibt.
+      ok(await db.storage.from('photo-uploads').upload(path, body, { contentType: mimeType }));
+      const { data, error } = await db.functions.invoke('photo-check', { body: { path } });
+      if (error || !data?.ok) throw new PhotoRejected(data?.reason ?? 'unavailable');
       return path;
     },
     async savePhotos(photos) {

@@ -65,6 +65,7 @@ export const PRIVACY_POLICY: PrivacySection[] = [
     body: [
       'Supabase (Datenbank, Anmeldung, Fotospeicher): Die Server stehen in Frankfurt am Main. Supabase ist ein US-Unternehmen; der Vertrag zur Auftragsverarbeitung enthält die EU-Standardvertragsklauseln.',
       'Didit (Ausweis- und Selfie-Prüfung): verarbeitet Ausweis und Selfie in unserem Auftrag und meldet uns nur das Ergebnis.',
+      'Sightengine (Fotoprüfung): prüft jedes neue Profilfoto automatisch, ob ein Gesicht klar zu erkennen ist und ob es ein Nacktfoto, ein KI-Bild oder stark gefiltert ist. Das Foto wird nur dafür übertragen.',
       'Ein SMS-Anbieter verschickt den Bestätigungscode an deine Handynummer.',
       'Die Web-Version liegt bei GitHub Pages (GitHub, USA). Beim Aufruf verarbeitet GitHub deine IP-Adresse, um die Seite auszuliefern.',
       'Andere Mitglieder sehen dein Profil mit Vorname, Alter, Entfernung, Fotos und Profilinhalten, aber nie E-Mail, Handynummer oder genauen Standort.',
