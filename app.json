@@ -44,6 +44,12 @@
           "microphonePermission": false
         }
       ]
-    ]
+    ],
+    "owner": "malcolmz",
+    "extra": {
+      "eas": {
+        "projectId": "8f81d902-05a7-454e-bca3-d74869557aef"
+      }
+    }
   }
 }
