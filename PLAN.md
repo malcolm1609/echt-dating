@@ -116,6 +116,12 @@ Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --o
 - GitHub-Aktion `iphone.yml`: „einrichten“ legt das Expo-Projekt an und hinterlegt die Adresse des Beta-Servers, „bauen“ baut und schickt zu TestFlight. Braucht das GitHub-Secret `EXPO_TOKEN`.
 - Der allererste Build läuft einmal am Computer (`npx eas-cli@latest build -p ios --profile production --auto-submit`), weil dabei die Apple-Zertifikate entstehen.
 
+## Datenschutz
+
+- Datenschutzerklärung in `src/domain/privacy.ts`, in der App unter Einstellungen → Datenschutz. Bei jeder Änderung `PRIVACY_VERSION` hochsetzen.
+- Bei der Registrierung zwei Pflicht-Häkchen (Erklärung + 18+, ausdrückliche Einwilligung nach Art. 9 DSGVO). Gespeichert je Fassung in der Tabelle `consents`.
+- Kein Tracking, keine Werbe-Cookies, deshalb kein Cookie-Banner. Vor dem Start: Anschrift und Kontakt-E-Mail eintragen, Impressum, rechtliche Prüfung.
+
 ## Offene Punkte
 - Monetarisierung: Echt Plus (4,99 €/Monat) plus Einnahmen von Partner-Cafés und Events, im Prototyp nur als Demo ohne Zahlung
 - Geschlechter jenseits von f/m und wer wen sucht: die Verhältnisregel muss das später abbilden
