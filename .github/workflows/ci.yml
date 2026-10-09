@@ -22,7 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        # Offizielles Postgres-Abbild über den AWS-Spiegel: Docker Hub begrenzt anonyme Downloads.
+        image: public.ecr.aws/docker/library/postgres:16
         env:
           POSTGRES_PASSWORD: postgres
         ports: ['5432:5432']
