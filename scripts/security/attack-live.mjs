@@ -70,7 +70,7 @@ try {
     hacker = await account('hacker', { gender: 'm' });
     ghost = await account('geist', { profile: false });
     voicePath = `${victim.id}/angriff-${run}.webm`;
-    ok(await victim.db.storage.from('voice').upload(voicePath, new Blob([new Uint8Array(64)]), { contentType: 'audio/webm' }));
+    ok(await victim.db.storage.from('voice').upload(voicePath, new Blob([new Uint8Array(64)], { type: 'audio/webm' }), { contentType: 'audio/webm' }));
   });
 
   // ---------------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ try {
     assert(!data?.length, `${data.length} Dateien sichtbar`);
   });
   await r.check('In fremden Ordner hochladen', async () => {
-    const { error } = await hacker.db.storage.from('voice').upload(`${victim.id}/boese.webm`, new Blob([new Uint8Array(8)]), { contentType: 'audio/webm' });
+    const { error } = await hacker.db.storage.from('voice').upload(`${victim.id}/boese.webm`, new Blob([new Uint8Array(8)], { type: 'audio/webm' }), { contentType: 'audio/webm' });
     assert(error, 'Upload in fremden Ordner ging durch');
   });
   await r.check('Fremdes Foto durch die Prüfung schleusen', async () => {
