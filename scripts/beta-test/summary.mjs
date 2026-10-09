@@ -43,7 +43,11 @@ if (city) {
   if (city.aborted) lines.push(`❌ Abgebrochen: ${city.aborted}\n`);
   if (city.missingShards) lines.push(`❌ ${city.missingShards} von 8 Lastrechnern haben kein Ergebnis geliefert.\n`);
   lines.push(`Konten angelegt in ${st.createSeconds ?? '?'} s (${st.createFailed ?? '?'} fehlgeschlagen), Profile in ${st.profileSeconds ?? '?'} s, ${st.historyLikes ?? '?'} frühere Entscheidungen in ${st.historySeconds ?? '?'} s.`);
-  lines.push(`Angemeldet: ${city.shards.reduce((a, x) => a + (x.loggedIn ?? 0), 0)} von ${city.shards.reduce((a, x) => a + (x.wanted ?? 0), 0)}.\n`);
+  lines.push(`Angemeldet: ${city.shards.reduce((a, x) => a + (x.loggedIn ?? 0), 0)} von ${city.shards.reduce((a, x) => a + (x.wanted ?? 0), 0)}.`);
+  if (city.server) lines.push(`Server: ${city.server}.`);
+  const w = city.warmup;
+  if (w) lines.push(`Erste Vorschläge des Tages (vorab, 64 gleichzeitig): ${w.count} in ${w.seconds} s, ${w.perSecond}/s, Median ${w.p50} ms, 95 % unter ${w.p95} ms, ${w.errors} Fehler.`);
+  lines.push('');
   lines.push('| Gleichzeitig | Anfragen/s | Fehler | Median | 95 % unter | 99 % unter |', '|---|---|---|---|---|---|');
   for (const p of city.phases) lines.push(`| ${p.active} | ${p.perSecond} | ${p.errorRate} % | ${p.p50} ms | ${p.p95} ms | ${p.p99} ms |`);
   for (const p of city.phases.filter((x) => x.errors)) {

@@ -190,6 +190,14 @@ async function shard(n) {
   // Wettlauf um die Plätze noch vor den Stufen, damit er die Messung nicht verschiebt.
   const joins = await Promise.all(users.filter((u) => u !== host).map((u) => u.db.rpc('join_event', { event_id: eventId })));
   report.joins = { ok: joins.filter((x) => !x.error).length, rejected: joins.filter((x) => x.error).length };
+
+  // Im echten Leben öffnen die Leute die App über den Tag verteilt zum ersten Mal; dabei werden ihre
+  // Vorschläge berechnet. Das passiert hier vorab in gebremstem Tempo und wird eigens gemessen.
+  const warm = meter();
+  t = performance.now();
+  await pool(users, 8, (u) => warm.time('Erste Vorschläge des Tages', () => u.db.rpc('todays_picks')));
+  report.warmup = { seconds: secs(t), stats: warm.stats };
+  console.log(`  erste Vorschläge für ${users.length} Personen in ${report.warmup.seconds} s`);
   await sleep(Math.max(0, t0 - Date.now()));
 
   for (const [k, total] of PHASES.entries()) {
@@ -246,6 +254,17 @@ async function finish() {
       report.phases.push({ concurrent: total, active: here, seconds: Math.round(seconds), requests: all.length, perSecond: +(all.length / seconds).toFixed(1), errors,
         errorRate: +((100 * errors) / (all.length || 1)).toFixed(2), p50: pct(all, 50), p95: pct(all, 95), p99: pct(all, 99), ops });
     }
+
+    // Erste Vorschläge des Tages (vorab, gebremst) zusammenführen.
+    const warm = { times: [], errors: {}, expected: 0 };
+    for (const s of shards) {
+      const x = s.warmup?.stats?.['Erste Vorschläge des Tages'];
+      if (!x) continue;
+      warm.times.push(...x.times);
+      for (const [e, cnt] of Object.entries(x.errors)) warm.errors[e] = (warm.errors[e] ?? 0) + cnt;
+    }
+    const warmSeconds = Math.max(0, ...shards.map((s) => s.warmup?.seconds ?? 0));
+    if (warm.times.length) report.warmup = { seconds: warmSeconds, ...summarize({ w: warm }, warmSeconds || 1)[0] };
 
     // Regeln nachzählen.
     const start = env('CITY_START');
