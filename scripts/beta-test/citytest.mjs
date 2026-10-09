@@ -46,9 +46,20 @@ async function runUserIds(all = false) {
   const prefix = all ? 'city-' : `city-${run}-`;
   const ids = [];
   for (let page = 1; ; page++) {
-    const { users } = ok(await svc.auth.admin.listUsers({ page, perPage: 1000 }));
+    const { users } = await patiently(() => svc.auth.admin.listUsers({ page, perPage: 1000 }));
     ids.push(...users.filter((u) => u.email?.startsWith(prefix)).map((u) => u.id));
     if (users.length < 1000) return ids;
+  }
+}
+
+// Bei überlastetem Server mehrfach mit wachsender Pause versuchen (bis etwa 15 Minuten).
+async function patiently(call, tries = 10) {
+  for (let k = 1; ; k++) {
+    const { data, error } = await call();
+    if (!error) return data;
+    if (k >= tries) throw new Error(error.message ?? String(error));
+    console.log(`  Server antwortet nicht (${error.status ?? error.code ?? error.message}), neuer Versuch in ${20 * k} s`);
+    await sleep(20000 * k);
   }
 }
 
@@ -279,16 +290,18 @@ async function finish() {
 async function cleanup() {
   const t = performance.now();
   const ids = await runUserIds(true);
+  console.log(`  ${ids.length} Testkonten gefunden`);
   let failed = 0;
-  await pool(ids, 20, async (id) => {
-    for (let k = 0; k < 3; k++) {
-      const { error } = await svc.auth.admin.deleteUser(id);
-      if (!error) return;
-      await sleep(1000 * (k + 1));
+  let done = 0;
+  await pool(ids, 8, async (id) => {
+    try {
+      await patiently(() => svc.auth.admin.deleteUser(id), 6);
+    } catch {
+      failed++;
     }
-    failed++;
+    if (++done % 1000 === 0) console.log(`  … ${done} gelöscht`);
   });
-  const areas = ok(await svc.from('areas').select('id').like('name', 'Lasttest %')).map((a) => a.id);
+  const areas = (await patiently(() => svc.from('areas').select('id').like('name', 'Lasttest %'))).map((a) => a.id);
   if (areas.length) await svc.from('areas').delete().in('id', areas);
   console.log(`Aufgeräumt: ${ids.length - failed} Konten und ${areas.length} Test-Städte gelöscht in ${secs(t)} s${failed ? `, ${failed} Konten blieben übrig` : ''}`);
   return failed ? 1 : 0;

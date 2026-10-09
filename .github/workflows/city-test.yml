@@ -33,8 +33,25 @@ env:
   SHARDS: '8'
 
 jobs:
+  # Nur aufräumen: „[stadttest aufräumen]“ löscht übrig gebliebene Testkonten und Test-Städte.
+  cleanup:
+    if: contains(github.event.head_commit.message, '[stadttest aufräumen]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CITY_RUN: cleanup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: scripts/beta-test/keys.sh
+      - run: node scripts/beta-test/citytest.mjs cleanup city-results
+
   setup:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[stadttest')
+    if: github.event_name == 'workflow_dispatch' || (contains(github.event.head_commit.message, '[stadttest') && !contains(github.event.head_commit.message, '[stadttest aufräumen]'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -120,6 +137,7 @@ jobs:
           node scripts/beta-test/citytest.mjs finish city-results
       - name: Aufräumen
         if: always()
+        timeout-minutes: 45
         run: node scripts/beta-test/citytest.mjs cleanup city-results
       - name: Zusammenfassung
         if: always()
