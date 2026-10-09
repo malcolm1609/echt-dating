@@ -89,10 +89,12 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       if (error) throw error;
     },
     async deleteAccount() {
-      // Fotos zuerst: Sie liegen im Speicher, nicht in der Datenbank, und würden sonst öffentlich bleiben.
+      // Fotos und Sprachmemos zuerst: Sie liegen im Speicher, nicht in der Datenbank, und würden sonst bleiben.
       const id = await uid();
       const files = ok(await db.storage.from('photos').list(id, { limit: 100 })) ?? [];
       if (files.length) ok(await db.storage.from('photos').remove(files.map((f) => `${id}/${f.name}`)));
+      const memos = ok(await db.storage.from('voice').list(id, { limit: 1000 })) ?? [];
+      if (memos.length) ok(await db.storage.from('voice').remove(memos.map((f) => `${id}/${f.name}`)));
       ok(await db.rpc('delete_my_account'));
       await db.auth.signOut({ scope: 'local' });
     },

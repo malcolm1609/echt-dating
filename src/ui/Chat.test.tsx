@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { act, render, screen, fireEvent } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { Chat } from './Chat';
 import type { Match } from '../lib/matches';
@@ -91,5 +91,32 @@ describe('Chat', () => {
     rerender(<Chat match={{ ...base, date: { ...date, mine: true } }} now={now} {...actions()} acceptDate={acceptDate} />);
     expect(screen.queryByText('Zusagen')).toBeNull();
     expect(screen.getByText('Wartet auf Mara')).toBeTruthy();
+  });
+
+  it('records a voice memo when the text field is empty and sends it', async () => {
+    const sendVoice = jest.fn(async () => {});
+    render(<Chat match={base} now={now} {...actions()} sendVoice={sendVoice} />);
+    await act(async () => fireEvent.press(screen.getByLabelText('Sprachmemo aufnehmen')));
+    expect(screen.getByText('0:04 / 1:00')).toBeTruthy();
+    expect(screen.queryByLabelText('Nachricht')).toBeNull();
+    await act(async () => fireEvent.press(screen.getByLabelText('Sprachmemo senden')));
+    expect(sendVoice).toHaveBeenCalledWith('file:///memo.m4a', 4200);
+    expect(screen.getByLabelText('Nachricht')).toBeTruthy();
+  });
+
+  it('shows the send button instead of the microphone while typing', () => {
+    render(<Chat match={base} now={now} {...actions()} sendVoice={jest.fn()} />);
+    fireEvent.changeText(screen.getByLabelText('Nachricht'), 'Hallo');
+    expect(screen.queryByLabelText('Sprachmemo aufnehmen')).toBeNull();
+    expect(screen.getByLabelText('Senden')).toBeTruthy();
+  });
+
+  it('plays a voice memo from a private link', async () => {
+    const voiceUrl = jest.fn(async () => 'https://signed/memo');
+    const memo: Match = { ...base, messages: [{ id: 'v', from: 'them', text: '', at: now, audio: { path: 'u/memo.m4a', durationMs: 7000 } }] };
+    render(<Chat match={memo} now={now} {...actions()} voiceUrl={voiceUrl} />);
+    expect(screen.getByText('0:07')).toBeTruthy();
+    await act(async () => fireEvent.press(screen.getByLabelText('Sprachmemo, 0:07, abspielen')));
+    expect(voiceUrl).toHaveBeenCalledWith('u/memo.m4a');
   });
 });

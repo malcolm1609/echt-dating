@@ -9,7 +9,9 @@ import type { ShownPrompt } from '../ui/ProfileDetails';
 import { photoUrls, placeholderPhoto } from './photos';
 import { supabase } from './supabase';
 
-export interface Message { id: string; from: 'me' | 'them'; text: string; at: Date }
+export interface Message { id: string; from: 'me' | 'them'; text: string; at: Date; audio?: VoiceMemo }
+/** Sprachmemo: Speicherpfad (Demo: lokale Adresse) und Länge. */
+export interface VoiceMemo { path: string; durationMs: number }
 export interface DateProposal {
   idea?: string; place: string; when: string; accepted: boolean; past: boolean; reserved?: boolean;
   /** Von mir vorgeschlagen? Zusagen kann nur die andere Person. */
@@ -48,6 +50,10 @@ export interface MatchStore {
   add(person: { id: string; name: string; age: number; opener?: ShownPrompt; shared?: string[]; profile?: MatchProfile; photos?: string[] }): void;
   answer(id: string, key: string, text: string): void;
   send(id: string, text: string): void;
+  /** Sprachmemo aus einer Aufnahme (lokale Datei) senden. */
+  sendVoice(id: string, uri: string, durationMs: number): Promise<void>;
+  /** Adresse zum Abspielen eines Sprachmemos (kurz gültig). */
+  voiceUrl(path: string): Promise<string>;
   proposeDate(id: string, idea: string, place: string, when: string, reserved?: boolean): void;
   acceptDate(id: string): void;
   markDatePast(id: string): void;
@@ -137,6 +143,12 @@ export function createDemoStore(delayMs = 1200): MatchStore {
       const replied = get(id)?.messages.some((m) => m.from === 'them');
       if (!replied) later(() => fromThem(id, (m) => ({ ...m, messages: [...m.messages, msg('them', 'Haha, genau so! Erzähl mir mehr 🙂')] })));
     },
+    async sendVoice(id, uri, durationMs) {
+      update(id, (m) => ({ ...m, messages: [...m.messages, { ...msg('me', ''), audio: { path: uri, durationMs } }] }));
+    },
+    async voiceUrl(path) {
+      return path;
+    },
     proposeDate(id, idea, place, when, reserved = false) {
       update(id, (m) => ({ ...m, date: { idea, place, when, accepted: false, past: false, reserved, mine: true } }));
       later(() => fromThem(id, (m) => ({ ...m, date: m.date && { ...m.date, accepted: true }, messages: [...m.messages, msg('them', `${when} passt mir super. Bis dann!`)] })));
@@ -181,7 +193,7 @@ interface ServerMatch {
   interests: string[];
   ended: boolean;
   answers: Record<string, { mine: string; theirs: string | null }>;
-  messages: { id: number; mine: boolean; text: string; at: string }[];
+  messages: { id: number; mine: boolean; text: string; at: string; audio?: string | null; duration_ms?: number | null }[];
   date: (Omit<DateProposal, 'idea'> & { idea: string | null }) | null;
   after_date: { mine: DateAnswer; theirs: DateAnswer | null } | null;
   unread: boolean;
@@ -200,7 +212,10 @@ export function fromServer(m: ServerMatch, myInterests: string[]): Match {
     opener: openerFor(prompts),
     shared: sharedInterests(myInterests, m.interests),
     answers: Object.fromEntries(Object.entries(m.answers).map(([k, a]) => [k, { mine: a.mine, theirs: a.theirs ?? undefined }])),
-    messages: m.messages.map((x) => ({ id: String(x.id), from: x.mine ? 'me' : 'them', text: x.text, at: new Date(x.at) })),
+    messages: m.messages.map((x) => ({
+      id: String(x.id), from: x.mine ? 'me' : 'them', text: x.text, at: new Date(x.at),
+      ...(x.audio && x.duration_ms ? { audio: { path: x.audio, durationMs: x.duration_ms } } : {}),
+    })),
     date: m.date ? { ...m.date, idea: m.date.idea ?? undefined } : undefined,
     afterDate: { mine: m.after_date?.mine, theirs: m.after_date?.theirs ?? undefined },
     ended: m.ended,
@@ -266,6 +281,28 @@ export function createServerStore(db: SupabaseClient, pollMs = 4000): MatchStore
     send(id, text) {
       local(id, (m) => ({ ...m, messages: [...m.messages, msg(text)] }));
       call('send_message', { other: id, body: text });
+    },
+    async sendVoice(id, uri, durationMs) {
+      const { data: auth } = await db.auth.getSession();
+      const me = auth.session?.user.id;
+      if (!me) throw new Error('not signed in');
+      const blob = await (await fetch(uri)).blob();
+      const type = blob.type || (uri.endsWith('.webm') ? 'audio/webm' : 'audio/mp4');
+      const ext = type.includes('webm') ? 'webm' : type.includes('ogg') ? 'ogg' : 'm4a';
+      const path = `${me}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+      const up = await db.storage.from('voice').upload(path, await blob.arrayBuffer(), { contentType: type });
+      if (up.error) throw up.error;
+      const { error } = await db.rpc('send_voice', { other: id, path, duration_ms: Math.round(durationMs) });
+      if (error) {
+        await db.storage.from('voice').remove([path]);
+        throw error;
+      }
+      sync();
+    },
+    async voiceUrl(path) {
+      const { data, error } = await db.storage.from('voice').createSignedUrl(path, 3600);
+      if (error) throw error;
+      return data.signedUrl;
     },
     proposeDate(id, idea, place, when, reserved = false) {
       local(id, (m) => ({ ...m, date: { idea, place, when, accepted: false, past: false, reserved, mine: true } }));
