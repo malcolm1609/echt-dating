@@ -23,7 +23,10 @@ Deno.serve(async (req) => {
     selfie_match: v.selfieMatch,
     decided_at: final ? new Date().toISOString() : null,
   });
-  if (saved.error) return new Response(saved.error.message, { status: 500 });
+  if (saved.error) {
+    console.error('verification-webhook', saved.error.message);
+    return new Response('error', { status: 500 });
+  }
 
   const { data: profile } = await db.from('profiles').select('status, gender, lat, lng').eq('id', userId).maybeSingle();
   if (!profile) return new Response('no profile');
@@ -43,7 +46,10 @@ Deno.serve(async (req) => {
   if (update) {
     // Nur ändern, solange noch keine Entscheidung gefallen ist (Webhooks können doppelt kommen).
     const res = await db.from('profiles').update(update).eq('id', userId).eq('status', 'pending_verification');
-    if (res.error) return new Response(res.error.message, { status: 500 });
+    if (res.error) {
+      console.error('verification-webhook', res.error.message);
+      return new Response('error', { status: 500 });
+    }
   }
   return new Response('ok');
 });

@@ -19,7 +19,8 @@ export interface DateCheck {
 export interface DateCheckView {
   name: string;
   photo: string | null;
-  match: { name: string; age: number; photo: string | null };
+  /** Nach dem Ende nicht mehr dabei. */
+  match: { name: string; age: number; photo: string | null } | null;
   place: string | null;
   when: string | null;
   status: 'active' | 'overdue' | 'help' | 'ended';
@@ -62,6 +63,8 @@ export function sinceText(at: Date, now: Date) {
 
 /** Fehler vom Server in einen Satz für die App. */
 export function dateCheckErrorText(message: string) {
+  if (/too many date checks for contact/.test(message)) return 'Diese Nummer ist heute schon dreimal als Vertrauensperson eingetragen worden.';
+  if (/contact_phone country/.test(message)) return 'Die SMS geht nur an Handynummern aus Deutschland, Österreich und der Schweiz.';
   if (/too many date checks/.test(message)) return 'Du kannst höchstens 3 Date-Checks am Tag starten.';
   if (/no date/.test(message)) return 'Der Date-Check geht erst, wenn ihr ein Date ausgemacht habt.';
   if (/contact_phone/.test(message)) return 'Bitte gib eine Handynummer ein, die SMS empfangen kann.';

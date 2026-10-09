@@ -2,11 +2,10 @@
 // Ordner „photo-uploads“; nur bei Erfolg landet es im öffentlichen Ordner „photos“ und darf ins Profil.
 // Das Original wird danach immer gelöscht.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { json, preflight } from '../_shared/http.ts';
 import { judgePhoto, SIGHTENGINE_MODELS, type SightengineResult, type Verdict } from '../_shared/photoCheck.ts';
 
-const json = (body: unknown, status = 200) => Response.json(body, { status });
-
-// Fehlertext von Sightengine (ohne Zugangsdaten), damit „nicht erreichbar“ sich nachvollziehen lässt.
+// Fehlertext von Sightengine (ohne Zugangsdaten) landet nur im Protokoll, nicht in der Antwort.
 type Checked = { result: SightengineResult } | { error: string };
 
 async function sightengine(file: Blob, user: string, secret: string): Promise<Checked> {
@@ -24,6 +23,8 @@ async function sightengine(file: Blob, user: string, secret: string): Promise<Ch
 }
 
 Deno.serve(async (req) => {
+  const early = preflight(req);
+  if (early) return early;
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ error: 'unauthorized' }, 401);
   const url = Deno.env.get('SUPABASE_URL')!;
@@ -48,7 +49,7 @@ Deno.serve(async (req) => {
     let checkedBy = 'sightengine';
     if (apiUser && apiSecret) {
       const checked = await sightengine(file, apiUser, apiSecret);
-      if ('error' in checked) return json({ ok: false, reason: 'unavailable', detail: checked.error });
+      if ('error' in checked) return json({ ok: false, reason: 'unavailable' });
       verdict = judgePhoto(checked.result);
     } else {
       // Ohne Zugang zur Prüfung nur im Testbetrieb durchlassen, sonst lieber gar nichts.
@@ -66,10 +67,16 @@ Deno.serve(async (req) => {
     }
 
     const saved = await db.storage.from('photos').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true });
-    if (saved.error) return json({ ok: false, reason: 'unavailable', detail: `Speichern: ${saved.error.message}` });
+    if (saved.error) {
+      console.error('photo-check speichern', saved.error.message);
+      return json({ ok: false, reason: 'unavailable' });
+    }
     const noted = await db.from('approved_photos')
       .upsert({ path, user_id: userId, group_photo: verdict.group, checked_by: checkedBy });
-    if (noted.error) return json({ ok: false, reason: 'unavailable', detail: `Eintragen: ${noted.error.message}` });
+    if (noted.error) {
+      console.error('photo-check eintragen', noted.error.message);
+      return json({ ok: false, reason: 'unavailable' });
+    }
     return json({ ok: true, path, group: verdict.group });
   } finally {
     await db.storage.from('photo-uploads').remove([path]);
