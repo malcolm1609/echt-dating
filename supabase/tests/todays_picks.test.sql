@@ -26,6 +26,20 @@ select pg_temp.assert(
   'es geht mit dem nächsten Vorschlag weiter');
 reset role;
 
+-- Die Vorschläge des Tages werden gemerkt: Ein neues Profil ändert die Liste erst morgen,
+-- wer pausiert, fällt aber sofort heraus.
+insert into auth.users values ('00000000-0000-0000-0000-000000000299');
+insert into profiles (id, display_name, birthdate, gender, seeking, area_id, lat, lng, status, last_active_at, goal)
+  values ('00000000-0000-0000-0000-000000000299', 'Neu', '1992-01-01', 'm', '{f}', 1, 52.52, 13.40, 'admitted', now(), 'fest');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000001a');
+select pg_temp.assert(not exists (select from todays_picks() where display_name = 'Neu'), 'neues Profil kommt erst morgen dazu');
+reset role;
+update profiles set paused = true where id = (select id from first_round where n = 3);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000001a');
+select pg_temp.assert((select count(*) from todays_picks()) = 3, 'wer pausiert, fällt sofort aus den gemerkten Vorschlägen');
+select pg_temp.assert(not has_table_privilege('authenticated', 'daily_picks', 'select'), 'gemerkte Vorschläge sind nicht direkt lesbar');
+reset role;
+
 select pg_temp.as_user('00000000-0000-0000-0000-00000000001b');
 select pg_temp.assert((select count(*) from todays_picks()) = 0, 'Warteliste bekommt keine Vorschläge');
 reset role;

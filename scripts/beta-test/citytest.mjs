@@ -199,6 +199,8 @@ async function shard(n) {
     const errors = Object.values(m.stats).reduce((a, s) => a + Object.values(s.errors).reduce((x, y) => x + y, 0), 0);
     console.log(`    ${all.length} Anfragen, ${errors} Fehler, Median ${pct(all, 50)} ms, 95 % unter ${pct(all, 95)} ms, Dauer ${((Date.now() - began) / 1000).toFixed(0)} s`);
     for (const [name, x] of Object.entries(m.stats)) if (Object.keys(x.errors).length) console.log(`      ${name}: ${JSON.stringify(x.errors)}`);
+    // Nach jeder Stufe sichern, damit ein Abbruch nicht alles verliert.
+    writeFileSync(`${out}/shard-${n}.json`, JSON.stringify(report));
   }
   writeFileSync(`${out}/shard-${n}.json`, JSON.stringify(report));
 }

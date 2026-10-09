@@ -13,7 +13,9 @@ export const env = (name) => {
   return v;
 };
 
-const opts = { auth: { persistSession: false, autoRefreshToken: false } };
+// Nach 30 Sekunden ohne Antwort gibt die App auf (sonst würde ein hängender Server die Messung endlos aufhalten).
+const timedFetch = (url, init = {}) => fetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(30000) });
+const opts = { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: timedFetch } };
 export const admin = () => createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), opts);
 export const anon = () => createClient(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), opts);
 

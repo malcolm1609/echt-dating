@@ -73,6 +73,8 @@ insert into profiles (id, display_name, birthdate, gender, seeking, area_id, lat
   from generate_series(1, 12) i;
 insert into likes (from_id, to_id, decision)
   select ('00000000-0000-0000-0000-0000000009' || lpad(i::text, 2, '0'))::uuid, '00000000-0000-0000-0000-00000000007e', 'pass' from generate_series(1, 12) i;
+-- Leas Vorschläge für heute stehen schon fest; geprüft wird die Berechnung für jemanden, der erst jetzt öffnet.
+delete from daily_picks;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000007a');
 select pg_temp.assert(not exists (select from todays_picks() where display_name = 'Ben'), 'wer heute schon oft gezeigt wurde, pausiert bis morgen');
 reset role;
