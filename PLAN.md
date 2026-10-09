@@ -110,6 +110,12 @@ Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --o
 - **Stadttest** (`.github/workflows/city-test.yml`, Markierung `[stadttest]`, Probelauf `[stadttest klein]`): 10.000 Testpersonen in Gießen, Marburg, Frankfurt und Mainz, in Stufen bis 2.000 gleichzeitig, verteilt auf 8 Lastrechner.
 - Mit `db` in der Markierung (`[betatest db]`, `[stadttest db]`) werden vorher die Tabellen-Änderungen des Zweigs auf die Beta gespielt. Alle Testkonten werden danach gelöscht.
 
+## iPhone-App (TestFlight)
+
+- Gebaut wird in der Cloud von Expo (EAS), verteilt über TestFlight. App-Kennung `app.echt.dating`.
+- GitHub-Aktion `iphone.yml`: „einrichten“ legt das Expo-Projekt an und hinterlegt die Adresse des Beta-Servers, „bauen“ baut und schickt zu TestFlight. Braucht das GitHub-Secret `EXPO_TOKEN`.
+- Der allererste Build läuft einmal am Computer (`npx eas-cli@latest build -p ios --profile production --auto-submit`), weil dabei die Apple-Zertifikate entstehen.
+
 ## Offene Punkte
 - Monetarisierung: Echt Plus (4,99 €/Monat) plus Einnahmen von Partner-Cafés und Events, im Prototyp nur als Demo ohne Zahlung
 - Geschlechter jenseits von f/m und wer wen sucht: die Verhältnisregel muss das später abbilden
