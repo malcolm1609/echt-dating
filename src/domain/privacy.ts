@@ -48,7 +48,7 @@ export const PRIVACY_POLICY: PrivacySection[] = [
   {
     title: 'Besonders geschützte Daten',
     body: [
-      'Aus deinem Geschlecht und wen du suchst lässt sich deine sexuelle Orientierung ablesen. Das Ausweis- und Selfie-Abgleich nutzt biometrische Merkmale. Beides sind besondere Kategorien nach Art. 9 DSGVO.',
+      'Aus deinem Geschlecht und wen du suchst lässt sich deine sexuelle Orientierung ablesen. Der Ausweis- und Selfie-Abgleich nutzt biometrische Merkmale. Beides sind besondere Kategorien nach Art. 9 DSGVO.',
       'Wir verarbeiten sie nur mit deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a DSGVO), die du bei der Registrierung gibst. Du kannst sie jederzeit widerrufen, indem du dein Konto löschst. Die Verarbeitung bis dahin bleibt rechtmäßig.',
     ],
   },
