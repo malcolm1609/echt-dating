@@ -1,5 +1,5 @@
 -- Gefunden im Beta-Test: Seit die Vorschläge des Tages gemerkt werden, zeigte todays_picks nach 6 Entscheidungen
--- noch die übrigen gemerkten Vorschläge, wenn man auch über andere Wege (z. B. ein Event) entschieden hatte.
+-- noch die übrigen gemerkten Vorschläge, wenn ein Teil der Entscheidungen nicht auf diese Vorschläge fiel.
 -- Ist das Tageslimit erreicht, gibt es keine Vorschläge mehr.
 
 create or replace function todays_picks() returns setof public_profiles
