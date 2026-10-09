@@ -142,6 +142,14 @@ jobs:
 
       - run: npm ci
 
+      # Gebiete für Zulassung und Balance: alle Landkreise und kreisfreien Städte (Grenzen vom BKG).
+      - name: Landkreise laden
+        continue-on-error: true
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.service }}
+        run: node --experimental-strip-types scripts/load-districts.mjs
+
       - name: Beispielprofile und Testkonten
         env:
           SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co

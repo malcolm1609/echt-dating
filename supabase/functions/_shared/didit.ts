@@ -72,17 +72,17 @@ export function toVerification(w: DiditWebhook): { idCheck: CheckResult; selfieM
   };
 }
 
-export interface ProfileForDecision { status: string; gender: Gender; lat: number; lng: number }
+export interface ProfileForDecision { status: string; gender: Gender }
 export interface ProfileUpdate { status: 'admitted' | 'waitlisted' | 'rejected'; area_id: number | null; birthdate: string | null }
 
 /** Neue Werte fürs Profil, oder null, wenn nichts zu entscheiden ist. */
-export function decideWebhook(w: DiditWebhook, profile: ProfileForDecision, areas: Area[], today: Date): ProfileUpdate | null {
+export function decideWebhook(w: DiditWebhook, profile: ProfileForDecision, area: Area | null, today: Date): ProfileUpdate | null {
   if (profile.status !== 'pending_verification') return null;
   const v = toVerification(w);
   if (v.idCheck === 'pending' || v.selfieMatch === 'pending') return null;
   if (v.idCheck === 'failed' || v.selfieMatch === 'failed' || !v.birthdate) return { status: 'rejected', area_id: null, birthdate: null };
 
-  const outcome = processVerification({ ...v, birthdate: v.birthdate, gender: profile.gender, lat: profile.lat, lng: profile.lng }, areas, today);
+  const outcome = processVerification({ ...v, birthdate: v.birthdate, gender: profile.gender }, area, today);
   if (outcome.status === 'rejected') return { status: 'rejected', area_id: null, birthdate: v.birthdate };
   if (outcome.status === 'pending_verification') return null;
   return { status: outcome.status, area_id: outcome.areaId, birthdate: v.birthdate };

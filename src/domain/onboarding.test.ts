@@ -1,8 +1,7 @@
-import { ageOn, validateProfileDraft, assignArea, processVerification, Area } from './onboarding';
+import { ageOn, validateProfileDraft, processVerification, Area } from './onboarding';
 
 const today = new Date('2026-10-07T12:00:00Z');
-const berlin: Area = { id: 1, lat: 52.52, lng: 13.405, radiusKm: 30, capacity: 1000, counts: { f: 10, m: 10 } };
-const hamburg: Area = { id: 2, lat: 53.55, lng: 9.99, radiusKm: 30, capacity: 1000, counts: { f: 0, m: 0 } };
+const berlin: Area = { id: 1, capacity: 1000, counts: { f: 10, m: 10 } };
 
 describe('ageOn', () => {
   it('counts full years only', () => {
@@ -33,33 +32,23 @@ describe('validateProfileDraft', () => {
   });
 });
 
-describe('assignArea', () => {
-  it('picks the nearest area whose radius contains the location', () => {
-    expect(assignArea(52.4, 13.5, [hamburg, berlin])?.id).toBe(1);
-  });
-
-  it('returns null outside every area', () => {
-    expect(assignArea(48.14, 11.58, [hamburg, berlin])).toBeNull();
-  });
-});
-
 describe('processVerification', () => {
-  const applicant = { idCheck: 'passed', selfieMatch: 'passed', birthdate: '1998-04-12', gender: 'f', lat: 52.5, lng: 13.4 } as const;
+  const applicant = { idCheck: 'passed', selfieMatch: 'passed', birthdate: '1998-04-12', gender: 'f' } as const;
 
   it('admits and assigns the area when everything fits', () => {
-    expect(processVerification(applicant, [berlin, hamburg], today)).toEqual({ status: 'admitted', areaId: 1 });
+    expect(processVerification(applicant, berlin, today)).toEqual({ status: 'admitted', areaId: 1 });
   });
 
   it('uses the age from the ID check, not a typed one', () => {
-    expect(processVerification({ ...applicant, birthdate: '2010-01-01' }, [berlin], today)).toEqual({ status: 'rejected', reason: 'underage', areaId: 1 });
+    expect(processVerification({ ...applicant, birthdate: '2010-01-01' }, berlin, today)).toEqual({ status: 'rejected', reason: 'underage', areaId: 1 });
   });
 
   it('waitlists people outside every open area', () => {
-    expect(processVerification({ ...applicant, lat: 48.14, lng: 11.58 }, [berlin, hamburg], today)).toEqual({ status: 'waitlisted', reason: 'no_area', areaId: null });
+    expect(processVerification(applicant, null, today)).toEqual({ status: 'waitlisted', reason: 'no_area', areaId: null });
   });
 
   it('passes ratio decisions through from decideAdmission', () => {
     const crowded = { ...berlin, counts: { f: 60, m: 40 } };
-    expect(processVerification(applicant, [crowded], today)).toEqual({ status: 'waitlisted', reason: 'gender_ratio', areaId: 1 });
+    expect(processVerification(applicant, crowded, today)).toEqual({ status: 'waitlisted', reason: 'gender_ratio', areaId: 1 });
   });
 });
