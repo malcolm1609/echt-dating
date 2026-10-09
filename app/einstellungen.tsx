@@ -104,6 +104,7 @@ export default function Settings() {
         <Button title={plus.active ? 'Echt Plus ist aktiv' : `Echt Plus · ${PLUS_PRICE}`} variant="ghost" icon="star" onPress={() => router.push('/plus')} />
         {backend.demo && <Button title="Demo neu starten" variant="ghost" onPress={restartDemo} />}
         {backend.beta && <Button title="Testdaten zurücksetzen" variant="ghost" icon="rotate-ccw" onPress={resetTestData} />}
+        <Button title="Datenschutz" variant="ghost" icon="shield" onPress={() => router.push('/datenschutz')} />
         {!backend.demo && <Button title="Abmelden" variant="ghost" icon="log-out" onPress={signOut} />}
         {deleting ? (
           <View style={[s.hint, { gap: 12 }]}>

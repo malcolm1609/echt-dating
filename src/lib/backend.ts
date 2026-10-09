@@ -4,6 +4,7 @@ import { activeNearbyBucket } from '../domain/activeNearby.ts';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import { defaultPreferences, fitsEachOther, Preferences } from '../domain/preferences.ts';
 import { goalFit, ProfileContent, promptText, sharedInterests } from '../domain/profileContent.ts';
+import type { ConsentKind } from '../domain/privacy.ts';
 import { rankPicks } from '../domain/ranking.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
 import type { MyProfile } from '../ui/ProfileView';
@@ -30,6 +31,8 @@ export interface Backend {
   resetTestData(): Promise<void>;
   sendCode(email: string): Promise<void>;
   verifyCode(email: string, code: string): Promise<void>;
+  /** Speichert die Einwilligungen aus der Registrierung mit der Fassung der Datenschutzerklärung. */
+  recordConsent(kinds: ConsentKind[], version: string): Promise<void>;
   /** Zweite Prüfung: SMS-Code an die Handynummer (E.164). Eine Nummer gehört genau zu einem Konto. */
   sendPhoneCode(phone: string): Promise<void>;
   verifyPhoneCode(phone: string, code: string): Promise<void>;
@@ -96,6 +99,9 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
     },
     async verifyCode(email, token) {
       ok(await db.auth.verifyOtp({ email, token, type: 'email' }));
+    },
+    async recordConsent(kinds, version) {
+      ok(await db.rpc('record_consent', { kinds, version }));
     },
     async sendPhoneCode(phone) {
       const { error } = await db.auth.updateUser({ phone });
@@ -271,6 +277,7 @@ export function demoBackend(delayMs = 300): Backend {
     resetTestData: wait,
     sendCode: wait,
     verifyCode: wait,
+    recordConsent: wait,
     sendPhoneCode: wait,
     async verifyPhoneCode(p) {
       await wait();
