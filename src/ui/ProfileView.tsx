@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import type { Gender } from '../domain/admission';
+import { CONTACT_INFO_ERROR, hasContactInfo } from '../domain/contactInfo.ts';
 import type { MusicLink } from '../domain/music.ts';
 import { GoalId, ProfileContent, PromptAnswer, promptText } from '../domain/profileContent.ts';
 import type { Preferences } from '../domain/preferences.ts';
@@ -54,8 +55,8 @@ export function ProfileView({ profile, onSaveBio, onSaveContent, onUploadPhoto, 
     setError(undefined);
     try {
       await action();
-    } catch {
-      setError('Das hat nicht geklappt. Bitte versuch es noch einmal.');
+    } catch (e) {
+      setError(/contact info/.test(String((e as Error)?.message ?? e)) ? CONTACT_INFO_ERROR : 'Das hat nicht geklappt. Bitte versuch es noch einmal.');
     } finally {
       setBusy(false);
     }
@@ -92,7 +93,7 @@ export function ProfileView({ profile, onSaveBio, onSaveContent, onUploadPhoto, 
           <Text style={font.small}>{`${bio.length} / ${BIO_MAX}`}</Text>
           {changed && (
             <View style={{ minWidth: 140 }}>
-              <Button title="Speichern" busy={busy} onPress={() => run(async () => { await onSaveBio(bio.trim()); setSaved(bio.trim()); })} />
+              <Button title="Speichern" busy={busy} onPress={() => (hasContactInfo(bio) ? setError(CONTACT_INFO_ERROR) : run(async () => { await onSaveBio(bio.trim()); setSaved(bio.trim()); }))} />
             </View>
           )}
         </View>

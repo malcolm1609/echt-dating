@@ -3,3 +3,7 @@ project_id = "echt-dating"
 # Didit ruft den Webhook ohne Supabase-Login auf; geschützt ist er über die HMAC-Signatur.
 [functions.verification-webhook]
 verify_jwt = false
+
+# Wird jede Minute vom Server angestoßen und verschickt nur ohnehin fällige Date-Check-SMS.
+[functions.date-alarm]
+verify_jwt = false

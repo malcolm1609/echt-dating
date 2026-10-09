@@ -7,6 +7,7 @@
 #   SUPABASE_DB_PASSWORD   Datenbank-Passwort, das beim Anlegen des Projekts vergeben wurde
 #   BETA_PASSWORD          frei gewähltes Passwort für die Testkonten
 #   SIGHTENGINE_API_USER / SIGHTENGINE_API_SECRET  (optional) Zugang für die Fotoprüfung, von sightengine.com
+#   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM  (optional) SMS für den Date-Check, von twilio.com
 # und unter Settings → Pages als Quelle „GitHub Actions“ wählen.
 name: Beta
 
@@ -91,6 +92,31 @@ jobs:
           echo "anon=$anon" >> "$GITHUB_OUTPUT"
           echo "service=$service" >> "$GITHUB_OUTPUT"
 
+      # Date-Check: Alarm-SMS an Vertrauenspersonen über Twilio. Ohne die drei Secrets läuft alles,
+      # nur die SMS gehen nicht raus (die Seite der Vertrauensperson zeigt den Alarm trotzdem).
+      - name: Date-Check einrichten
+        continue-on-error: true
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM: ${{ secrets.TWILIO_FROM }}
+          SITE: ${{ steps.pages.outputs.base_url }}
+          SERVICE_KEY: ${{ steps.keys.outputs.service }}
+        run: |
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" PUBLIC_APP_URL="$SITE"
+          if [ -n "$TWILIO_ACCOUNT_SID" ] && [ -n "$TWILIO_AUTH_TOKEN" ] && [ -n "$TWILIO_FROM" ]; then
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+              TWILIO_ACCOUNT_SID="$TWILIO_ACCOUNT_SID" TWILIO_AUTH_TOKEN="$TWILIO_AUTH_TOKEN" TWILIO_FROM="$TWILIO_FROM"
+          else
+            echo "::notice::Date-Check ohne SMS: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN und TWILIO_FROM fehlen."
+          fi
+          supabase functions deploy date-alarm --project-ref "$SUPABASE_PROJECT_REF" --use-api --no-verify-jwt
+          url="https://$SUPABASE_PROJECT_REF.supabase.co"
+          curl -fsS -X POST "$url/rest/v1/app_settings?on_conflict=key" \
+            -H "apikey: $SERVICE_KEY" \
+            -H "Content-Type: application/json" -H "Prefer: resolution=merge-duplicates" \
+            --data "{\"key\":\"date_alarm_url\",\"value\":\"$url/functions/v1/date-alarm\"}"
+
       # Nur für die Anmeldung per E-Mail-Code; die Testkonten mit Passwort brauchen das nicht.
       - name: Anmeldung per 6-stelligem Code statt Link
         continue-on-error: true
@@ -128,6 +154,7 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.keys.outputs.anon }}
           EXPO_PUBLIC_BETA: '1'
+          EXPO_PUBLIC_APP_URL: ${{ steps.pages.outputs.base_url }}
           EXPO_BASE_URL: ${{ steps.pages.outputs.base_path }}
         run: |
           npx expo export --platform web --output-dir dist

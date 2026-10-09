@@ -7,6 +7,7 @@ import { backend } from '../../src/lib/backend';
 import { matchStore, useMatch } from '../../src/lib/matches';
 import { usePlus } from '../../src/lib/plus';
 import { Chat } from '../../src/ui/Chat';
+import { DateCheckPanel } from '../../src/ui/DateCheckPanel';
 import { Button, Screen } from '../../src/ui/kit';
 import { QuestionRound } from '../../src/ui/QuestionRound';
 import { ProfileDetails } from '../../src/ui/ProfileDetails';
@@ -88,6 +89,7 @@ export default function MatchScreen() {
             markDatePast={() => matchStore.markDatePast(id)}
             answerAfterDate={(a) => matchStore.answerAfterDate(id, a)}
             endKindly={(t) => matchStore.endKindly(id, t)}
+            dateCheck={<DateCheckPanel other={id} name={match.name} />}
           />
         ) : (
           <QuestionRound name={match.name} opener={match.opener} answers={match.answers} onAnswer={(k, t) => matchStore.answer(id, k, t)} />

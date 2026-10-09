@@ -2,6 +2,7 @@
 // drei Fragen aus je einer Kategorie, ein Beziehungsziel, bis zu fünf Interessen.
 // Fragen zielen auf Konkretes (Ort, Erlebnis, Empfehlung), nicht auf Witz.
 
+import { CONTACT_INFO_ERROR, hasContactInfo } from './contactInfo.ts';
 import { MusicLink, validateMusic } from './music.ts';
 
 export type PromptCategory = 'alltag' | 'anknuepfen' | 'werte';
@@ -101,6 +102,7 @@ export function validateProfileContent(c: ProfileContent): ProfileContentErrors 
     if (answers.length !== 1 || !answer) errors[id] = 'Bitte wähle eine Frage und beantworte sie.';
     else if (answer.length < PROMPT_MIN) errors[id] = 'Ein paar Worte mehr, damit man anknüpfen kann.';
     else if (answer.length > PROMPT_MAX) errors[id] = `Höchstens ${PROMPT_MAX} Zeichen.`;
+    else if (hasContactInfo(answer)) errors[id] = CONTACT_INFO_ERROR;
   }
   if (!c.goal || !goalLabel(c.goal)) errors.goal = 'Bitte wähle, was du suchst.';
   if (c.interests.length > INTEREST_MAX) errors.interests = `Höchstens ${INTEREST_MAX} Interessen.`;

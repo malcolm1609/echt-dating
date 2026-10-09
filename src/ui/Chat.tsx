@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { afterDateOutcome, DateAnswer, waitingDays } from '../domain/conversation.ts';
 import { dateIdeas } from '../domain/dateIdeas.ts';
@@ -28,16 +28,17 @@ interface Props {
   testTools?: boolean;
   plus?: { active: boolean; readReceipts: boolean };
   onUpgrade?: () => void;
+  /** Date-Check für ein zugesagtes, kommendes Date. */
+  dateCheck?: ReactNode;
 }
 
-export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, markDatePast, answerAfterDate, endKindly, testTools, plus = { active: false, readReceipts: false }, onUpgrade }: Props) {
+export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, markDatePast, answerAfterDate, endKindly, testTools, plus = { active: false, readReceipts: false }, onUpgrade, dateCheck }: Props) {
   const [draft, setDraft] = useState('');
   const [panel, setPanel] = useState<'none' | 'date' | 'end'>('none');
   const ideas = dateIdeas(match.shared ?? []);
   const [idea, setIdea] = useState(ideas[0]);
   const [place, setPlace] = useState(PARTNER_CAFES[0].name);
   const [reserve, setReserve] = useState(false);
-  const [checkIn, setCheckIn] = useState(false);
   const [when, setWhen] = useState(TIMES[0]);
   const goodbye = `Hey ${match.name}, danke für die schönen Gespräche. Ich merke, dass es für mich nicht ganz passt, und wollte dir das ehrlich sagen. Alles Gute für dich!`;
   const waiting = waitingDays(match.messages, now);
@@ -66,13 +67,7 @@ export function Chat({ match, now = new Date(), send, proposeDate, acceptDate, m
           {!match.date.accepted && match.date.mine === false && acceptDate && <Button title="Zusagen" onPress={acceptDate} />}
           {match.date.reserved && <Text style={font.small}>Tisch ist reserviert.</Text>}
           {PARTNER_CAFES.some((c) => c.name === match.date!.place) && <Text style={font.small}>{`Mit Echt bekommt ihr dort ${PARTNER_DATE_DISCOUNT} % Rabatt.`}</Text>}
-          {!match.date.past && (checkIn ? (
-            <Text style={[font.small, { color: colors.hint, marginTop: 8 }]}>Check-in aktiv: Eine Vertrauensperson sieht während des Dates, wo du bist, und wir fragen nach einer Stunde, ob alles okay ist.</Text>
-          ) : (
-            <View style={{ marginTop: 10 }}>
-              <Button title="Date-Check-in einschalten (kostenlos)" variant="ghost" icon="shield" onPress={() => setCheckIn(true)} />
-            </View>
-          ))}
+          {match.date.accepted && !match.date.past && dateCheck}
           {testTools && match.date.accepted && !match.date.past && <Button title="Test: Date ist vorbei" variant="ghost" onPress={markDatePast} />}
         </View>
       )}

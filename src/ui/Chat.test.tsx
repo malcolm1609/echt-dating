@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { Text } from 'react-native';
 import { Chat } from './Chat';
 import type { Match } from '../lib/matches';
 
@@ -70,11 +71,15 @@ describe('Chat', () => {
     expect(screen.getByText('Gelesen')).toBeTruthy();
   });
 
-  it('offers a free safety check-in for an upcoming date', () => {
-    const upcoming = { ...base, date: { place: 'Café am Kirchenplatz', when: 'Samstag', accepted: true, past: false } };
-    render(<Chat match={upcoming} now={now} {...actions()} />);
-    fireEvent.press(screen.getByText('Date-Check-in einschalten (kostenlos)'));
-    expect(screen.getByText(/Check-in aktiv/)).toBeTruthy();
+  it('shows the date check only for an accepted, upcoming date', () => {
+    const date = { place: 'Café am Kirchenplatz', when: 'Samstag', accepted: true, past: false };
+    const check = <Text>Date-Check hier</Text>;
+    const { rerender } = render(<Chat match={{ ...base, date }} now={now} {...actions()} dateCheck={check} />);
+    expect(screen.getByText('Date-Check hier')).toBeTruthy();
+    rerender(<Chat match={{ ...base, date: { ...date, accepted: false } }} now={now} {...actions()} dateCheck={check} />);
+    expect(screen.queryByText('Date-Check hier')).toBeNull();
+    rerender(<Chat match={{ ...base, date: { ...date, past: true } }} now={now} {...actions()} dateCheck={check} />);
+    expect(screen.queryByText('Date-Check hier')).toBeNull();
   });
 
   it('lets the invited person accept a date, but not the one who proposed it', () => {
