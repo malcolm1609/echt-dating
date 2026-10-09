@@ -1,5 +1,5 @@
 import Feather from '@expo/vector-icons/Feather';
-import { router, useFocusEffect } from 'expo-router';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { backend } from '../src/lib/backend';
@@ -69,6 +69,9 @@ export default function Settings() {
 
   return (
     <Screen>
+      {/* Ab iOS 26 geht „Zurück“ per Wischen überall auf der Seite. Hier würde das die Regler für Alter und
+          Umkreis stören, deshalb nur vom linken Rand aus. */}
+      <Stack.Screen options={{ fullScreenGestureEnabled: false }} />
       <ScrollView contentContainerStyle={{ gap: 24, paddingBottom: 12, paddingHorizontal: 2 }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Pressable accessibilityRole="button" accessibilityLabel="Zurück" onPress={back} hitSlop={12} style={{ width: 44, height: 44, justifyContent: 'center' }}>
