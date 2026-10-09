@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, View } from 'react-native';
+import { useScrollLock } from './ScrollLock';
 import { colors } from './theme';
 
 const native = Platform.OS !== 'web';
@@ -43,8 +44,9 @@ export function RangeSlider({ min, max, step = 1, values, onChange, labels }: Pr
   const left = useRef(0);
   const [active, setActive] = useState<number | null>(null);
   const pos = (v: number, w = width) => (w * (v - min)) / (max - min || 1);
-  const live = useRef({ width, values, onChange });
-  live.current = { width, values, onChange };
+  const lockScroll = useScrollLock();
+  const live = useRef({ width, values, onChange, lockScroll });
+  live.current = { width, values, onChange, lockScroll };
   const range = values.length === 2;
 
   const set = (i: number, v: number) => {
@@ -77,6 +79,8 @@ export function RangeSlider({ min, max, step = 1, values, onChange, labels }: Pr
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (_, g) => {
         drag.current = { thumb: null, offset: 0 };
+        // Solange der Finger auf dem Regler ist, scrollt die Seite nicht mit.
+        live.current.lockScroll(true);
         // Position der Leiste frisch messen: die Seite kann inzwischen gescrollt sein.
         track.current?.measureInWindow((x) => {
           left.current = x;
@@ -91,8 +95,14 @@ export function RangeSlider({ min, max, step = 1, values, onChange, labels }: Pr
         if (drag.current.thumb === null) return;
         set(drag.current.thumb, valueAt(at(g.moveX), live.current.width, min, max, step));
       },
-      onPanResponderRelease: () => setActive(null),
-      onPanResponderTerminate: () => setActive(null),
+      onPanResponderRelease: () => {
+        live.current.lockScroll(false);
+        setActive(null);
+      },
+      onPanResponderTerminate: () => {
+        live.current.lockScroll(false);
+        setActive(null);
+      },
     }),
   ).current;
 
