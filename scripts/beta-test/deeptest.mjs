@@ -3,6 +3,7 @@
 // Toms und Leas Testkonten bleiben unberührt.
 // Aufruf: SUPABASE_URL=… SUPABASE_ANON_KEY=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/beta-test/deeptest.mjs [bericht.json]
 import { writeFileSync } from 'node:fs';
+import { deflateSync } from 'node:zlib';
 import { admin, anon, assert, ok, password, profileFor, recorder, rejects, runId, signIn, sleep } from './lib.mjs';
 
 const svc = admin();
@@ -10,6 +11,21 @@ const run = runId();
 const r = recorder();
 const created = [];
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+
+// Einfarbiges Bild in Fotogröße (für die Fotoprüfung zu klein ist das 1×1-Bild oben).
+function plainPng(w, h) {
+  const crc = (buf) => { let c = ~0; for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1)); } return ~c >>> 0; };
+  const chunk = (type, data) => {
+    const t = Buffer.concat([Buffer.from(type), data]);
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+    const sum = Buffer.alloc(4); sum.writeUInt32BE(crc(t));
+    return Buffer.concat([len, t, sum]);
+  };
+  const head = Buffer.alloc(13); head.writeUInt32BE(w, 0); head.writeUInt32BE(h, 4); head[8] = 8; head[9] = 2;
+  const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(w * 3, 0xc8)]);
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', head),
+    chunk('IDAT', deflateSync(Buffer.concat(Array(h).fill(row)))), chunk('IEND', Buffer.alloc(0))]);
+}
 
 async function newAccount(tag) {
   const email = `deeptest-${run}-${tag}@example.com`;
@@ -81,12 +97,12 @@ try {
     rejects(a.from('profiles').update({ age_min: 40, age_max: 20 }).eq('id', A.id), 'Alter verdreht'));
   await r.check('Foto hochladen, prüfen lassen und im Profil speichern', async () => {
     const path = `${A.id}/deeptest-${run}.png`;
-    ok(await a.storage.from('photo-uploads').upload(path, PNG, { contentType: 'image/png' }));
+    ok(await a.storage.from('photo-uploads').upload(path, plainPng(320, 400), { contentType: 'image/png' }));
     const { data, error } = await a.functions.invoke('photo-check', { body: { path } });
     assert(!error, `Fotoprüfung nicht erreichbar (${error?.message})`);
     // Mit Sightengine hat das Testbild kein Gesicht und muss abgelehnt werden; ohne lässt der Testbetrieb es durch.
     if (!data.ok) {
-      assert(data.reason === 'no_face', `unerwarteter Grund ${data.reason}`);
+      assert(data.reason === 'no_face', `unerwarteter Grund ${data.reason} ${data.detail ?? ''}`);
       return 'Bild ohne Gesicht abgelehnt';
     }
     ok(await a.from('profiles').update({ photos: [path] }).eq('id', A.id));

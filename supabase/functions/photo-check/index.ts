@@ -6,16 +6,21 @@ import { judgePhoto, SIGHTENGINE_MODELS, type SightengineResult, type Verdict } 
 
 const json = (body: unknown, status = 200) => Response.json(body, { status });
 
-async function sightengine(file: Blob, user: string, secret: string): Promise<SightengineResult | null> {
+// Fehlertext von Sightengine (ohne Zugangsdaten), damit „nicht erreichbar“ sich nachvollziehen lässt.
+type Checked = { result: SightengineResult } | { error: string };
+
+async function sightengine(file: Blob, user: string, secret: string): Promise<Checked> {
   const form = new FormData();
   form.append('media', file, 'photo.jpg');
   form.append('models', SIGHTENGINE_MODELS);
   form.append('api_user', user);
   form.append('api_secret', secret);
   const res = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: form });
-  if (!res.ok) return null;
-  const body: SightengineResult = await res.json();
-  return body.status === 'success' ? body : null;
+  const body = await res.json().catch(() => null);
+  if (body?.status === 'success') return { result: body as SightengineResult };
+  const error = `${res.status} ${body?.error?.type ?? ''} ${body?.error?.message ?? ''}`.trim();
+  console.error('sightengine', error);
+  return { error };
 }
 
 Deno.serve(async (req) => {
@@ -42,9 +47,9 @@ Deno.serve(async (req) => {
     let verdict: Verdict;
     let checkedBy = 'sightengine';
     if (apiUser && apiSecret) {
-      const result = await sightengine(file, apiUser, apiSecret);
-      if (!result) return json({ ok: false, reason: 'unavailable' });
-      verdict = judgePhoto(result);
+      const checked = await sightengine(file, apiUser, apiSecret);
+      if ('error' in checked) return json({ ok: false, reason: 'unavailable', detail: checked.error });
+      verdict = judgePhoto(checked.result);
     } else {
       // Ohne Zugang zur Prüfung nur im Testbetrieb durchlassen, sonst lieber gar nichts.
       const { data: beta } = await db.rpc('beta_enabled');
@@ -61,10 +66,10 @@ Deno.serve(async (req) => {
     }
 
     const saved = await db.storage.from('photos').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true });
-    if (saved.error) return json({ ok: false, reason: 'unavailable' });
+    if (saved.error) return json({ ok: false, reason: 'unavailable', detail: `Speichern: ${saved.error.message}` });
     const noted = await db.from('approved_photos')
       .upsert({ path, user_id: userId, group_photo: verdict.group, checked_by: checkedBy });
-    if (noted.error) return json({ ok: false, reason: 'unavailable' });
+    if (noted.error) return json({ ok: false, reason: 'unavailable', detail: `Eintragen: ${noted.error.message}` });
     return json({ ok: true, path, group: verdict.group });
   } finally {
     await db.storage.from('photo-uploads').remove([path]);
