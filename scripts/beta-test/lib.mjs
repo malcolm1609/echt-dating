@@ -155,7 +155,7 @@ export function meter() {
 }
 
 // Erwartete Fehler, die zur App gehören (z. B. Tageslimit erreicht, Event voll), zählen nicht als Störung.
-export const expected = (e) => /daily limit|full|half|no seats|already|duplicate|not visible|row-level security|violates check|chat closed|round locked/i.test(e?.message ?? '');
+export const expected = (e) => /daily limit|full|half|no seats|already|duplicate|not visible|row-level security|violates check|chat closed|round locked|too many messages/i.test(e?.message ?? '');
 
 // Eine Person benutzt die App bis zum Zeitpunkt `until` wie im echten Leben: Beim Öffnen lädt die App
 // Aktivität, Vorschläge und Zähler, danach wird entschieden, in Matches und Treffen geschaut und geschrieben,
