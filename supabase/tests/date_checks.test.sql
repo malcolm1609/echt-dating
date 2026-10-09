@@ -63,6 +63,20 @@ select answer_date_check((select token from t), 'later');
 reset role;
 select pg_temp.assert((select kind from claim_date_alarms()) = 'clear', 'Entwarnung nach Antwort');
 select pg_temp.assert((select alarm_sent from date_checks) is null, 'späteres Überziehen alarmiert wieder');
+update date_checks set check_at = now() - interval '20 minutes';
+select pg_temp.assert((select kind from claim_date_alarms()) = 'overdue', 'zweites Überziehen: SMS');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000d1');
+select answer_date_check((select token from t), 'later');
+reset role;
+select pg_temp.assert((select kind from claim_date_alarms()) = 'clear', 'zweite Entwarnung');
+update date_checks set check_at = now() - interval '20 minutes';
+select pg_temp.assert(not exists (select from claim_date_alarms()), 'ab dem dritten Überziehen keine SMS mehr (gegen SMS-Schleuder)');
+update date_checks set check_at = now() + interval '1 hour';
+
+-- Das Match ändert den Ort: Die Vertrauensperson sieht weiter den Ort vom Start des Checks.
+update match_dates set place = 'Irgendwo anders', when_text = 'Sonntag', accepted = false;  -- wie ein neuer Vorschlag
+select pg_temp.assert((select date_check_public(token)->>'place' from t) = 'Café am Kirchenplatz', 'Ort lässt sich nachträglich nicht umbiegen');
+update match_dates set place = 'Café am Kirchenplatz', when_text = 'Samstag, 15 Uhr', accepted = true;
 
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000d1');
 select answer_date_check((select token from t), 'help');
@@ -77,16 +91,31 @@ select pg_temp.as_user('00000000-0000-0000-0000-0000000000d1');
 select answer_date_check((select token from t), 'ok');
 reset role;
 select pg_temp.assert((select date_check_public(token)->>'status' from t) = 'ended', 'beendet');
-select pg_temp.assert((select date_check_public(token)->'location' from t) = 'null'::jsonb, 'Standort nach dem Ende weg');
+select pg_temp.assert((select date_check_public(token)->'location' from t) is null, 'Standort nach dem Ende weg');
+select pg_temp.assert((select date_check_public(token)->'match' from t) is null and (select date_check_public(token)->'place' from t) is null,
+  'nach dem Ende kein Match und kein Ort mehr');
 select pg_temp.assert((select lat is null from date_checks), 'Standort gelöscht');
 select pg_temp.assert((select kind from claim_date_alarms()) = 'clear', 'Entwarnung nach dem Hilferuf');
 
 -- Höchstens 3 pro Tag -------------------------------------------------------------------
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000d1');
-select start_date_check('00000000-0000-0000-0000-0000000000d2', 'Mama', '+4915112345678');
-select start_date_check('00000000-0000-0000-0000-0000000000d2', 'Mama', '+4915112345678');
-select pg_temp.assert(pg_temp.fails($$select start_date_check('00000000-0000-0000-0000-0000000000d2', 'Mama', '+4915112345678')$$),
+select pg_temp.assert(pg_temp.fails($$select start_date_check('00000000-0000-0000-0000-0000000000d2', 'Fremd', '+19005550100')$$),
+  'nur Nummern aus Deutschland, Österreich und der Schweiz');
+select start_date_check('00000000-0000-0000-0000-0000000000d2', 'Papa', '+4917012345678');
+select start_date_check('00000000-0000-0000-0000-0000000000d2', 'Oma', '+436641234567');
+select pg_temp.assert(pg_temp.fails($$select start_date_check('00000000-0000-0000-0000-0000000000d2', 'Opa', '+41791234567')$$),
   'höchstens 3 Checks pro Tag');
 reset role;
+
+-- Dieselbe Nummer höchstens dreimal am Tag, auch von verschiedenen Leuten
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000d2');
+select start_date_check('00000000-0000-0000-0000-0000000000d1', 'Mama', '+4917012345678');
+select start_date_check('00000000-0000-0000-0000-0000000000d1', 'Mama', '+4917012345678');
+select pg_temp.assert(pg_temp.fails($$select start_date_check('00000000-0000-0000-0000-0000000000d1', 'Mama', '+4917012345678')$$),
+  'dieselbe Nummer höchstens dreimal am Tag');
+reset role;
+
+-- Die Alarm-Funktion bekommt ein Geheimnis, das nur in der Datenbank steht
+select pg_temp.assert(length((select value from app_settings where key = 'date_alarm_secret')) = 64, 'Geheimnis für die Alarm-Funktion');
 
 rollback;

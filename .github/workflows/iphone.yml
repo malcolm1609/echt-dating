@@ -16,6 +16,9 @@ on:
   push:
     branches: [main, 'claude/**']
 
+permissions:
+  contents: read
+
 jobs:
   ios:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[iphone')

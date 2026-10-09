@@ -22,9 +22,9 @@ end $$;
 select pg_temp.assert((select lat = 50.58 and lng = 8.68 from profiles where id = '00000000-0000-0000-0000-000000000001'),
   'Standort wird beim Anlegen grob gespeichert');
 select pg_temp.as_user('00000000-0000-0000-0000-000000000001');
-update profiles set lat = 50.123456, lng = 8.654321 where id = auth.uid();
+update profiles set lat = 50.601234, lng = 8.654321 where id = auth.uid();
 reset role;
-select pg_temp.assert((select lat = 50.12 and lng = 8.65 from profiles where id = '00000000-0000-0000-0000-000000000001'),
+select pg_temp.assert((select lat = 50.6 and lng = 8.65 from profiles where id = '00000000-0000-0000-0000-000000000001'),
   'Standort wird beim Ändern grob gespeichert');
 
 -- Längen --------------------------------------------------------------------------
@@ -51,6 +51,10 @@ select pg_temp.assert(pg_temp.fails($$select create_event('Noch eine', 'Spiele',
 reset role;
 
 -- Meldungen -----------------------------------------------------------------------
+-- Alle haben P4 schon einmal gesehen (ein Like an P4), sonst darf P4 sie nicht melden.
+insert into likes (from_id, to_id, decision)
+  select ('00000000-0000-0000-0000-0000000000' || lpad(i::text, 2, '0'))::uuid, '00000000-0000-0000-0000-000000000004', 'pass'
+  from generate_series(1, 13) i where i <> 4;
 select pg_temp.as_user('00000000-0000-0000-0000-000000000004');
 select report_user(('00000000-0000-0000-0000-0000000000' || lpad(i::text, 2, '0'))::uuid, 'spam') from generate_series(3, 12) i where i <> 4;
 select report_user('00000000-0000-0000-0000-000000000001', 'spam');

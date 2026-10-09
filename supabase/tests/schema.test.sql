@@ -84,17 +84,12 @@ exception when check_violation then raise notice 'ok - höchstens 6 Entscheidung
 end $$;
 reset role;
 
--- Meldungen sperren ab 3
+-- Meldungen sperren ab 3 (Melden selbst geht nur über report_user, siehe attack.test.sql)
 insert into auth.users values ('00000000-0000-0000-0000-0000000000e1'), ('00000000-0000-0000-0000-0000000000e2');
-select pg_temp.as_user('00000000-0000-0000-0000-0000000000e1');
-insert into reports (reporter_id, reported_id, reason) values (auth.uid(), '00000000-0000-0000-0000-00000000000b', 'spam');
-reset role;
-select pg_temp.as_user('00000000-0000-0000-0000-0000000000e2');
-insert into reports (reporter_id, reported_id, reason) values (auth.uid(), '00000000-0000-0000-0000-00000000000b', 'spam');
-reset role;
-select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
-insert into reports (reporter_id, reported_id, reason) values (auth.uid(), '00000000-0000-0000-0000-00000000000b', 'spam');
-reset role;
+insert into reports (reporter_id, reported_id, reason) values
+  ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-00000000000b', 'spam'),
+  ('00000000-0000-0000-0000-0000000000e2', '00000000-0000-0000-0000-00000000000b', 'spam'),
+  ('00000000-0000-0000-0000-00000000000d', '00000000-0000-0000-0000-00000000000b', 'spam');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 select pg_temp.assert((select count(*) from public_profiles where display_name = 'Ben') = 0, 'ab 3 offenen Meldungen unsichtbar');
 reset role;

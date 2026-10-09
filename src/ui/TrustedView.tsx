@@ -50,15 +50,17 @@ export function TrustedView({ view, now = new Date() }: { view: DateCheckView | 
         </View>
       )}
 
-      <View style={{ gap: 10 }}>
-        <Text style={s.label}>Das Date</Text>
-        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          {match.photo && <Image source={{ uri: match.photo }} style={{ width: 56, height: 56, borderRadius: 28 }} accessibilityLabel={`Foto von ${match.name}`} />}
-          <Text style={[font.body, { fontFamily: fontFamily.semibold, flex: 1 }]}>{`${name} trifft ${match.name}${match.age ? `, ${match.age}` : ''}`}</Text>
+      {match && (
+        <View style={{ gap: 10 }}>
+          <Text style={s.label}>Das Date</Text>
+          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+            {match.photo && <Image source={{ uri: match.photo }} style={{ width: 56, height: 56, borderRadius: 28 }} accessibilityLabel={`Foto von ${match.name}`} />}
+            <Text style={[font.body, { fontFamily: fontFamily.semibold, flex: 1 }]}>{`${name} trifft ${match.name}${match.age ? `, ${match.age}` : ''}`}</Text>
+          </View>
+          {view.when && <Text style={font.body}>{view.when}</Text>}
+          {view.place && <PlaceLink place={view.place} />}
         </View>
-        {view.when && <Text style={font.body}>{view.when}</Text>}
-        {view.place && <PlaceLink place={view.place} />}
-      </View>
+      )}
       <Text style={font.small}>Diese Seite aktualisiert sich von selbst. Echt ist eine Dating-App, bei der alle Profile mit Ausweis geprüft sind.</Text>
     </View>
   );

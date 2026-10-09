@@ -1,9 +1,10 @@
 // Startet eine Didit-Prüfung für die angemeldete Person und gibt den Prüf-Link zurück.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-
-const json = (body: unknown, status = 200) => Response.json(body, { status });
+import { json, preflight } from '../_shared/http.ts';
 
 Deno.serve(async (req) => {
+  const early = preflight(req);
+  if (early) return early;
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ error: 'unauthorized' }, 401);
 
@@ -23,7 +24,10 @@ Deno.serve(async (req) => {
       callback: Deno.env.get('DIDIT_CALLBACK_URL') || undefined,
     }),
   });
-  if (!res.ok) return json({ error: 'didit_failed', status: res.status }, 502);
+  if (!res.ok) {
+    console.error('didit', res.status, await res.text());
+    return json({ error: 'didit_failed' }, 502);
+  }
   const { url } = await res.json();
   return json({ url });
 });

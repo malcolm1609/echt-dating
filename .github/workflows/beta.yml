@@ -20,6 +20,9 @@ concurrency:
   group: beta
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest

@@ -1,0 +1,104 @@
+# Sicherheitswache: läuft bei jeder Änderung, nach jedem Ausrollen auf den Beta-Server und jede Nacht.
+# - Geheimnisse: Kein Passwort oder Schlüssel darf im Code landen.
+# - Bibliotheken: Keine neue bekannte Sicherheitslücke in dem, was in die App kommt.
+# - Code-Analyse: GitHub CodeQL sucht typische Fehler (z. B. eingeschleuster Code).
+# - Hacker-Roboter: greift den Beta-Server von außen an (scripts/security/attack-live.mjs).
+# Die Rechte-Wache für die Datenbank (supabase/tests/guard.test.sql) läuft mit den übrigen Datenbank-Tests in CI.
+# Schlägt etwas fehl, öffnet die Wache ein Issue „Sicherheitsalarm“ (bzw. ergänzt das offene).
+name: Sicherheitswache
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_run:
+    workflows: [Beta]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Geheimnisse im Code
+    if: github.event_name != 'workflow_run'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          curl -fsSL https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz | tar xz gitleaks
+          ./gitleaks git . --no-banner --redact --exit-code 1
+
+  dependencies:
+    name: Bibliotheken
+    if: github.event_name != 'workflow_run'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node scripts/security/audit-deps.mjs
+
+  codeql:
+    name: Code-Analyse
+    if: github.event_name != 'workflow_run'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3
+
+  attack:
+    name: Hacker-Roboter gegen den Beta-Server
+    # Nur auf main (nach dem Ausrollen, nachts oder von Hand), nie für Pull Requests: braucht die Server-Schlüssel.
+    if: >-
+      github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: scripts/beta-test/keys.sh
+      - run: node scripts/security/attack-live.mjs
+
+  alarm:
+    name: Sicherheitsalarm
+    needs: [secrets, dependencies, codeql, attack]
+    if: failure() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Issue öffnen oder ergänzen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          body="Die Sicherheitswache hat etwas gefunden: $RUN_URL"
+          open=$(gh issue list --state open --search 'Sicherheitsalarm in:title' --json number --jq '.[0].number')
+          if [ -n "$open" ]; then gh issue comment "$open" --body "$body"
+          else gh issue create --title 'Sicherheitsalarm' --body "$body" --assignee "${{ github.repository_owner }}"; fi

@@ -44,11 +44,11 @@ export function serverDateCheckApi(db: SupabaseClient): DateCheckApi {
       return {
         name: v.name,
         photo: v.photo ? photoUrl(v.photo) : null,
-        match: { name: v.match.name, age: v.match.age, photo: v.match.photo ? photoUrl(v.match.photo) : null },
-        place: v.place,
-        when: v.when,
+        match: v.match ? { name: v.match.name, age: v.match.age, photo: v.match.photo ? photoUrl(v.match.photo) : null } : null,
+        place: v.place ?? null,
+        when: v.when ?? null,
         status: v.status,
-        checkAt: new Date(v.check_at),
+        checkAt: new Date(v.check_at ?? Date.now()),
         location: v.location ? { lat: v.location.lat, lng: v.location.lng, at: new Date(v.location.at) } : null,
       };
     },
@@ -92,7 +92,7 @@ export function demoDateCheckApi(): DateCheckApi {
       return {
         name: 'Du',
         photo: null,
-        match: { name: m?.name ?? 'Dein Match', age: m?.age ?? 0, photo: m?.photos?.[0] ?? null },
+        match: c.ended ? null : { name: m?.name ?? 'Dein Match', age: m?.age ?? 0, photo: m?.photos?.[0] ?? null },
         place: m?.date?.place ?? null,
         when: m?.date?.when ?? null,
         status: c.ended ? 'ended' : c.status === 'help' ? 'help' : overdue ? 'overdue' : 'active',

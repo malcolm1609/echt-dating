@@ -32,6 +32,13 @@ env:
   SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
   SMALL: ${{ contains(github.event.head_commit.message, '[stadttest klein]') }}
   SHARDS: '8'
+  # Eingaben nur über Umgebungsvariablen, nie direkt in Befehle einsetzen (sonst ließe sich Code einschleusen).
+  IN_USERS: ${{ inputs.users || '10000' }}
+  IN_PHASES: ${{ inputs.phases || '250,500,1000,2000' }}
+  IN_SECONDS: ${{ inputs.seconds || '60' }}
+
+permissions:
+  contents: read
 
 jobs:
   # Nur aufräumen: „[stadttest aufräumen]“ löscht übrig gebliebene Testkonten und Test-Städte.
@@ -70,7 +77,7 @@ jobs:
       - name: Städte, Konten, Profile und Verlauf anlegen
         id: setup
         run: |
-          if [ "$SMALL" = true ]; then export CITY_USERS=400 CITY_LOGIN_MINUTES=3; else export CITY_USERS=${{ inputs.users || '10000' }}; fi
+          if [ "$SMALL" = true ]; then export CITY_USERS=400 CITY_LOGIN_MINUTES=3; else export CITY_USERS="$IN_USERS"; fi
           node scripts/beta-test/citytest.mjs setup city-results
       - uses: actions/upload-artifact@v4
         if: always()
@@ -100,7 +107,7 @@ jobs:
       - name: Anmelden und App benutzen
         run: |
           if [ "$SMALL" = true ]; then export CITY_USERS=400 CITY_PHASES=40,80 CITY_SECONDS=20;
-          else export CITY_USERS=${{ inputs.users || '10000' }} CITY_PHASES=${{ inputs.phases || '250,500,1000,2000' }} CITY_SECONDS=${{ inputs.seconds || '60' }}; fi
+          else export CITY_USERS="$IN_USERS" CITY_PHASES="$IN_PHASES" CITY_SECONDS="$IN_SECONDS"; fi
           node scripts/beta-test/citytest.mjs run ${{ matrix.shard }} city-results
       - uses: actions/upload-artifact@v4
         if: always()
@@ -134,7 +141,7 @@ jobs:
         continue-on-error: true
         run: |
           if [ "$SMALL" = true ]; then export CITY_USERS=400 CITY_PHASES=40,80 CITY_SECONDS=20;
-          else export CITY_USERS=${{ inputs.users || '10000' }} CITY_PHASES=${{ inputs.phases || '250,500,1000,2000' }} CITY_SECONDS=${{ inputs.seconds || '60' }}; fi
+          else export CITY_USERS="$IN_USERS" CITY_PHASES="$IN_PHASES" CITY_SECONDS="$IN_SECONDS"; fi
           node scripts/beta-test/citytest.mjs finish city-results
       - name: Aufräumen
         if: always()
