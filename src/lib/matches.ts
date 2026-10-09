@@ -223,10 +223,10 @@ export function createServerStore(db: SupabaseClient, pollMs = 4000): MatchStore
   };
 
   const refresh = async () => {
-    const { data: user } = await db.auth.getUser();
-    if (!user.user) return;
+    const { data: auth } = await db.auth.getSession();
+    if (!auth.session) return;
     if (!myInterests) {
-      const { data } = await db.from('profiles').select('interests').eq('id', user.user.id).maybeSingle();
+      const { data } = await db.from('profiles').select('interests').eq('id', auth.session.user.id).maybeSingle();
       myInterests = data?.interests ?? [];
     }
     const { data, error } = await db.rpc('my_matches');

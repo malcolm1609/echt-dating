@@ -72,7 +72,7 @@ describe('server match store', () => {
   it('shows an answer right away, saves it on the server and then loads the server state', async () => {
     const rpc = jest.fn(async (fn: string) => (fn === 'my_matches' ? { data: [serverMatch], error: null } : { data: null, error: null }));
     const profiles = { select: () => profiles, eq: () => profiles, maybeSingle: async () => ({ data: { interests: [] } }) };
-    const db = { rpc, auth: { getUser: async () => ({ data: { user: { id: 'u-1' } } }) }, from: () => profiles } as unknown as SupabaseClient;
+    const db = { rpc, auth: { getSession: async () => ({ data: { session: { user: { id: 'u-1' } } } }) }, from: () => profiles } as unknown as SupabaseClient;
     const store = createServerStore(db);
     store.refresh();
     await new Promise((r) => setTimeout(r, 0));
@@ -86,7 +86,7 @@ describe('server match store', () => {
   const serverDb = () => {
     const rpc = jest.fn(async (fn: string) => (fn === 'my_matches' ? { data: [serverMatch], error: null } : { data: null, error: null }));
     const profiles = { select: () => profiles, eq: () => profiles, maybeSingle: async () => ({ data: { interests: [] } }) };
-    return { rpc, db: { rpc, auth: { getUser: async () => ({ data: { user: { id: 'u-1' } } }) }, from: () => profiles } as unknown as SupabaseClient };
+    return { rpc, db: { rpc, auth: { getSession: async () => ({ data: { session: { user: { id: 'u-1' } } } }) }, from: () => profiles } as unknown as SupabaseClient };
   };
   const tick = () => new Promise((r) => setTimeout(r, 0));
 

@@ -71,7 +71,7 @@ describe('demoBackend', () => {
   it('starts with wide wishes and hides who is farther away than wanted', async () => {
     const b = demoBackend(0);
     const { preferences } = await b.myProfile();
-    expect(preferences.maxDistanceKm).toBe(30);
+    expect(preferences.maxDistanceKm).toBe(50);
     expect(preferences.ageMax - preferences.ageMin).toBe(16);
     await b.savePreferences({ ...preferences, maxDistanceKm: 5 });
     const { picks } = await b.todaysPicks();

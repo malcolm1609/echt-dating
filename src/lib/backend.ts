@@ -4,12 +4,14 @@ import { activeNearbyBucket } from '../domain/activeNearby.ts';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import { defaultPreferences, fitsEachOther, Preferences } from '../domain/preferences.ts';
 import { goalFit, ProfileContent, promptText, sharedInterests } from '../domain/profileContent.ts';
+import type { ConsentKind } from '../domain/privacy.ts';
 import { rankPicks } from '../domain/ranking.ts';
 import type { CompleteProfile } from '../ui/ProfileForm';
 import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
 import { photoUrls, placeholderPhoto } from './photos';
 import { beta, supabase } from './supabase';
+import { PhotoRejected } from './photoErrors';
 
 export type MyStatus =
   | { status: 'pending_verification' | 'admitted' | 'rejected' }
@@ -30,6 +32,8 @@ export interface Backend {
   resetTestData(): Promise<void>;
   sendCode(email: string): Promise<void>;
   verifyCode(email: string, code: string): Promise<void>;
+  /** Speichert die Einwilligungen aus der Registrierung mit der Fassung der Datenschutzerklärung. */
+  recordConsent(kinds: ConsentKind[], version: string): Promise<void>;
   /** Zweite Prüfung: SMS-Code an die Handynummer (E.164). Eine Nummer gehört genau zu einem Konto. */
   sendPhoneCode(phone: string): Promise<void>;
   verifyPhoneCode(phone: string, code: string): Promise<void>;
@@ -65,10 +69,12 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
     if (error) throw error;
     return data;
   };
+  // Die Kennung kommt aus der gespeicherten Sitzung, ohne Anfrage an den Server: Supabase begrenzt
+  // Anfragen an /user je Adresse, und im Uni-WLAN teilen sich viele eine Adresse.
   const uid = async () => {
-    const { data } = await db.auth.getUser();
-    if (!data.user) throw new Error('Nicht angemeldet');
-    return data.user.id;
+    const { data } = await db.auth.getSession();
+    if (!data.session) throw new Error('Nicht angemeldet');
+    return data.session.user.id;
   };
 
   return {
@@ -83,6 +89,10 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       if (error) throw error;
     },
     async deleteAccount() {
+      // Fotos zuerst: Sie liegen im Speicher, nicht in der Datenbank, und würden sonst öffentlich bleiben.
+      const id = await uid();
+      const files = ok(await db.storage.from('photos').list(id, { limit: 100 })) ?? [];
+      if (files.length) ok(await db.storage.from('photos').remove(files.map((f) => `${id}/${f.name}`)));
       ok(await db.rpc('delete_my_account'));
       await db.auth.signOut({ scope: 'local' });
     },
@@ -94,6 +104,9 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
     },
     async verifyCode(email, token) {
       ok(await db.auth.verifyOtp({ email, token, type: 'email' }));
+    },
+    async recordConsent(kinds, version) {
+      ok(await db.rpc('record_consent', { kinds, version }));
     },
     async sendPhoneCode(phone) {
       const { error } = await db.auth.updateUser({ phone });
@@ -120,11 +133,19 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
       const path = `${await uid()}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
       const body = await (await fetch(uri)).arrayBuffer();
-      ok(await db.storage.from('photos').upload(path, body, { contentType: mimeType }));
+      // Erst in den privaten Prüfordner; öffentlich wird das Foto nur, wenn die Prüfung es freigibt.
+      ok(await db.storage.from('photo-uploads').upload(path, body, { contentType: mimeType }));
+      const { data, error } = await db.functions.invoke('photo-check', { body: { path } });
+      if (error || !data?.ok) throw new PhotoRejected(data?.reason ?? 'unavailable');
       return path;
     },
     async savePhotos(photos) {
-      ok(await db.from('profiles').update({ photos }).eq('id', await uid()));
+      const id = await uid();
+      const before: string[] = ok(await db.from('profiles').select('photos').eq('id', id).single())?.photos ?? [];
+      ok(await db.from('profiles').update({ photos }).eq('id', id));
+      // Entfernte Fotos auch aus dem Speicher löschen, damit sie nicht über ihre Adresse erreichbar bleiben.
+      const removed = before.filter((p) => !photos.includes(p) && p.startsWith(`${id}/`));
+      if (removed.length) await db.storage.from('photos').remove(removed);
     },
     async saveContent(c) {
       ok(await db.from('profiles').update(contentColumns(c)).eq('id', await uid()));
@@ -269,6 +290,7 @@ export function demoBackend(delayMs = 300): Backend {
     resetTestData: wait,
     sendCode: wait,
     verifyCode: wait,
+    recordConsent: wait,
     sendPhoneCode: wait,
     async verifyPhoneCode(p) {
       await wait();

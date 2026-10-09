@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Animated, ScrollView, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Platform, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import type { MusicLink } from '../domain/music.ts';
 import type { GoalId } from '../domain/profileContent.ts';
@@ -8,7 +8,7 @@ import type { ShownPrompt } from './ProfileDetails';
 import { Glass } from './Glass';
 import { Button, s } from './kit';
 import { LikeKnob } from './LikeKnob';
-import { useEntrance, usePulse } from './motion';
+import { useEntrance, usePulse, useReducedMotion } from './motion';
 import { ProfileDetails } from './ProfileDetails';
 import { ReportPanel } from './ReportPanel';
 import type { ReportReason } from '../domain/safety.ts';
@@ -60,16 +60,31 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   const enterCard = useEntrance(current?.id);
   const enterMatch = useEntrance(match?.id);
   const like = usePulse();
+  const reduced = useReducedMotion();
+  const screenWidth = useWindowDimensions().width;
+  // drag: wie weit der Knopf gezogen ist, die Karte geht ein Stück mit.
+  // exit: -1 = Karte fliegt nach links (Weiter), 1 = hebt sich und verblasst (Gefällt mir).
+  const drag = useRef(new Animated.Value(0)).current;
+  const exit = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    exit.setValue(0);
+    drag.setValue(0);
+  }, [current?.id, exit, drag]);
 
   const decide = async (decision: Decision) => {
     setBusy(true);
     setError(undefined);
     if (decision === 'like') like.pulse();
+    const out = new Promise<void>((done) => {
+      if (reduced) return done();
+      Animated.timing(exit, { toValue: decision === 'pass' ? -1 : 1, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: Platform.OS !== 'web' }).start(() => done());
+    });
     try {
-      const { matched } = await onDecide(current.id, decision);
+      const [{ matched }] = await Promise.all([onDecide(current.id, decision), out]);
       if (matched) setMatch(current);
       setIndex((i) => i + 1);
     } catch {
+      exit.setValue(0);
       setError('Das hat nicht geklappt. Bitte versuch es noch einmal.');
     } finally {
       setBusy(false);
@@ -109,6 +124,22 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
         </Glass>
       </View>
       <Animated.View style={[{ flex: 1 }, enterCard]}>
+        <Animated.View
+          style={{
+            flex: 1,
+            opacity: exit.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }),
+            transform: [
+              { translateX: Animated.add(
+                drag.interpolate({ inputRange: [-300, 0], outputRange: [-40, 0], extrapolate: 'clamp' }),
+                exit.interpolate({ inputRange: [-1, 0, 1], outputRange: [-screenWidth, 0, 0] }),
+              ) },
+              { translateY: exit.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 0, -28] }) },
+              { rotate: drag.interpolate({ inputRange: [-300, 0], outputRange: ['-2deg', '0deg'], extrapolate: 'clamp' }) },
+              { rotate: exit.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-6deg', '0deg', '0deg'] }) },
+              { scale: exit.interpolate({ inputRange: [-1, 0, 1], outputRange: [1, 1, 1.03] }) },
+            ],
+          }}
+        >
         <ScrollView key={current.id} contentContainerStyle={{ paddingBottom: 96, paddingTop: 4, paddingHorizontal: 2 }} showsVerticalScrollIndicator={false}>
           <ProfileDetails
             name={current.displayName}
@@ -140,12 +171,13 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
             <Text accessibilityRole="button" onPress={() => setReporting(true)} style={[font.small, { marginTop: 20, textDecorationLine: 'underline' }]}>{`${current.displayName} melden`}</Text>
           ))}
         </ScrollView>
+        </Animated.View>
       </Animated.View>
       {error && <Text style={s.error}>{error}</Text>}
       {/* Die Entscheidung schwebt als Glasleiste über dem Profil, damit das Foto bis unten durchscheint.
           Ein Knopf: antippen = Gefällt mir, nach links ziehen = Weiter. */}
       <Animated.View style={[{ position: 'absolute', left: 0, right: 0, bottom: 4 }, like.style]}>
-        <LikeKnob disabled={busy} onLike={() => decide('like')} onPass={() => decide('pass')} />
+        <LikeKnob x={drag} disabled={busy} onLike={() => decide('like')} onPass={() => decide('pass')} />
       </Animated.View>
     </View>
   );

@@ -1,6 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { useRef, useState } from 'react';
-import { Animated, PanResponder, Platform, Pressable, Text, View } from 'react-native';
+import { Animated, Easing, PanResponder, Platform, Pressable, Text, View } from 'react-native';
 import { Glass } from './Glass';
 import { colors, fontFamily } from './theme';
 
@@ -8,20 +8,25 @@ const native = Platform.OS !== 'web';
 const PAD = 6;
 
 /** Ab welchem Weg nach links das Loslassen als „Weiter“ zählt: gut die Hälfte der Strecke. */
-export function dragDecision(dx: number, travel: number): 'pass' | 'back' {
-  return travel > 0 && -dx >= travel * 0.55 ? 'pass' : 'back';
+/** Ein schneller Schwung nach links zählt auch, wenn der Weg kürzer war. */
+export function dragDecision(dx: number, travel: number, vx = 0): 'pass' | 'back' {
+  if (travel <= 0) return 'back';
+  return -dx >= travel * 0.55 || (vx < -0.6 && -dx >= travel * 0.2) ? 'pass' : 'back';
 }
 
 interface Props {
   disabled?: boolean;
   onLike: () => void;
   onPass: () => void;
+  /** Wie weit der Knopf gerade nach links gezogen ist (≤ 0), z. B. damit die Karte mitgeht. */
+  x?: Animated.Value;
 }
 
 // Ein Bordeaux-Knopf in einer Glasleiste. Er liegt immer rechts auf „Gefällt mir“:
 // antippen heißt Gefällt mir, nach links ziehen heißt Weiter.
-export function LikeKnob({ disabled, onLike, onPass }: Props) {
-  const x = useRef(new Animated.Value(0)).current;
+export function LikeKnob({ disabled, onLike, onPass, x: shared }: Props) {
+  const own = useRef(new Animated.Value(0)).current;
+  const x = shared ?? own;
   const [width, setWidth] = useState(0);
   const [armed, setArmed] = useState(false);
   const knobWidth = Math.max(0, width * 0.56);
@@ -53,8 +58,8 @@ export function LikeKnob({ disabled, onLike, onPass }: Props) {
         const { travel, onPass } = live.current;
         setArmed(false);
         settle();
-        if (dragDecision(g.dx, travel) === 'pass') {
-          Animated.timing(x, { toValue: -travel, duration: 90, useNativeDriver: native }).start(() => {
+        if (dragDecision(g.dx, travel, g.vx) === 'pass') {
+          Animated.timing(x, { toValue: -travel, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: native }).start(() => {
             onPass();
             back();
           });

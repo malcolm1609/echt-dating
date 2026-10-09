@@ -7,6 +7,9 @@ describe('LikeKnob', () => {
     expect(dragDecision(-80, 200)).toBe('back');
     expect(dragDecision(60, 200)).toBe('back');
     expect(dragDecision(-50, 0)).toBe('back');
+    // ein schneller Schwung reicht schon ab einem kurzen Stück
+    expect(dragDecision(-50, 200, -1.2)).toBe('pass');
+    expect(dragDecision(-20, 200, -1.2)).toBe('back');
   });
 
   it('likes on tap and offers Weiter as an action for screen readers', () => {

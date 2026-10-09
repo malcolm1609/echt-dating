@@ -53,7 +53,7 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Date-Vorschlag mit Partner-Café und Uhrzeit, „Freundlich beenden“ mit fertiger, ehrlicher Nachricht
 8. **Check nach dem Date** ✅ Prototyp: Wiedersehen nur bei beidseitigem Ja sichtbar, ein einseitiges Nein bleibt verborgen
 9. **Vorschläge und Filter** ✅ (`src/domain/preferences.ts`, `src/domain/ranking.ts`, Migration `20261008000000_preferences.sql`)
-   - Harte Filter nur Alter (Start: eigenes Alter ± 8) und Entfernung (5/10/20/30 km), beidseitig; einstellbar im Profil unter „Wen ich sehen möchte“
+   - Harte Filter nur Alter (Start: eigenes Alter ± 8) und Entfernung (5 bis 100 km in 5-km-Schritten, Start 50 km, auch über den Gebietsradius hinaus), beidseitig; einstellbar im Profil unter „Wen ich sehen möchte“ per Schieberegler (Alter mit zwei Griffen, rechts „60+“)
    - Reihenfolge nach festen Punkten: gleiches Ziel, gemeinsame Interessen, in den letzten 2 Tagen aktiv; kein lernendes Modell, keine Like-Zahlen
    - Ein Platz für jemanden, der mich schon geliked hat (bleibt verborgen), einer für die diese Woche am seltensten Gezeigten; wer heute 12-mal bewertet wurde, pausiert bis morgen
    - Unter jedem Vorschlag ein Satz, warum er passt; Date-Ideen aus gemeinsamen Interessen (`src/domain/dateIdeas.ts`)
@@ -103,6 +103,24 @@ Grundlage: Konzept und Canvas-Entwurf „Echt – App-Entwurf“ aus dem Origina
    - Noch offen: Hauptfoto mit dem Ausweis-Selfie abgleichen, Foto als Pflicht für die Vorschläge, privater Bucket mit signierten Adressen
 
 Klickbarer Prototyp als einzelne HTML-Datei: `npx expo export --platform web --output-dir dist && node scripts/prototype-html.mjs dist`
+
+## Tests gegen die Beta
+
+- **Beta-Test** (`.github/workflows/beta-test.yml`, Commit-Markierung `[betatest]`): Tiefentest aller Funktionen, Klicktest im Browser, Stresstest mit 100 Konten.
+- **Stadttest** (`.github/workflows/city-test.yml`, Markierung `[stadttest]`, Probelauf `[stadttest klein]`): 10.000 Testpersonen in Gießen, Marburg, Frankfurt und Mainz, in Stufen bis 2.000 gleichzeitig, verteilt auf 8 Lastrechner.
+- Mit `db` in der Markierung (`[betatest db]`, `[stadttest db]`) werden vorher die Tabellen-Änderungen des Zweigs auf die Beta gespielt. Alle Testkonten werden danach gelöscht.
+
+## iPhone-App (TestFlight)
+
+- Gebaut wird in der Cloud von Expo (EAS), verteilt über TestFlight. App-Kennung `app.echt.dating`.
+- GitHub-Aktion `iphone.yml`: „einrichten“ legt das Expo-Projekt an und hinterlegt die Adresse des Beta-Servers, „bauen“ baut und schickt zu TestFlight. Braucht das GitHub-Secret `EXPO_TOKEN`.
+- Der allererste Build läuft einmal am Computer (`npx eas-cli@latest build -p ios --profile production --auto-submit`), weil dabei die Apple-Zertifikate entstehen.
+
+## Datenschutz
+
+- Datenschutzerklärung in `src/domain/privacy.ts`, in der App unter Einstellungen → Datenschutz. Bei jeder Änderung `PRIVACY_VERSION` hochsetzen.
+- Bei der Registrierung zwei Pflicht-Häkchen (Erklärung + 18+, ausdrückliche Einwilligung nach Art. 9 DSGVO). Gespeichert je Fassung in der Tabelle `consents`.
+- Kein Tracking, keine Werbe-Cookies, deshalb kein Cookie-Banner. Vor dem Start: Anschrift und Kontakt-E-Mail eintragen, Impressum, rechtliche Prüfung.
 
 ## Offene Punkte
 - Monetarisierung: Echt Plus (4,99 €/Monat) plus Einnahmen von Partner-Cafés und Events, im Prototyp nur als Demo ohne Zahlung

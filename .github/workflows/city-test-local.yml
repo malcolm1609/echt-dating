@@ -1,0 +1,77 @@
+# Stadttest gegen einen eigenen Supabase-Server auf dem GitHub-Rechner statt gegen die Beta.
+# Gleiche Datenbank, gleiche Migrationen, gleicher Test wie city-test.yml, aber mit 4 Kernen und 16 GB.
+# So lässt sich trennen, ob die App oder der Beta-Server bremst. Die Lastrechner laufen hier auf demselben
+# Rechner wie der Server und nehmen ihm Rechenzeit weg; das Ergebnis ist also eher zu schlecht als zu gut.
+# Startet von Hand oder bei „[stadttest lokal]“ in der Commit-Nachricht. Nichts davon berührt die Beta.
+name: Stadttest lokal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**']
+
+concurrency:
+  group: city-test-local-${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[stadttest lokal]') }}
+  cancel-in-progress: false
+
+jobs:
+  local:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[stadttest lokal]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      SHARDS: '8'
+      CITY_USERS: '10000'
+      CITY_PHASES: '250,500,1000,2000'
+      CITY_SECONDS: '60'
+      CITY_LOGIN_MINUTES: '5'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Supabase auf diesem Rechner starten
+        run: |
+          # Alle Testpersonen melden sich von derselben Adresse an; die Grenze je Adresse gilt hier nicht.
+          printf '\n[auth.rate_limit]\nsign_in_sign_ups = 100000\ntoken_refresh = 100000\n' >> supabase/config.toml
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,realtime
+          eval "$(supabase status -o env)"
+          {
+            echo "SUPABASE_URL=$API_URL"
+            echo "SUPABASE_ANON_KEY=${ANON_KEY:-$PUBLISHABLE_KEY}"
+            echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY:-$SECRET_KEY}"
+          } >> "$GITHUB_ENV"
+      - name: Testbetrieb und Beispielprofile wie auf der Beta
+        run: BETA_PASSWORD=$(openssl rand -hex 16) node scripts/beta-seed.mjs
+      - name: Städte, Konten, Profile und Verlauf anlegen
+        id: setup
+        run: node scripts/beta-test/citytest.mjs setup city-results
+      - name: 8 Lastrechner gleichzeitig
+        env:
+          CITY_RUN: ${{ steps.setup.outputs.run }}
+          CITY_T0: ${{ steps.setup.outputs.t0 }}
+        run: |
+          # Auslastung der Datenbank mitschreiben.
+          (while true; do docker stats --no-stream --format '{{.Name}} {{.CPUPerc}} {{.MemUsage}}' >> stats.log; sleep 10; done) &
+          for n in 0 1 2 3 4 5 6 7; do node scripts/beta-test/citytest.mjs run $n city-results > shard-$n.log 2>&1 & done
+          status=0
+          for job in $(jobs -p | tail -n 8); do wait $job || status=1; done
+          kill %1 || true
+          for n in 0 1 2 3 4 5 6 7; do echo "--- Teil $n"; cat shard-$n.log; done
+          db=$(grep supabase_db stats.log | awk '{gsub("%","",$2); v=$2+0; if (v>m) m=v} END {printf "%.0f", m}')
+          echo "CITY_SERVER=eigener Supabase-Server auf dem GitHub-Rechner ($(nproc) Kerne, $(free -g | awk '/Mem/{print $2}') GB, geteilt mit den Lastrechnern), Datenbank in der Spitze ${db} % CPU (100 % = 1 Kern)" >> "$GITHUB_ENV"
+          exit $status
+      - name: Auswerten
+        if: always() && steps.setup.outputs.run != ''
+        env:
+          CITY_RUN: ${{ steps.setup.outputs.run }}
+          CITY_START: ${{ steps.setup.outputs.start }}
+        run: node scripts/beta-test/citytest.mjs finish city-results
+      - name: Zusammenfassung
+        if: always()
+        run: node scripts/beta-test/summary.mjs city-results | tee -a "$GITHUB_STEP_SUMMARY"

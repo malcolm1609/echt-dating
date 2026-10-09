@@ -1,7 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import { PRIVACY_VERSION, ConsentKind } from '../src/domain/privacy';
 import { backend } from '../src/lib/backend';
+import { allConsented, ConsentChecks } from '../src/ui/ConsentChecks';
 import { Button, Field, Screen, StepHeader } from '../src/ui/kit';
 import { colors, font } from '../src/ui/theme';
 
@@ -11,6 +13,7 @@ export default function SignIn() {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [consents, setConsents] = useState<ConsentKind[]>([]);
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
@@ -37,11 +40,12 @@ export default function SignIn() {
         <Field label="E-Mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" error={error} />
       )}
       <View style={{ flex: 1 }} />
+      {!sent && <ConsentChecks checked={consents} onChange={setConsents} onOpenPolicy={() => router.push('/datenschutz')} />}
       {sent && <Button title="Andere E-Mail" variant="ghost" onPress={() => { setSent(false); setCode(''); setError(undefined); }} />}
       <Button
         title={sent ? 'Bestätigen' : 'Code senden'}
         busy={busy}
-        disabled={busy || (sent ? code.length < 6 : !email.includes('@'))}
+        disabled={busy || (sent ? code.length < 6 : !email.includes('@') || !allConsented(consents))}
         onPress={() =>
           run(async () => {
             if (!sent) {
@@ -49,6 +53,8 @@ export default function SignIn() {
               setSent(true);
             } else {
               await backend.verifyCode(email.trim(), code.trim());
+              // Nachweis der Einwilligung (Art. 7 DSGVO), erst jetzt gibt es ein Konto dazu.
+              await backend.recordConsent(consents, PRIVACY_VERSION);
               router.replace('/handy');
             }
           })

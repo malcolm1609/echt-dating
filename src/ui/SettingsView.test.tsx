@@ -23,10 +23,10 @@ describe('SettingsView', () => {
     const { onSavePreferences } = setup();
     expect(screen.getByText('Männer, 22 bis 36 Jahre, bis 30 km')).toBeTruthy();
     fireEvent.press(screen.getByText('Alter und Entfernung ändern'));
-    fireEvent.press(screen.getByLabelText('Bis 20 km'));
+    fireEvent(screen.getByLabelText('Umkreis bis 30 km'), 'accessibilityAction', { nativeEvent: { actionName: 'decrement' } });
     await act(async () => fireEvent.press(screen.getByText('Wünsche speichern')));
-    expect(onSavePreferences).toHaveBeenCalledWith({ ageMin: 22, ageMax: 36, maxDistanceKm: 20 });
-    expect(screen.getByText('Männer, 22 bis 36 Jahre, bis 20 km')).toBeTruthy();
+    expect(onSavePreferences).toHaveBeenCalledWith({ ageMin: 22, ageMax: 36, maxDistanceKm: 25 });
+    expect(screen.getByText('Männer, 22 bis 36 Jahre, bis 25 km')).toBeTruthy();
   });
 
   it('pauses the profile with the switch', async () => {
