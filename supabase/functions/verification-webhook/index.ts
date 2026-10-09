@@ -28,16 +28,18 @@ Deno.serve(async (req) => {
   const { data: profile } = await db.from('profiles').select('status, gender, lat, lng').eq('id', userId).maybeSingle();
   if (!profile) return new Response('no profile');
 
-  const [{ data: areas }, { data: stats }] = await Promise.all([
-    db.from('areas').select('id, lat, lng, radius_km, capacity'),
-    db.from('area_stats').select('area_id, f, m'),
-  ]);
-  const withCounts: Area[] = (areas ?? []).map((a) => {
-    const s = stats?.find((x) => x.area_id === a.id);
-    return { id: a.id, lat: a.lat, lng: a.lng, radiusKm: a.radius_km, capacity: a.capacity, counts: { f: s?.f ?? 0, m: s?.m ?? 0 } };
-  });
+  // Gebiet ist der Landkreis, in dem man wohnt.
+  const { data: areaId } = await db.rpc('area_for', { p_lat: profile.lat, p_lng: profile.lng });
+  let area: Area | null = null;
+  if (areaId) {
+    const [{ data: a }, { data: s }] = await Promise.all([
+      db.from('areas').select('id, capacity').eq('id', areaId).single(),
+      db.from('area_stats').select('f, m').eq('area_id', areaId).maybeSingle(),
+    ]);
+    if (a) area = { id: a.id, capacity: a.capacity, counts: { f: s?.f ?? 0, m: s?.m ?? 0 } };
+  }
 
-  const update = decideWebhook(hook, profile, withCounts, new Date());
+  const update = decideWebhook(hook, profile, area, new Date());
   if (update) {
     // Nur ändern, solange noch keine Entscheidung gefallen ist (Webhooks können doppelt kommen).
     const res = await db.from('profiles').update(update).eq('id', userId).eq('status', 'pending_verification');

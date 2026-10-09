@@ -40,7 +40,7 @@ export const PRIVACY_POLICY: PrivacySection[] = [
     body: [
       'Konto: E-Mail-Adresse und Handynummer, damit du dich anmelden kannst und jede Person nur ein Konto hat.',
       'Profil: Vorname, Geburtsdatum, Geschlecht, wen du suchst, Fotos, Antworten auf Profilfragen, Beziehungsziel, Interessen und auf Wunsch ein Lieblingssong.',
-      'Standort: dein ungefährer Standort per GPS, damit wir dir Menschen in deiner Nähe vorschlagen. Andere sehen nur die Entfernung, nie deinen genauen Ort.',
+      'Standort: dein ungefährer Standort per GPS, damit wir dir Menschen in deiner Nähe vorschlagen. Andere sehen nur die Entfernung, nie deinen genauen Ort. Aus dem Standort ermitteln wir außerdem deinen Landkreis, denn dort gelten Zulassung und Warteliste.',
       'Prüfung: Bei der Ausweis- und Selfie-Prüfung gleicht unser Anbieter dein Ausweisfoto mit einem Live-Selfie ab. Wir erhalten nur das Ergebnis (bestanden oder nicht), keine Kopie deines Ausweises.',
       'Date-Check (nur wenn du ihn einschaltest): Name und Handynummer deiner Vertrauensperson und während des Dates dein genauer Standort. Den Standort sieht nur deine Vertrauensperson über ihren privaten Link. Er wird gelöscht, sobald du den Check beendest, spätestens nach 12 Stunden.',
       'Nutzung: deine Entscheidungen bei den Vorschlägen, Matches, Antworten in der Fragenrunde, Nachrichten, Verabredungen, Treffen und Events, Meldungen und Blockierungen sowie wann du zuletzt aktiv warst.',
@@ -100,3 +100,6 @@ export const PRIVACY_POLICY: PrivacySection[] = [
     ],
   },
 ];
+
+/** Quellen, die genannt werden müssen. */
+export const DATA_SOURCES = ['Gebietsgrenzen: © GeoBasis-DE / BKG (2026), Datenlizenz Deutschland – Namensnennung – Version 2.0'];

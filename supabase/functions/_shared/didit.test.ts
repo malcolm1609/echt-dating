@@ -69,23 +69,23 @@ describe('toVerification', () => {
 });
 
 describe('decideWebhook', () => {
-  const berlin: Area = { id: 1, lat: 52.52, lng: 13.405, radiusKm: 30, capacity: 1000, counts: { f: 10, m: 10 } };
+  const berlin: Area = { id: 1, capacity: 1000, counts: { f: 10, m: 10 } };
   const profile = { status: 'pending_verification', gender: 'f', lat: 52.5, lng: 13.4 } as const;
 
   it('admits a pending profile and stores the birthdate from the ID', () => {
-    expect(decideWebhook(approved, profile, [berlin], now)).toEqual({ status: 'admitted', area_id: 1, birthdate: '1998-04-12' });
+    expect(decideWebhook(approved, profile, berlin, now)).toEqual({ status: 'admitted', area_id: 1, birthdate: '1998-04-12' });
   });
 
   it('never re-decides a profile that already has a decision', () => {
-    expect(decideWebhook(approved, { ...profile, status: 'admitted' }, [berlin], now)).toBeNull();
+    expect(decideWebhook(approved, { ...profile, status: 'admitted' }, berlin, now)).toBeNull();
   });
 
   it('changes nothing while the check is still pending', () => {
-    expect(decideWebhook({ ...approved, status: 'In Review' }, profile, [berlin], now)).toBeNull();
+    expect(decideWebhook({ ...approved, status: 'In Review' }, profile, berlin, now)).toBeNull();
   });
 
   it('rejects declined checks', () => {
-    expect(decideWebhook({ ...approved, status: 'Declined', decision: { ...approved.decision, id_verifications: [{ status: 'Declined' }] } }, profile, [berlin], now))
+    expect(decideWebhook({ ...approved, status: 'Declined', decision: { ...approved.decision, id_verifications: [{ status: 'Declined' }] } }, profile, berlin, now))
       .toEqual({ status: 'rejected', area_id: null, birthdate: null });
   });
 });

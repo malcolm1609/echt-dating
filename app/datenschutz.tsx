@@ -1,7 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { PRIVACY_POLICY, PRIVACY_VERSION } from '../src/domain/privacy';
+import { DATA_SOURCES, PRIVACY_POLICY, PRIVACY_VERSION } from '../src/domain/privacy';
 import { Screen } from '../src/ui/kit';
 import { colors, font, fontFamily } from '../src/ui/theme';
 
@@ -24,6 +24,7 @@ export default function Privacy() {
             {section.body.map((p) => <Text key={p} style={font.body}>{p}</Text>)}
           </View>
         ))}
+        {DATA_SOURCES.map((s) => <Text key={s} style={font.small}>{s}</Text>)}
       </ScrollView>
     </Screen>
   );

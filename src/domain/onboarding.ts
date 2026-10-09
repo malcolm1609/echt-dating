@@ -1,11 +1,9 @@
 import { hasContactInfo } from './contactInfo.ts';
 import { decideAdmission, Admission, CheckResult, Gender } from './admission.ts';
 
+/** Landkreis oder kreisfreie Stadt, in dem man wohnt (Zuordnung per area_for() in der Datenbank). */
 export interface Area {
   id: number;
-  lat: number;
-  lng: number;
-  radiusKm: number;
   capacity: number;
   counts: Record<Gender, number>;
 }
@@ -25,8 +23,6 @@ export interface VerifiedApplicant {
   /** Geburtsdatum laut Ausweis */
   birthdate: string;
   gender: Gender;
-  lat: number;
-  lng: number;
 }
 
 export type VerificationOutcome = Admission & { areaId: number | null } | { status: 'waitlisted'; reason: 'no_area'; areaId: null };
@@ -61,15 +57,7 @@ export function distanceKm(lat1: number, lng1: number, lat2: number, lng2: numbe
   return 2 * 6371 * Math.asin(Math.sqrt(h));
 }
 
-export function assignArea(lat: number, lng: number, areas: Area[]): Area | null {
-  return areas
-    .map((area) => ({ area, km: distanceKm(lat, lng, area.lat, area.lng) }))
-    .filter(({ area, km }) => km <= area.radiusKm)
-    .sort((a, b) => a.km - b.km)[0]?.area ?? null;
-}
-
-export function processVerification(a: VerifiedApplicant, areas: Area[], today: Date): VerificationOutcome {
-  const area = assignArea(a.lat, a.lng, areas);
+export function processVerification(a: VerifiedApplicant, area: Area | null, today: Date): VerificationOutcome {
   const admission = decideAdmission(
     { idCheck: a.idCheck, selfieMatch: a.selfieMatch, age: ageOn(a.birthdate, today), gender: a.gender },
     area ? { counts: area.counts, capacity: area.capacity } : { counts: { f: 0, m: 0 }, capacity: Infinity },
