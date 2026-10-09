@@ -1,3 +1,4 @@
+import { hasContactInfo } from './contactInfo.ts';
 import { decideAdmission, Admission, CheckResult, Gender } from './admission.ts';
 
 export interface Area {
@@ -45,6 +46,7 @@ export function ageOn(birthdate: string, today: Date): number {
 export function validateProfileDraft(draft: ProfileDraft, today: Date): ProfileErrors {
   const errors: ProfileErrors = {};
   if (!draft.displayName.trim()) errors.displayName = 'Bitte gib deinen Vornamen an.';
+  else if (hasContactInfo(draft.displayName)) errors.displayName = 'Bitte nur deinen Vornamen, ohne @-Namen, Links oder Nummern.';
   if (!parseDate(draft.birthdate)) errors.birthdate = 'Bitte gib ein gültiges Datum an, z. B. 12.04.1998.';
   else if (ageOn(draft.birthdate, today) < 18) errors.birthdate = 'Du musst mindestens 18 Jahre alt sein.';
   if (!draft.gender) errors.gender = 'Bitte wähle dein Geschlecht.';
