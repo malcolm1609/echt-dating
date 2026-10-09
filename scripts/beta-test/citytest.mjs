@@ -227,6 +227,7 @@ async function shard(n) {
 // ------------------------------------------------------------------------------------------------
 async function finish() {
   const report = { run, setup: existsSync(`${out}/setup.json`) ? JSON.parse(readFileSync(`${out}/setup.json`, 'utf8')) : null, shards: [], phases: [], invariants: [] };
+  if (process.env.CITY_SERVER) report.server = process.env.CITY_SERVER;
   const shards = readdirSync(out).filter((f) => /^shard-\d+\.json$/.test(f)).map((f) => JSON.parse(readFileSync(`${out}/${f}`, 'utf8')));
   report.shards = shards.map(({ phases, ...s }) => s);
   report.missingShards = SHARDS - shards.length;

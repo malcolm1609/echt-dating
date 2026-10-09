@@ -2,7 +2,8 @@
 # davon in Stufen bis zu 2.000 gleichzeitig in der App. Die Last kommt von 8 Rechnern gleichzeitig, wie echte
 # Nutzer von vielen Adressen. Alle Testkonten und Test-Städte werden am Ende wieder gelöscht.
 # Startet von Hand (Actions → Stadttest → Run workflow) oder bei „[stadttest]“ in der Commit-Nachricht;
-# „[stadttest klein]“ ist ein kurzer Probelauf mit 400 Personen.
+# „[stadttest klein]“ ist ein kurzer Probelauf mit 400 Personen. „[stadttest lokal]“ läuft gegen einen eigenen
+# Supabase-Server auf dem GitHub-Rechner (city-test-local.yml).
 name: Stadttest
 
 on:
@@ -51,7 +52,7 @@ jobs:
       - run: node scripts/beta-test/citytest.mjs cleanup city-results
 
   setup:
-    if: github.event_name == 'workflow_dispatch' || (contains(github.event.head_commit.message, '[stadttest') && !contains(github.event.head_commit.message, '[stadttest aufräumen]'))
+    if: github.event_name == 'workflow_dispatch' || (contains(github.event.head_commit.message, '[stadttest') && !contains(github.event.head_commit.message, '[stadttest aufräumen]') && !contains(github.event.head_commit.message, '[stadttest lokal]'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
