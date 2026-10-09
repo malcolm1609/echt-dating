@@ -40,6 +40,16 @@ select pg_temp.assert((select count(*) from todays_picks()) = 3, 'wer pausiert, 
 select pg_temp.assert(not has_table_privilege('authenticated', 'daily_picks', 'select'), 'gemerkte Vorschläge sind nicht direkt lesbar');
 reset role;
 
+-- Wer heute schon 6-mal entschieden hat, bekommt keine Vorschläge mehr, auch wenn gemerkte übrig sind.
+insert into likes (from_id, to_id, decision)
+  select '00000000-0000-0000-0000-00000000001a', id, 'pass' from profiles
+  where gender = 'm' and id not in (select id from first_round) limit 3;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000001a');
+insert into likes (from_id, to_id, decision) select auth.uid(), id, 'pass' from first_round where n = 4;
+select pg_temp.assert((select used from my_picks_today) = 6, '6 Entscheidungen heute');
+select pg_temp.assert((select count(*) from todays_picks()) = 0, 'nach 6 Entscheidungen keine Vorschläge mehr');
+reset role;
+
 select pg_temp.as_user('00000000-0000-0000-0000-00000000001b');
 select pg_temp.assert((select count(*) from todays_picks()) = 0, 'Warteliste bekommt keine Vorschläge');
 reset role;
