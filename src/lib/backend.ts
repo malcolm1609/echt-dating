@@ -88,6 +88,10 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       if (error) throw error;
     },
     async deleteAccount() {
+      // Fotos zuerst: Sie liegen im Speicher, nicht in der Datenbank, und würden sonst öffentlich bleiben.
+      const id = await uid();
+      const files = ok(await db.storage.from('photos').list(id, { limit: 100 })) ?? [];
+      if (files.length) ok(await db.storage.from('photos').remove(files.map((f) => `${id}/${f.name}`)));
       ok(await db.rpc('delete_my_account'));
       await db.auth.signOut({ scope: 'local' });
     },
@@ -132,7 +136,12 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       return path;
     },
     async savePhotos(photos) {
-      ok(await db.from('profiles').update({ photos }).eq('id', await uid()));
+      const id = await uid();
+      const before: string[] = ok(await db.from('profiles').select('photos').eq('id', id).single())?.photos ?? [];
+      ok(await db.from('profiles').update({ photos }).eq('id', id));
+      // Entfernte Fotos auch aus dem Speicher löschen, damit sie nicht über ihre Adresse erreichbar bleiben.
+      const removed = before.filter((p) => !photos.includes(p) && p.startsWith(`${id}/`));
+      if (removed.length) await db.storage.from('photos').remove(removed);
     },
     async saveContent(c) {
       ok(await db.from('profiles').update(contentColumns(c)).eq('id', await uid()));

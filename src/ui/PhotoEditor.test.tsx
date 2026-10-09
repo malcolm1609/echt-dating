@@ -3,16 +3,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { PhotoEditor } from './PhotoEditor';
 
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
+jest.mock('../lib/cleanPhoto', () => ({ cleanPhoto: jest.fn(async () => ({ uri: 'file:///ohne-gps.jpg', mimeType: 'image/jpeg' })) }));
 
 describe('PhotoEditor', () => {
-  it('uploads a picked photo and appends it', async () => {
+  it('uploads a cleaned copy of the picked photo and appends it', async () => {
     (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: false, assets: [{ uri: 'file:///neu.jpg', mimeType: 'image/jpeg' }] });
     const onUpload = jest.fn().mockResolvedValue('u-1/neu.jpg');
     const onChange = jest.fn().mockResolvedValue(undefined);
     render(<PhotoEditor photos={['u-1/a.jpg']} onUpload={onUpload} onChange={onChange} />);
     fireEvent.press(screen.getByLabelText('Foto hinzufügen'));
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(['u-1/a.jpg', 'u-1/neu.jpg']));
-    expect(onUpload).toHaveBeenCalledWith('file:///neu.jpg', 'image/jpeg');
+    expect(onUpload).toHaveBeenCalledWith('file:///ohne-gps.jpg', 'image/jpeg');
   });
 
   it('makes a photo the main one and removes photos', async () => {
