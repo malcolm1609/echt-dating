@@ -2,6 +2,8 @@ import Feather from '@expo/vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
+import { cleanPhoto } from '../lib/cleanPhoto';
+import { photoErrorText } from '../lib/photoErrors';
 import { MAX_PHOTOS, photoUrl } from '../lib/photos';
 import { s } from './kit';
 import { colors, font } from './theme';
@@ -21,8 +23,8 @@ export function PhotoEditor({ photos, onUpload, onChange }: Props) {
     setError(undefined);
     try {
       await fn();
-    } catch {
-      setError('Das hat nicht geklappt. Bitte versuch es noch einmal.');
+    } catch (e) {
+      setError(photoErrorText(e) ?? 'Das hat nicht geklappt. Bitte versuch es noch einmal.');
     } finally {
       setBusy(false);
     }
@@ -30,8 +32,8 @@ export function PhotoEditor({ photos, onUpload, onChange }: Props) {
   const add = () => run(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 0.7 });
     if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
-    const path = await onUpload(asset.uri, asset.mimeType ?? 'image/jpeg');
+    const photo = await cleanPhoto(result.assets[0].uri, result.assets[0].width);
+    const path = await onUpload(photo.uri, photo.mimeType);
     await onChange([...photos, path]);
   });
   const tile = { width: '31%', aspectRatio: 4 / 5, borderRadius: 14, overflow: 'hidden' } as const;
@@ -39,7 +41,7 @@ export function PhotoEditor({ photos, onUpload, onChange }: Props) {
   return (
     <View style={{ gap: 10 }}>
       <Text style={[font.body, { fontWeight: '600' }]}>Fotos</Text>
-      <Text style={font.small}>{photos.length ? 'Antippen macht ein Foto zum Hauptfoto.' : 'Zeig dich, wie du wirklich aussiehst. Das erste Foto gleichen wir mit deinem Ausweis-Selfie ab.'}</Text>
+      <Text style={font.small}>{photos.length ? 'Antippen macht ein Foto zum Hauptfoto.' : 'Zeig dich, wie du wirklich aussiehst: Auf jedem Foto muss man dein Gesicht klar erkennen, ohne starke Filter. Höchstens ein Gruppenfoto.'}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {photos.map((p, i) => (
           <View key={p} style={tile}>

@@ -11,6 +11,7 @@ import type { MyProfile } from '../ui/ProfileView';
 import type { Decision, Pick } from '../ui/TodayDeck';
 import { photoUrls, placeholderPhoto } from './photos';
 import { beta, supabase } from './supabase';
+import { PhotoRejected } from './photoErrors';
 
 export type MyStatus =
   | { status: 'pending_verification' | 'admitted' | 'rejected' }
@@ -88,6 +89,10 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       if (error) throw error;
     },
     async deleteAccount() {
+      // Fotos zuerst: Sie liegen im Speicher, nicht in der Datenbank, und würden sonst öffentlich bleiben.
+      const id = await uid();
+      const files = ok(await db.storage.from('photos').list(id, { limit: 100 })) ?? [];
+      if (files.length) ok(await db.storage.from('photos').remove(files.map((f) => `${id}/${f.name}`)));
       ok(await db.rpc('delete_my_account'));
       await db.auth.signOut({ scope: 'local' });
     },
@@ -128,11 +133,19 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
       const path = `${await uid()}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
       const body = await (await fetch(uri)).arrayBuffer();
-      ok(await db.storage.from('photos').upload(path, body, { contentType: mimeType }));
+      // Erst in den privaten Prüfordner; öffentlich wird das Foto nur, wenn die Prüfung es freigibt.
+      ok(await db.storage.from('photo-uploads').upload(path, body, { contentType: mimeType }));
+      const { data, error } = await db.functions.invoke('photo-check', { body: { path } });
+      if (error || !data?.ok) throw new PhotoRejected(data?.reason ?? 'unavailable');
       return path;
     },
     async savePhotos(photos) {
-      ok(await db.from('profiles').update({ photos }).eq('id', await uid()));
+      const id = await uid();
+      const before: string[] = ok(await db.from('profiles').select('photos').eq('id', id).single())?.photos ?? [];
+      ok(await db.from('profiles').update({ photos }).eq('id', id));
+      // Entfernte Fotos auch aus dem Speicher löschen, damit sie nicht über ihre Adresse erreichbar bleiben.
+      const removed = before.filter((p) => !photos.includes(p) && p.startsWith(`${id}/`));
+      if (removed.length) await db.storage.from('photos').remove(removed);
     },
     async saveContent(c) {
       ok(await db.from('profiles').update(contentColumns(c)).eq('id', await uid()));
