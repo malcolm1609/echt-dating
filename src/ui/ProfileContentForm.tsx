@@ -4,7 +4,7 @@ import {
   answerHint, GOALS, GoalId, INTEREST_MAX, INTERESTS, PROMPT_CATEGORIES, PROMPT_MAX, PromptAnswer, PromptCategory, PROMPTS,
   ProfileContent, ProfileContentErrors, validateProfileContent,
 } from '../domain/profileContent.ts';
-import type { MusicLink } from '../domain/music.ts';
+import { MusicLink, SONGS_MAX } from '../domain/music.ts';
 import { lookupMusicTitle } from '../lib/musicTitle';
 import { Button, Chip, Field, s } from './kit';
 import { MusicField } from './MusicField';
@@ -27,7 +27,12 @@ export function ProfileContentForm({ initial, submitLabel, busy, onSubmit, looku
   const [picking, setPicking] = useState<PromptCategory>();
   const [goal, setGoal] = useState<GoalId | undefined>(initial?.goal);
   const [interests, setInterests] = useState<string[]>(initial?.interests ?? []);
-  const [music, setMusic] = useState<MusicLink | undefined>(initial?.music);
+  // Ein Platz je Song; der Schlüssel bleibt, damit beim Entfernen die übrigen Eingaben stehen bleiben.
+  const [songs, setSongs] = useState<{ key: number; value?: MusicLink }[]>(() => {
+    const start = initial?.music?.length ? initial.music : [undefined];
+    return start.map((value, key) => ({ key, value }));
+  });
+  const nextKey = () => Math.max(-1, ...songs.map((x) => x.key)) + 1;
   const [errors, setErrors] = useState<ProfileContentErrors>({});
 
   const edited = (field: keyof ProfileContentErrors) => setErrors(({ [field]: _, ...rest }) => rest);
@@ -41,11 +46,12 @@ export function ProfileContentForm({ initial, submitLabel, busy, onSubmit, looku
   };
 
   const submit = () => {
+    const chosen = songs.flatMap(({ value }) => (value ? [{ ...value, title: value.title.trim() }] : []));
     const content: ProfileContent = {
       prompts: PROMPT_CATEGORIES.flatMap(({ id }) => (answers[id] ? [{ ...answers[id]!, answer: answers[id]!.answer.trim() }] : [])),
       goal,
       interests,
-      ...(music && { music: { ...music, title: music.title.trim() } }),
+      ...(chosen.length > 0 && { music: chosen }),
     };
     const found = validateProfileContent(content);
     setErrors(found);
@@ -131,9 +137,26 @@ export function ProfileContentForm({ initial, submitLabel, busy, onSubmit, looku
       </View>
 
       <View style={{ gap: 12 }}>
-        <Text style={[font.label, { color: colors.hint }]}>Dein Song, freiwillig</Text>
-        <Text style={font.small}>Ein Lieblingssong oder eine Playlist aus Spotify oder Apple Music. Andere können ihn direkt anhören.</Text>
-        <MusicField value={music} error={errors.music} lookupTitle={lookupTitle} onChange={(m) => { edited('music'); setMusic(m); }} />
+        <Text style={[font.label, { color: colors.hint }]}>Deine Top-Songs, freiwillig</Text>
+        <Text style={font.small}>{`Bis zu ${SONGS_MAX} Songs oder Playlists aus Spotify oder Apple Music. Andere können sie direkt anhören.`}</Text>
+        {songs.map(({ key, value }, i) => (
+          <View key={key} style={{ gap: 8, paddingTop: i > 0 ? 8 : 0, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: colors.line }}>
+            {songs.length > 1 && <Text style={font.label}>{`Song ${i + 1}`}</Text>}
+            <MusicField
+              value={value}
+              number={i + 1}
+              lookupTitle={lookupTitle}
+              onChange={(m) => {
+                edited('music');
+                setSongs((cur) => (!m && cur.length > 1 ? cur.filter((x) => x.key !== key) : cur.map((x) => (x.key === key ? { key, value: m } : x))));
+              }}
+            />
+          </View>
+        ))}
+        {songs.length < SONGS_MAX && songs.every((x) => x.value) && (
+          <Link label="Weiteren Song hinzufügen" onPress={() => setSongs((cur) => [...cur, { key: nextKey() }])} />
+        )}
+        {errors.music && <Text style={s.error}>{errors.music}</Text>}
       </View>
 
       <Button title={submitLabel} busy={busy} onPress={submit} />

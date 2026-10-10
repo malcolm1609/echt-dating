@@ -23,7 +23,7 @@ export interface Pick {
   goal?: GoalId;
   prompts?: ShownPrompt[];
   interests?: string[];
-  music?: MusicLink;
+  music?: MusicLink[];
   /** Bild-Adressen, das erste ist das Hauptfoto. */
   photos?: string[];
 }

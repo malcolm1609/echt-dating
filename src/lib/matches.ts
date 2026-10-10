@@ -3,7 +3,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { Answers, answerKey, DateAnswer, QUESTION_ROUNDS } from '../domain/conversation.ts';
 import { PROMPTS, promptText, sharedInterests } from '../domain/profileContent.ts';
 import { ReportReason, unreadCount } from '../domain/safety.ts';
-import type { MusicLink } from '../domain/music.ts';
+import { MusicLink, toSongs } from '../domain/music.ts';
 import type { GoalId } from '../domain/profileContent.ts';
 import type { ShownPrompt } from '../ui/ProfileDetails';
 import { photoUrls, placeholderPhoto } from './photos';
@@ -41,7 +41,7 @@ export interface Match {
   photos?: string[];
 }
 
-export interface MatchProfile { bio: string; goal?: GoalId; prompts: ShownPrompt[]; interests: string[]; music?: MusicLink }
+export interface MatchProfile { bio: string; goal?: GoalId; prompts: ShownPrompt[]; interests: string[]; music?: MusicLink[] }
 
 export interface MatchStore {
   list(): Match[];
@@ -199,7 +199,7 @@ interface ServerMatch {
   unread: boolean;
   bio?: string;
   goal?: GoalId | null;
-  music?: MusicLink | null;
+  music?: MusicLink | MusicLink[] | null;
   photos?: string[];
 }
 
@@ -221,7 +221,7 @@ export function fromServer(m: ServerMatch, myInterests: string[]): Match {
     ended: m.ended,
     unread: m.unread,
     photos: photoUrls(m.photos),
-    profile: { bio: m.bio ?? '', goal: m.goal ?? undefined, prompts, interests: m.interests, music: m.music ?? undefined },
+    profile: { bio: m.bio ?? '', goal: m.goal ?? undefined, prompts, interests: m.interests, music: toSongs(m.music) },
   };
 }
 

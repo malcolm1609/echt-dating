@@ -25,7 +25,7 @@ export interface MyProfile {
   goal?: GoalId;
   prompts: PromptAnswer[];
   interests: string[];
-  music?: MusicLink;
+  music?: MusicLink[];
   preferences: Preferences;
   /** Speicherpfade, das erste ist das Hauptfoto. */
   photos: string[];

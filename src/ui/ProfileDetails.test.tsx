@@ -39,4 +39,14 @@ describe('ProfileDetails', () => {
     fireEvent.press(screen.getByText('In Spotify öffnen'));
     expect(open).toHaveBeenCalledWith(music.url);
   });
+
+  it('lists up to three top songs in order', () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const song = (n: number) => ({ provider: 'spotify' as const, kind: 'track' as const, url: `https://open.spotify.com/track/${n}`, title: `Song ${n}` });
+    render(<ProfileDetails {...person} music={[song(1), song(2), song(3)]} />);
+    expect(screen.getByText('Läuft gerade bei Elif')).toBeTruthy();
+    expect(screen.getAllByText('In Spotify öffnen')).toHaveLength(3);
+    fireEvent.press(screen.getByLabelText('Song 2, in Spotify öffnen'));
+    expect(open).toHaveBeenCalledWith('https://open.spotify.com/track/2');
+  });
 });

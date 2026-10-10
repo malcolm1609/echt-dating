@@ -1,6 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { Linking, Pressable, Text, View } from 'react-native';
-import { MusicLink, providerName } from '../domain/music.ts';
+import { MusicLink, providerName, toSongs } from '../domain/music.ts';
 import { GoalId, goalLabel, sharedInterests } from '../domain/profileContent.ts';
 import { Print, ProfileCard } from './ProfileCard';
 import { colors, font, fontFamily } from './theme';
@@ -19,7 +19,8 @@ interface Props {
   prompts: ShownPrompt[];
   interests: string[];
   myInterests?: string[];
-  music?: MusicLink;
+  /** Top-Songs; ein einzelner Song aus älteren gespeicherten Matches wird auch verstanden. */
+  music?: MusicLink[] | MusicLink;
   /** Bild-Adressen; das erste kommt auf die Karte, die übrigen stehen zwischen den Antworten. */
   photos?: string[];
   dimmed?: boolean;
@@ -32,6 +33,7 @@ function Photo({ uri, name }: { uri: string; name: string }) {
 // Ein ganzes Profil: oben die Karte, darunter Fragen und Interessen zum Anknüpfen.
 export function ProfileDetails({ name, age, eyebrow, bio, goal, prompts, interests, myInterests, music, photos = [], dimmed }: Props) {
   const more = photos.slice(1);
+  const songs = toSongs(music);
   const shared = myInterests ? sharedInterests(myInterests, interests) : [];
   return (
     <View style={{ gap: 16, opacity: dimmed ? 0.5 : 1 }}>
@@ -53,16 +55,25 @@ export function ProfileDetails({ name, age, eyebrow, bio, goal, prompts, interes
         </View>
       ))}
       {more.slice(prompts.length).map((uri) => <Photo key={uri} uri={uri} name={name} />)}
-      {music && (
-        <View style={{ borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 14, gap: 6 }}>
+      {songs.length > 0 && (
+        <View style={{ borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 14, gap: 10 }}>
           <Text style={font.small}>{`Läuft gerade bei ${name}`}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Feather name="music" size={16} color={colors.accent} />
-            <Text style={[font.body, { flex: 1 }]} numberOfLines={2}>{music.title}</Text>
-          </View>
-          <Pressable accessibilityRole="link" onPress={() => Linking.openURL(music.url)} hitSlop={8} style={{ minHeight: 32, justifyContent: 'center', alignSelf: 'flex-start' }}>
-            <Text style={[font.small, { color: colors.hint }]}>{`In ${providerName(music.provider)} öffnen`}</Text>
-          </Pressable>
+          {songs.map((song, i) => (
+            <Pressable
+              key={song.url}
+              accessibilityRole="link"
+              accessibilityLabel={`${song.title}, in ${providerName(song.provider)} öffnen`}
+              onPress={() => Linking.openURL(song.url)}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, opacity: pressed ? 0.6 : 1 })}
+            >
+              <Text style={{ fontFamily: fontFamily.serifItalic, fontSize: 22, lineHeight: 28, color: colors.accent, width: 18 }}>{i + 1}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={font.body} numberOfLines={2}>{song.title}</Text>
+                <Text style={[font.small, { color: colors.hint }]}>{`In ${providerName(song.provider)} öffnen`}</Text>
+              </View>
+              <Feather name="play-circle" size={22} color={colors.accent} />
+            </Pressable>
+          ))}
         </View>
       )}
       {interests.length > 0 && (

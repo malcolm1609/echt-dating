@@ -56,8 +56,8 @@ describe('demoBackend', () => {
     await b.saveProfile({ displayName: 'Anna', birthdate: '1998-04-12', gender: 'f', seeking: ['m'] }, { lat: 52.5, lng: 13.4 }, content);
     expect(await b.myProfile()).toMatchObject({ goal: 'fest', interests: ['Kochen'], prompts: content.prompts });
     const music = { provider: 'spotify' as const, kind: 'track' as const, url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody' };
-    await b.saveContent({ ...content, goal: 'offen', music });
-    expect(await b.myProfile()).toMatchObject({ goal: 'offen', music });
+    await b.saveContent({ ...content, goal: 'offen', music: [music] });
+    expect(await b.myProfile()).toMatchObject({ goal: 'offen', music: [music] });
   });
 
   it('shows suggestions with their answers, goal and interests', async () => {
