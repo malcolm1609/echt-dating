@@ -9,7 +9,8 @@ import { useCampus } from '../../src/lib/campus';
 import { usePlus } from '../../src/lib/plus';
 import { Button, Chip, Screen, s } from '../../src/ui/kit';
 import { PlaceLink } from '../../src/ui/PlaceLink';
-import { colors, font, fontFamily, shadow } from '../../src/ui/theme';
+import { Seal } from '../../src/ui/Seal';
+import { colors, font, fontFamily } from '../../src/ui/theme';
 
 type Filter = 'alle' | 'heute' | 'campus';
 const FILTERS: [Filter, string][] = [['alle', 'Alle'], ['heute', 'Heute Abend'], ['campus', 'Campus']];
@@ -35,6 +36,17 @@ function Seats({ e }: { e: MeetupEvent }) {
           <Text style={[font.small, { width: 40, textAlign: 'right' }]}>{`${e.joined[g]}/${half}`}</Text>
         </View>
       ))}
+    </View>
+  );
+}
+
+// Unser Vorteil gegenüber großen Apps: Wer zusagt, ist mit Ausweis geprüft. Das steht an jedem Event.
+function Verified({ e }: { e: MeetupEvent }) {
+  const n = e.joined.f + e.joined.m;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: colors.accentSoft }}>
+      <Seal size={22} label="" />
+      <Text style={[font.label, { flex: 1, color: colors.accent }]}>{n === 0 ? 'Wer zusagt, ist mit Ausweis geprüft' : n === 1 ? 'Die erste Zusage ist mit Ausweis geprüft' : `Alle ${n} Zusagen mit Ausweis geprüft`}</Text>
     </View>
   );
 }
@@ -74,9 +86,9 @@ export default function Treffen() {
 
   return (
     <Screen tabs>
-      <Text style={font.display}>Treffen</Text>
+      <Text accessibilityRole="header" style={font.display}>Treffen</Text>
       <ScrollView contentContainerStyle={{ gap: 14, paddingBottom: 12 }}>
-        <Text style={font.body}>Kleine Runden mit verifizierten Leuten aus deiner Nähe. Die Plätze sind immer zur Hälfte für Frauen und Männer.</Text>
+        <Text style={font.body}>Kleine Runden, in denen jede Person geprüft ist. Die Plätze sind immer zur Hälfte für Frauen und Männer.</Text>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
             <Button title="Heute feiern" icon="moon" onPress={() => router.push('/event-neu?heute=1')} />
@@ -107,7 +119,7 @@ export default function Treffen() {
           const state = joinState(e, gender, { joined: mine.has(e.id), plus: plus.active, invited: invited.has(e.id), noShows, campus: campus.uni });
           const price = eventPrice(e, plus.active);
           return (
-            <View key={e.id} style={[{ backgroundColor: colors.surface, borderRadius: 24, padding: 18, gap: 12, borderWidth: state === 'joined' ? 1.5 : 0, borderColor: colors.accent }, shadow]}>
+            <View key={e.id} style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 18, gap: 12, borderWidth: state === 'joined' ? 1.5 : 1, borderColor: state === 'joined' ? colors.accent : colors.line }}>
               <View style={{ gap: 4 }}>
                 {(e.tonight || e.campus) && (
                   <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4 }}>
@@ -120,6 +132,7 @@ export default function Treffen() {
                 <Text style={font.body}>{e.when}</Text>
               </View>
               <PlaceLink place={e.place} address={e.address} />
+              <Verified e={e} />
               <HostLine e={e} />
               <Seats e={e} />
               <Text style={font.small}>

@@ -11,7 +11,8 @@ const person = {
 describe('ProfileDetails', () => {
   it('puts the main photo on the card and the others between the answers', () => {
     render(<ProfileDetails {...person} photos={['https://x/1.jpg', 'https://x/2.jpg', 'https://x/3.jpg']} />);
-    const shown = screen.UNSAFE_getAllByType(Image).map((n) => n.props.source.uri);
+    // Das Siegel ist auch ein Bild, aber ohne Adresse.
+    const shown = screen.UNSAFE_getAllByType(Image).map((n) => n.props.source.uri).filter(Boolean);
     expect(shown).toEqual(['https://x/1.jpg', 'https://x/2.jpg', 'https://x/3.jpg']);
   });
 

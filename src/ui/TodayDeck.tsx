@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Animated, Easing, Platform, ScrollView, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
 import type { MusicLink } from '../domain/music.ts';
 import type { GoalId } from '../domain/profileContent.ts';
 import { pickReason } from '../domain/ranking.ts';
 import type { ShownPrompt } from './ProfileDetails';
-import { Glass } from './Glass';
 import { Button, s } from './kit';
 import { LikeKnob } from './LikeKnob';
 import { useEntrance, usePulse, useReducedMotion } from './motion';
 import { ProfileDetails } from './ProfileDetails';
 import { ReportPanel } from './ReportPanel';
 import type { ReportReason } from '../domain/safety.ts';
-import { colors, font, fontFamily } from './theme';
+import { colors, font, palette } from './theme';
 
 export interface Pick {
   id: string;
@@ -62,6 +62,7 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   const like = usePulse();
   const reduced = useReducedMotion();
   const screenWidth = useWindowDimensions().width;
+  const ground = palette[useColorScheme() === 'dark' ? 'dark' : 'light'].bg;
   // drag: wie weit der Knopf gezogen ist, die Karte geht ein Stück mit.
   // exit: -1 = Karte fliegt nach links (Weiter), 1 = hebt sich und verblasst (Gefällt mir).
   const drag = useRef(new Animated.Value(0)).current;
@@ -117,11 +118,9 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
   const reason = pickReason({ goal: myGoal, interests: myInterests }, { goal: current.goal, interests: current.interests ?? [] });
   return (
     <View style={{ flex: 1, gap: 16 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
         {title && <Text accessibilityRole="header" style={font.display}>{title}</Text>}
-        <Glass style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-          <Text accessibilityLabel={`${position} von ${DAILY_LIMIT} Vorschlägen`} style={[font.small, { fontFamily: fontFamily.semibold, color: colors.text }]}>{`${position} von ${DAILY_LIMIT}`}</Text>
-        </Glass>
+        <Text accessibilityLabel={`${position} von ${DAILY_LIMIT} Vorschlägen`} style={font.small}>{`${position} von ${DAILY_LIMIT}`}</Text>
       </View>
       <Animated.View style={[{ flex: 1 }, enterCard]}>
         <Animated.View
@@ -176,6 +175,8 @@ export function TodayDeck({ picks, usedBefore, onDecide, onOpenMatch, myInterest
       {error && <Text style={s.error}>{error}</Text>}
       {/* Die Entscheidung schwebt als Glasleiste über dem Profil, damit das Foto bis unten durchscheint.
           Ein Knopf: antippen = Gefällt mir, nach links ziehen = Weiter. */}
+      {/* Der Text läuft unter dem Knopf sanft aus, statt durch das Glas zu scheinen. */}
+      <LinearGradient pointerEvents="none" colors={[`${ground}00`, ground]} locations={[0, 0.55]} style={{ position: 'absolute', left: -24, right: -24, bottom: -4, height: 120 }} />
       <Animated.View style={[{ position: 'absolute', left: 0, right: 0, bottom: 4 }, like.style]}>
         <LikeKnob x={drag} disabled={busy} onLike={() => decide('like')} onPass={() => decide('pass')} />
       </Animated.View>
