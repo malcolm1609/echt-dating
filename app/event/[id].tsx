@@ -5,7 +5,7 @@ import type { Gender } from '../../src/domain/admission.ts';
 import { backend } from '../../src/lib/backend';
 import { eventStore, useEvent } from '../../src/lib/events';
 import { Button, Screen, s } from '../../src/ui/kit';
-import { PlaceLink } from '../../src/ui/PlaceLink';
+import { EventPlace } from '../../src/ui/EventPlace';
 import { photoUrl } from '../../src/lib/photos';
 import { Avatar } from '../../src/ui/ProfileCard';
 import { colors, font, fontFamily } from '../../src/ui/theme';
@@ -49,7 +49,7 @@ export default function EventScreen() {
           <Text style={s.label}>{`${event.kind} · Gastgeber ${event.host.name}`}</Text>
           <Text style={font.body}>{event.when}</Text>
         </View>
-        <PlaceLink place={event.place} address={event.address} />
+        <EventPlace e={event} joined={joined} />
 
         {!joined ? (
           <Text style={font.body}>Wer dabei ist und den Gruppenchat siehst du, sobald du einen Platz hast.</Text>

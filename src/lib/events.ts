@@ -155,7 +155,7 @@ export function createEventStore(delayMs = 1200): EventStore {
 }
 
 interface ServerEvent {
-  id: string; title: string; kind: string; when: string; starts_at: string; place: string; address: string; seats: number; price: number | string;
+  id: string; title: string; kind: string; when: string; starts_at: string; place: string; address: string; hidden?: boolean; area?: string; seats: number; price: number | string;
   access: 'open' | 'invite'; campus: string | null; tonight: boolean; joined: Record<Gender, number>;
   host: { name: string; events: number; ratings: number[]; reviews: string[] };
   is_host: boolean; mine: boolean; invited: boolean; invitees: string[] | null; people: EventPerson[] | null;
@@ -165,7 +165,7 @@ interface ServerPast { id: string; title: string; when: string; place: string; a
 
 export function eventFromServer(e: ServerEvent): MeetupEvent {
   return {
-    id: e.id, title: e.title, kind: e.kind, when: e.when, place: e.place, address: e.address || undefined, seats: e.seats, joined: e.joined, price: Number(e.price),
+    id: e.id, title: e.title, kind: e.kind, when: e.when, place: e.place, address: e.address || undefined, placeHidden: !!e.hidden, city: e.area, startsAt: new Date(e.starts_at), seats: e.seats, joined: e.joined, price: Number(e.price),
     plusFirst: false, access: e.access, host: e.host, campus: e.campus ?? undefined, tonight: e.tonight, isHost: e.is_host,
     invitees: e.invitees ?? undefined, people: e.people ?? undefined,
     messages: e.messages?.map((m) => ({ id: String(m.id), mine: m.mine, name: m.name, text: m.text, at: new Date(m.at) })),
