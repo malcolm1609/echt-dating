@@ -287,7 +287,8 @@ export function createServerStore(db: SupabaseClient, pollMs = 4000): MatchStore
       const me = auth.session?.user.id;
       if (!me) throw new Error('not signed in');
       const blob = await (await fetch(uri)).blob();
-      const type = blob.type || (uri.endsWith('.webm') ? 'audio/webm' : 'audio/mp4');
+      // Ohne Zusätze wie „;codecs=opus“, sonst lehnt der Speicher den Typ ab.
+      const type = blob.type.split(';')[0] || (uri.endsWith('.webm') ? 'audio/webm' : 'audio/mp4');
       const ext = type.includes('webm') ? 'webm' : type.includes('ogg') ? 'ogg' : 'm4a';
       const path = `${me}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
       const up = await db.storage.from('voice').upload(path, await blob.arrayBuffer(), { contentType: type });
