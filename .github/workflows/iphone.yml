@@ -2,7 +2,8 @@
 # „einrichten“ legt das Projekt bei Expo an und hinterlegt dort die Adresse des Beta-Servers.
 # „bauen“ baut die App in der Cloud von Expo und schickt sie zu TestFlight. Das geht erst, wenn der
 # erste Build einmal am Computer gelaufen ist (dort entstehen die Apple-Zertifikate).
-# Start: Actions → iPhone-App → Run workflow, oder „[iphone einrichten]“ / „[iphone]“ in der Commit-Nachricht.
+# „fehler“ zeigt das Protokoll des letzten iPhone-Builds bei Expo (wenn ein Build fehlgeschlagen ist).
+# Start: Actions → iPhone-App → Run workflow, oder „[iphone einrichten]“ / „[iphone fehler]“ / „[iphone]“ in der Commit-Nachricht.
 name: iPhone-App
 
 on:
@@ -11,7 +12,7 @@ on:
       aufgabe:
         description: einrichten oder bauen
         type: choice
-        options: [bauen, einrichten]
+        options: [bauen, einrichten, fehler]
         default: bauen
   push:
     branches: [main, 'claude/**']
@@ -29,6 +30,7 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       SETUP: ${{ inputs.aufgabe == 'einrichten' || contains(github.event.head_commit.message, '[iphone einrichten]') }}
+      LOG: ${{ inputs.aufgabe == 'fehler' || contains(github.event.head_commit.message, '[iphone fehler]') }}
     steps:
       - name: Expo-Schlüssel vorhanden?
         run: |
@@ -67,6 +69,20 @@ jobs:
           eas env:set production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "$SUPABASE_ANON_KEY" --visibility plaintext --non-interactive
           eas env:set production --name EXPO_PUBLIC_BETA --value 1 --visibility plaintext --non-interactive
 
+      - name: Protokoll des letzten Builds zeigen
+        if: env.LOG == 'true'
+        run: |
+          npx eas-cli@latest build:list --platform ios --limit 1 --json --non-interactive > build.json
+          jq '.[0] | {id, status, appBuildVersion, error}' build.json
+          for url in $(jq -r '.[0].logFiles[]?' build.json); do
+            curl -sSL "$url" > part.log || continue
+            # Expo speichert das Protokoll als JSON-Zeilen; nur die Meldungen ausgeben.
+            jq -r 'select(.msg != null) | "[\(.phase // "")] \(.msg)"' part.log 2>/dev/null > text.log || cp part.log text.log
+            grep -n -i -B3 -A12 "error\|failed\|❌" text.log | tail -150 || true
+            echo "----- Ende des Protokolls -----"
+            tail -60 text.log
+          done
+
       - name: In der Expo-Cloud bauen und zu TestFlight schicken
-        if: env.SETUP != 'true'
+        if: env.SETUP != 'true' && env.LOG != 'true'
         run: npx eas-cli@latest build --platform ios --profile production --auto-submit --non-interactive --no-wait
