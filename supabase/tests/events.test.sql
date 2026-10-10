@@ -30,6 +30,7 @@ create temp table ev as select create_event('Kneipentour', 'Feiern', 'Seltersweg
 grant select on ev to authenticated;
 select pg_temp.assert((my_events()->'events'->0->>'mine')::boolean, 'der Gastgeber ist selbst dabei');
 select pg_temp.assert((my_events()->'events'->0->'joined'->>'m')::int = 1, 'und belegt einen Platz seiner Hälfte');
+select pg_temp.assert(my_events()->'events'->0->>'place' = 'Seltersweg', 'der Gastgeber sieht den Treffpunkt immer');
 reset role;
 
 -- Anmelden ------------------------------------------------------------------------
@@ -39,7 +40,11 @@ select pg_temp.assert(pg_temp.fails($$select join_event((select id from ev))$$),
 reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
 select pg_temp.assert(my_events()->'events'->0->'people' = 'null', 'wer nicht dabei ist, sieht keine Teilnehmenden');
+select pg_temp.assert(my_events()->'events'->0->>'place' = '' and my_events()->'events'->0->>'address' = ''
+  and (my_events()->'events'->0->>'hidden')::boolean and my_events()->'events'->0->>'area' = 'Gießen',
+  'ohne Zusage nur die Stadt, kein Treffpunkt');
 select join_event((select id from ev));
+select pg_temp.assert((my_events()->'events'->0->>'hidden')::boolean, 'mit Zusage noch nicht, solange die Gruppe nicht voll ist');
 select pg_temp.assert(my_events()->'events'->0->'people'->0->>'name' = 'Host', 'nach dem Anmelden schon');
 reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c3');
@@ -48,12 +53,14 @@ reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c4');
 select join_event((select id from ev));
 select pg_temp.assert((my_events()->'events'->0->'joined'->>'m')::int = 2, 'Männerhälfte jetzt voll');
+select pg_temp.assert(my_events()->'events'->0->>'place' = 'Seltersweg', 'volle Gruppe: alle Zusagen sehen den Treffpunkt');
 reset role;
 insert into auth.users (id) values ('00000000-0000-0000-0000-0000000000c6');
 insert into profiles (id, display_name, birthdate, gender, seeking, area_id, lat, lng, status) values
   ('00000000-0000-0000-0000-0000000000c6', 'Kai', '2002-02-01', 'm', '{f}', 1, 50.58, 8.68, 'admitted');
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c6');
 select pg_temp.assert(pg_temp.fails($$select join_event((select id from ev))$$), 'volle Hälfte ist nicht buchbar');
+select pg_temp.assert(my_events()->'events'->0->>'place' = '', 'wer nicht dabei ist, sieht ihn auch bei voller Gruppe nicht');
 select pg_temp.assert(pg_temp.fails($$select send_event_message((select id from ev), 'Hi')$$), 'Gruppenchat nur für Teilnehmende');
 reset role;
 
@@ -126,11 +133,20 @@ select beta_reset_me();
 select pg_temp.assert((select count(*) from jsonb_array_elements(my_events()->'events') e where (e->>'tonight')::boolean) = 1,
   'ein Event für heute Abend, auch nach zweimal Zurücksetzen');
 select pg_temp.assert(jsonb_array_length(my_events()->'past') = 1, 'ein vergangener Abend zum Bewerten');
-select pg_temp.assert((select bool_and(e->>'address' <> '') from jsonb_array_elements(my_events()->'events') e where e->'host'->>'name' like 'Probe%'),
-  'jedes Beispiel-Event hat eine Adresse für die Karten-App');
 select pg_temp.assert(jsonb_array_length(review_event(my_events()->'past'->0->>'id', 5, '',
   array(select (p->>'id')::uuid from jsonb_array_elements(my_events()->'past'->0->'attendees') p where p->>'gender' = 'f'))) = 2,
   'zwei Beispielprofile möchten die Testperson wiedersehen');
+reset role;
+select pg_temp.assert((select bool_and(e.address <> '') from events e join profiles p on p.id = e.host_id where p.is_sample),
+  'jedes Beispiel-Event hat eine Adresse für die Karten-App');
+
+-- Treffpunkt spätestens kurz vor Beginn ---------------------------------------------------
+insert into events (host_id, area_id, title, kind, place, address, when_text, starts_at, seats)
+  values ('00000000-0000-0000-0000-0000000000c1', 1, 'Spieleabend', 'Spiele', 'Spielecafé', 'Seltersweg 1', 'Heute', now() + interval '2 hours', 10);
+insert into event_attendees (event_id, user_id, gender) select max(id), '00000000-0000-0000-0000-0000000000c3', 'f' from events where title = 'Spieleabend';
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c3');
+select pg_temp.assert((select e->>'place' from jsonb_array_elements(my_events()->'events') e where e->>'title' = 'Spieleabend') = 'Spielecafé',
+  '3 Stunden vor Beginn sehen Zusagen den Treffpunkt, auch wenn die Gruppe nicht voll ist');
 reset role;
 
 rollback;

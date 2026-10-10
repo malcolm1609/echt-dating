@@ -1,4 +1,4 @@
-import { averageRating, dayOptions, EventDraft, eventPrice, joinState, MeetupEvent, mutualPicks, seatsLeft, startsAt, validateEvent, whenLabel } from './events.ts';
+import { averageRating, dayOptions, EventDraft, eventPrice, joinState, MeetupEvent, mutualPicks, placeHint, placeShown, seatsLeft, startsAt, validateEvent, whenLabel } from './events.ts';
 
 const host = { name: 'Jonas', events: 6, ratings: [5, 4, 5], reviews: ['Lockere Runde.'] };
 const quiz: MeetupEvent = {
@@ -87,5 +87,17 @@ describe('event time', () => {
   it('rejects a start in the past', () => {
     const draft: EventDraft = { title: 'Quiz', kind: 'Spiele', place: 'Pub', when: 'Heute', startsAt: new Date(Date.now() - 60_000), seats: 8, price: 0, access: 'open' };
     expect(validateEvent(draft).when).toBeTruthy();
+  });
+
+  it('shows the meeting place to attendees only once the group is full or shortly before', () => {
+    const at = new Date('2026-10-10T19:00:00Z');
+    const e = { ...quiz, startsAt: at, joined: { f: 2, m: 2 } };
+    expect(placeShown({ ...e, isHost: true }, true, new Date('2026-10-09T12:00:00Z'))).toBe(true);
+    expect(placeShown(e, false, new Date('2026-10-10T18:30:00Z'))).toBe(false);
+    expect(placeShown(e, true, new Date('2026-10-10T15:59:00Z'))).toBe(false);
+    expect(placeShown(e, true, new Date('2026-10-10T16:00:00Z'))).toBe(true);
+    expect(placeShown({ ...e, tonight: true }, true, new Date('2026-10-10T17:30:00Z'))).toBe(false);
+    expect(placeShown({ ...e, joined: { f: 6, m: 6 } }, true, new Date('2026-10-09T12:00:00Z'))).toBe(true);
+    expect(placeHint({ ...e, tonight: true }, true)).toBe('Den genauen Treffpunkt siehst du, sobald die Gruppe voll ist, spätestens 1 Stunde vor Beginn.');
   });
 });

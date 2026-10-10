@@ -12,6 +12,10 @@ export interface MeetupEvent {
   place: string;
   /** Straße und Hausnummer, damit man den Ort in der Karten-App findet. */
   address?: string;
+  /** Treffpunkt noch verborgen (siehe placeShown); dann steht nur die Stadt da. */
+  placeHidden?: boolean;
+  city?: string;
+  startsAt?: Date;
   seats: number;
   joined: Record<Gender, number>;
   /** Preis in Euro, 0 = kostenlos. */
@@ -47,6 +51,26 @@ export const EVENT_KINDS = ['Feiern', 'Essen & Trinken', 'Sport', 'Spiele', 'Kul
 export const MAX_PRICE = 50;
 /** Wer so oft ohne Absage fehlt, kann eine Zeit lang nicht buchen. */
 export const NO_SHOW_LIMIT = 2;
+
+/** Wie lange vor Beginn Zusagen den Treffpunkt spätestens sehen. */
+export const revealHours = (e: Pick<MeetupEvent, 'tonight'>) => (e.tonight ? 1 : 3);
+
+/**
+ * Treffpunkt erst später: Der Gastgeber sieht ihn immer, Zusagen sobald die Gruppe voll ist, spätestens
+ * revealHours vor Beginn. Wer nicht zugesagt hat, sieht nur die Stadt. Der Server wendet dieselbe Regel an.
+ */
+export function placeShown(e: MeetupEvent, joined: boolean, now = new Date()): boolean {
+  if (e.isHost) return true;
+  if (!joined) return false;
+  if (e.joined.f + e.joined.m >= e.seats) return true;
+  return !e.startsAt || now.getTime() >= e.startsAt.getTime() - revealHours(e) * 3600e3;
+}
+
+/** Hinweis, solange der Treffpunkt verborgen ist. */
+export function placeHint(e: MeetupEvent, joined: boolean): string {
+  const later = `sobald die Gruppe voll ist, spätestens ${revealHours(e)} ${revealHours(e) === 1 ? 'Stunde' : 'Stunden'} vor Beginn`;
+  return joined ? `Den genauen Treffpunkt siehst du, ${later}.` : `Den genauen Treffpunkt sehen nur Zusagen, ${later}.`;
+}
 
 export const seatsLeft = (e: MeetupEvent, g: Gender) => Math.max(0, Math.floor(e.seats / 2) - e.joined[g]);
 
