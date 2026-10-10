@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { toSongs } from '../domain/music.ts';
 import { ageOn } from '../domain/onboarding.ts';
 import { activeNearbyBucket } from '../domain/activeNearby.ts';
 import { DAILY_LIMIT } from '../domain/dailyPicks.ts';
@@ -124,7 +125,7 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
       const phone = data.user.phone ? `+${data.user.phone.replace(/^\+/, '')}` : null;
       return {
         displayName: p.display_name, age: ageOn(p.birthdate, new Date()), bio: p.bio, gender: p.gender, seeking: p.seeking, phone, paused: p.paused,
-        goal: p.goal ?? undefined, interests: p.interests, music: p.music ?? undefined, prompts: p.prompts.map((x: any) => ({ promptId: x.prompt_id, answer: x.answer })),
+        goal: p.goal ?? undefined, interests: p.interests, music: toSongs(p.music), prompts: p.prompts.map((x: any) => ({ promptId: x.prompt_id, answer: x.answer })),
         preferences: { ageMin: p.age_min, ageMax: p.age_max, maxDistanceKm: p.max_distance_km }, photos: p.photos ?? [],
       };
     },
@@ -184,7 +185,7 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
     async todaysPicks() {
       const [rows, today] = await Promise.all([db.rpc('todays_picks'), db.from('my_picks_today').select('used').single()]);
       const picks = (ok(rows) ?? []).map((r: any) => ({
-        id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km, goal: r.goal ?? undefined, interests: r.interests, music: r.music ?? undefined, photos: photoUrls(r.photos),
+        id: r.id, displayName: r.display_name, age: r.age, bio: r.bio, distanceKm: r.distance_km, goal: r.goal ?? undefined, interests: r.interests, music: toSongs(r.music), photos: photoUrls(r.photos),
         prompts: r.prompts.map((x: any) => ({ question: promptText(x.prompt_id) ?? '', answer: x.answer })),
       }));
       return { picks, used: ok(today)?.used ?? 0 };
@@ -212,7 +213,7 @@ function supabaseBackend(db: SupabaseClient, beta: boolean): Backend {
 const contentColumns = (c: ProfileContent) => ({
   goal: c.goal ?? null,
   interests: c.interests,
-  music: c.music ?? null,
+  music: c.music?.length ? c.music : null,
   prompts: c.prompts.map((p) => ({ prompt_id: p.promptId, answer: p.answer })),
 });
 
@@ -224,7 +225,10 @@ const DEMO_PICKS: Pick[] = [
   {
     id: 'demo-1', displayName: 'Jonas', age: 31, photos: [placeholderPhoto('Jonas'), placeholderPhoto('Jonas-2')], bio: 'Baut Fahrräder, kocht lieber als er bestellt.', distanceKm: 4, goal: 'fest',
     interests: ['Radfahren', 'Kochen', 'Brettspiele'],
-    music: { provider: 'spotify', kind: 'track', url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody – Queen' },
+    music: [
+      { provider: 'spotify', kind: 'track', url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody – Queen' },
+      { provider: 'spotify', kind: 'track', url: 'https://open.spotify.com/track/7hQJA50XrCWABAu5v6QZ4i', title: 'Don’t Stop Me Now – Queen' },
+    ],
     prompts: shown(
       ['alltag-4', 'Gerade Shakshuka, seit ich in Tel Aviv war. Mit viel zu viel Koriander.'],
       ['anknuepfen-4', 'Laufräder einspeichen. Mein drittes Rad ist fast fertig.'],

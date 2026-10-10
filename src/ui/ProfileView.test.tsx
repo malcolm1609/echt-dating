@@ -53,7 +53,7 @@ describe('ProfileView', () => {
 
   it('lets people change questions, goal and interests', async () => {
     const { onSaveContent } = setup();
-    fireEvent.press(screen.getByText('Fragen, Ziel, Interessen und Song ändern'));
+    fireEvent.press(screen.getByText('Fragen, Ziel, Interessen und Songs ändern'));
     fireEvent.press(screen.getByLabelText('Erstmal Freundschaft'));
     fireEvent.press(screen.getByText('Änderungen speichern'));
     await act(async () => {});

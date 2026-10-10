@@ -1,6 +1,7 @@
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { ReactNode } from 'react';
 import { Platform, StyleProp, View, ViewStyle } from 'react-native';
+import { colors } from './theme';
 
 // Echtes Liquid Glass gibt es nur ab iOS 26. Manche Betas haben die API nicht und stürzen sonst ab.
 const liquid = (() => {
@@ -15,13 +16,13 @@ const liquid = (() => {
 // Im Web ein Milchglas per backdrop-filter, auf Android eine fast deckende helle Fläche mit Schatten.
 const fallback = Platform.select<ViewStyle>({
   web: {
-    backgroundColor: 'rgba(255,255,255,0.74)',
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.75)',
+    borderColor: colors.line,
     backdropFilter: 'blur(28px) saturate(180%)',
-    boxShadow: '0 10px 30px rgba(23,23,23,0.14), inset 0 1px 0 rgba(255,255,255,0.9)',
+    boxShadow: '0 10px 30px rgba(33,22,26,0.12)',
   } as ViewStyle,
-  default: { backgroundColor: 'rgba(255,255,255,0.94)', elevation: 8, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } },
+  default: { backgroundColor: colors.surface, elevation: 8, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } },
 });
 
 const dark = Platform.select<ViewStyle>({
@@ -34,20 +35,20 @@ const tinted = (color: string) =>
   Platform.select<ViewStyle>({
     web: {
       // Milchiger Grund unter der Farbe, damit Text dahinter nicht durchscheint.
-      backgroundColor: 'rgba(255,255,255,0.85)',
-      backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.05) 60%), linear-gradient(${color}, ${color})`,
+      backgroundColor: colors.surface,
+      backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%), linear-gradient(${color}, ${color})`,
       backdropFilter: 'blur(20px) saturate(180%)',
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.6)',
-      boxShadow: '0 6px 18px rgba(140,29,59,0.18), inset 0 1px 0 rgba(255,255,255,0.7)',
+      borderColor: colors.line,
+      boxShadow: '0 6px 18px rgba(140,29,59,0.14)',
     } as ViewStyle,
-    default: { backgroundColor: color, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)' },
+    default: { backgroundColor: color, borderWidth: 1, borderColor: colors.line },
   });
 
 export function Glass({ children, style, tone = 'light', interactive, tint }: { children?: ReactNode; style?: StyleProp<ViewStyle>; tone?: 'light' | 'dark'; interactive?: boolean; tint?: string }) {
   if (liquid) {
     return (
-      <GlassView style={style} glassEffectStyle={tone === 'dark' ? 'clear' : 'regular'} colorScheme={tone === 'dark' ? 'dark' : 'light'} isInteractive={interactive} tintColor={tint}>
+      <GlassView style={style} glassEffectStyle={tone === 'dark' ? 'clear' : 'regular'} colorScheme={tone === 'dark' ? 'dark' : 'auto'} isInteractive={interactive} tintColor={tint}>
         {children}
       </GlassView>
     );

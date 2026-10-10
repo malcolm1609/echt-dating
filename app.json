@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.echt.dating",
@@ -27,7 +27,7 @@
       "output": "single"
     },
     "scheme": "echt",
-    "backgroundColor": "#F6F1EE",
+    "backgroundColor": "#F3ECE1",
     "plugins": [
       "expo-router",
       [

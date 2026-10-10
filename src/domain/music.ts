@@ -1,4 +1,4 @@
-// Lieblingssong oder Playlist: nur ein öffentlicher Link, keine Kontoverbindung.
+// Top-Songs: bis zu drei öffentliche Links zu Spotify oder Apple Music, keine Kontoverbindung.
 
 export type MusicProvider = 'spotify' | 'apple';
 export type MusicKind = 'track' | 'album' | 'playlist' | 'artist';
@@ -11,6 +11,7 @@ export interface MusicLink {
 }
 
 export const MUSIC_TITLE_MAX = 80;
+export const SONGS_MAX = 3;
 
 const KIND_LABELS: Record<MusicKind, string> = { track: 'Song', album: 'Album', playlist: 'Playlist', artist: 'Künstler:in' };
 export const musicKindLabel = (k: MusicKind) => KIND_LABELS[k];
@@ -51,5 +52,21 @@ export function validateMusic(m: MusicLink): string | null {
   const title = m.title.trim();
   if (!title) return 'Wie heißt der Song oder die Playlist?';
   if (title.length > MUSIC_TITLE_MAX) return `Höchstens ${MUSIC_TITLE_MAX} Zeichen.`;
+  return null;
+}
+
+/** Liest, was der Server liefert: früher ein einzelner Song, jetzt eine Liste. */
+export function toSongs(raw: MusicLink | MusicLink[] | null | undefined): MusicLink[] {
+  if (!raw) return [];
+  return (Array.isArray(raw) ? raw : [raw]).slice(0, SONGS_MAX);
+}
+
+/** Fehler zum ersten Song, der nicht passt, mit seiner Nummer. */
+export function validateSongs(songs: MusicLink[]): string | null {
+  if (songs.length > SONGS_MAX) return `Höchstens ${SONGS_MAX} Songs.`;
+  for (const [i, m] of songs.entries()) {
+    const error = validateMusic(m);
+    if (error) return songs.length > 1 ? `Song ${i + 1}: ${error}` : error;
+  }
   return null;
 }

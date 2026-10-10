@@ -17,11 +17,20 @@ export default function Layout() {
     preventScreenCaptureAsync().catch(() => {});
     if (Platform.OS === 'ios') enableAppSwitcherProtectionAsync(0.6).catch(() => {});
   }, []);
-  const [loaded, error] = useFonts({ HankenGrotesk_400Regular, HankenGrotesk_500Medium, HankenGrotesk_600SemiBold, HankenGrotesk_700Bold });
+  const [loaded, error] = useFonts({
+    HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
+    HankenGrotesk_700Bold,
+    // Fraunces mit weichen Formen (SOFT 100), als feste Schnitte aus der variablen Schrift.
+    Fraunces_500Soft: require('../assets/fonts/Fraunces-Soft-Medium.ttf'),
+    Fraunces_500SoftItalic: require('../assets/fonts/Fraunces-Soft-MediumItalic.ttf'),
+    Fraunces_600Soft: require('../assets/fonts/Fraunces-Soft-SemiBold.ttf'),
+  });
   if (!loaded && !error) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right', animationDuration: 280 }} />
     </>
   );

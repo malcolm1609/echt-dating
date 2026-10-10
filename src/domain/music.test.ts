@@ -1,4 +1,4 @@
-import { musicKindLabel, parseMusicLink, validateMusic } from './music.ts';
+import { musicKindLabel, parseMusicLink, toSongs, validateMusic } from './music.ts';
 
 describe('parseMusicLink', () => {
   it('recognizes Spotify songs, playlists and albums and drops tracking parameters', () => {
@@ -39,5 +39,14 @@ describe('musicKindLabel', () => {
   it('names the kind in German', () => {
     expect(musicKindLabel('track')).toBe('Song');
     expect(musicKindLabel('playlist')).toBe('Playlist');
+  });
+});
+
+describe('toSongs', () => {
+  const song = { provider: 'spotify' as const, kind: 'track' as const, url: 'https://open.spotify.com/track/1', title: 'Eins' };
+  it('reads both the old single song and the new list', () => {
+    expect(toSongs(null)).toEqual([]);
+    expect(toSongs(song)).toEqual([song]);
+    expect(toSongs([song, song, song, song])).toHaveLength(3);
   });
 });

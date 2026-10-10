@@ -71,7 +71,23 @@ describe('ProfileContentForm', () => {
     expect(lookupTitle).toHaveBeenCalledWith('https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv');
     expect(screen.getByDisplayValue('Bohemian Rhapsody – Queen')).toBeTruthy();
     fireEvent.press(screen.getByText('Weiter'));
-    expect(onSubmit.mock.calls[0][0].music).toEqual({ provider: 'spotify', kind: 'track', url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody – Queen' });
+    expect(onSubmit.mock.calls[0][0].music).toEqual([{ provider: 'spotify', kind: 'track', url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody – Queen' }]);
+  });
+
+  it('takes up to three songs', async () => {
+    const onSubmit = jest.fn();
+    render(<ProfileContentForm submitLabel="Weiter" onSubmit={onSubmit} lookupTitle={jest.fn().mockResolvedValue('Titel')} />);
+    fillAll();
+    fireEvent.press(screen.getByLabelText('Feste Beziehung'));
+    for (const n of [1, 2, 3]) {
+      if (n > 1) fireEvent.press(screen.getByText('Weiteren Song hinzufügen'));
+      fireEvent.changeText(screen.getByLabelText(n > 1 ? `Link zu Spotify oder Apple Music, Song ${n}` : 'Link zu Spotify oder Apple Music'), `https://open.spotify.com/track/abc${n}`);
+      await act(async () => {});
+    }
+    expect(screen.queryByText('Weiteren Song hinzufügen')).toBeNull();
+    fireEvent.press(screen.getAllByText('Song entfernen')[1]);
+    fireEvent.press(screen.getByText('Weiter'));
+    expect(onSubmit.mock.calls[0][0].music.map((m: { url: string }) => m.url)).toEqual(['https://open.spotify.com/track/abc1', 'https://open.spotify.com/track/abc3']);
   });
 
   it('says when a link is not from Spotify or Apple Music', () => {
@@ -83,7 +99,7 @@ describe('ProfileContentForm', () => {
   it('lets people leave the song out or remove it', () => {
     const onSubmit = jest.fn();
     const music = { provider: 'spotify' as const, kind: 'track' as const, url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody' };
-    const initial = { prompts: ['alltag', 'anknuepfen', 'werte'].map((c) => ({ promptId: first(c).id, answer: 'Eine schon gespeicherte Antwort.' })), goal: 'offen' as const, interests: [], music };
+    const initial = { prompts: ['alltag', 'anknuepfen', 'werte'].map((c) => ({ promptId: first(c).id, answer: 'Eine schon gespeicherte Antwort.' })), goal: 'offen' as const, interests: [], music: [music] };
     render(<ProfileContentForm initial={initial} submitLabel="Speichern" onSubmit={onSubmit} lookupTitle={jest.fn()} />);
     fireEvent.press(screen.getByText('Song entfernen'));
     fireEvent.press(screen.getByText('Speichern'));

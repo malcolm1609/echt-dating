@@ -49,8 +49,10 @@ describe('validateProfileContent', () => {
 
   it('checks an optional favourite song', () => {
     const music = { provider: 'spotify' as const, kind: 'track' as const, url: 'https://open.spotify.com/track/4u7EnebtmKWzUH433cf5Qv', title: 'Bohemian Rhapsody' };
-    expect(validateProfileContent({ ...complete, music })).toEqual({});
-    expect(validateProfileContent({ ...complete, music: { ...music, title: '' } }).music).toBe('Wie heißt der Song oder die Playlist?');
+    expect(validateProfileContent({ ...complete, music: [music] })).toEqual({});
+    expect(validateProfileContent({ ...complete, music: [{ ...music, title: '' }] }).music).toBe('Wie heißt der Song oder die Playlist?');
+    expect(validateProfileContent({ ...complete, music: [music, { ...music, title: '' }] }).music).toBe('Song 2: Wie heißt der Song oder die Playlist?');
+    expect(validateProfileContent({ ...complete, music: [music, music, music, music] }).music).toBe('Höchstens 3 Songs.');
   });
 
   it('limits interests to five from the list', () => {

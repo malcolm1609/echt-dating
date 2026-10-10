@@ -3,7 +3,7 @@
 // Fragen zielen auf Konkretes (Ort, Erlebnis, Empfehlung), nicht auf Witz.
 
 import { CONTACT_INFO_ERROR, hasContactInfo } from './contactInfo.ts';
-import { MusicLink, validateMusic } from './music.ts';
+import { MusicLink, validateSongs } from './music.ts';
 
 export type PromptCategory = 'alltag' | 'anknuepfen' | 'werte';
 export type GoalId = 'fest' | 'ernst' | 'offen' | 'freundschaft';
@@ -88,8 +88,8 @@ export interface ProfileContent {
   prompts: PromptAnswer[];
   goal?: GoalId;
   interests: string[];
-  /** Freiwillig: Lieblingssong oder Playlist als Link. */
-  music?: MusicLink;
+  /** Freiwillig: bis zu drei Top-Songs als Links. */
+  music?: MusicLink[];
 }
 
 export type ProfileContentErrors = Partial<Record<PromptCategory | 'goal' | 'interests' | 'music', string>>;
@@ -107,7 +107,7 @@ export function validateProfileContent(c: ProfileContent): ProfileContentErrors 
   if (!c.goal || !goalLabel(c.goal)) errors.goal = 'Bitte wähle, was du suchst.';
   if (c.interests.length > INTEREST_MAX) errors.interests = `Höchstens ${INTEREST_MAX} Interessen.`;
   else if (c.interests.some((i) => !INTERESTS.includes(i))) errors.interests = 'Bitte nur Interessen aus der Liste.';
-  const music = c.music && validateMusic(c.music);
+  const music = c.music && validateSongs(c.music);
   if (music) errors.music = music;
   return errors;
 }

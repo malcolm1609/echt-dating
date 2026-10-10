@@ -7,12 +7,14 @@ import { colors, font } from './theme';
 
 interface Props {
   value?: MusicLink;
+  /** Nummer des Songs, damit Vorlesefunktionen die Felder unterscheiden können. */
+  number?: number;
   error?: string;
   onChange: (music: MusicLink | undefined) => void;
   lookupTitle: (url: string) => Promise<string | null>;
 }
 
-export function MusicField({ value, error, onChange, lookupTitle }: Props) {
+export function MusicField({ value, number = 1, error, onChange, lookupTitle }: Props) {
   const [link, setLink] = useState(value?.url ?? '');
   const parsed = link.trim() ? parseMusicLink(link) : null;
   const wrong = link.trim().length > 0 && !parsed;
@@ -35,7 +37,7 @@ export function MusicField({ value, error, onChange, lookupTitle }: Props) {
     <View style={{ gap: 12 }}>
       <Field
         label="Link"
-        accessibilityLabel="Link zu Spotify oder Apple Music"
+        accessibilityLabel={number > 1 ? `Link zu Spotify oder Apple Music, Song ${number}` : 'Link zu Spotify oder Apple Music'}
         value={link}
         onChangeText={(v) => {
           setLink(v);
