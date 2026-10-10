@@ -33,12 +33,14 @@ interface Props {
   onChange: (values: number[]) => void;
   /** Vorlesetext je Griff, z. B. „Ab 22 Jahre“. */
   labels: (value: number, index: number) => string;
+  /** Bei einem Griff: Von hier aus wird die Leiste gefüllt, z. B. 0 bei Reglern mit Minus und Plus. */
+  origin?: number;
 }
 
 // Schieberegler mit einem oder zwei Griffen. Ziehen geht überall auf der Leiste, Antippen springt
 // dorthin. Der Griff wird beim Anfassen größer und federt beim Loslassen zurück; Screenreader können
 // ihn schrittweise verstellen.
-export function RangeSlider({ min, max, step = 1, values, onChange, labels }: Props) {
+export function RangeSlider({ min, max, step = 1, values, onChange, labels, origin = min }: Props) {
   const track = useRef<View>(null);
   const [width, setWidth] = useState(0);
   const left = useRef(0);
@@ -125,8 +127,8 @@ export function RangeSlider({ min, max, step = 1, values, onChange, labels }: Pr
           height: 6,
           borderRadius: 3,
           backgroundColor: colors.accent,
-          left: range ? pos(values[0]) : 0,
-          width: Math.max(0, pos(values[values.length - 1]) - (range ? pos(values[0]) : 0)),
+          left: range ? pos(values[0]) : Math.min(pos(origin), pos(values[0])),
+          width: range ? Math.max(0, pos(values[1]) - pos(values[0])) : Math.abs(pos(values[0]) - pos(origin)),
         }}
       />
       {values.map((v, i) => (

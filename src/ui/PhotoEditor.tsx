@@ -1,11 +1,14 @@
 import Feather from '@expo/vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Modal, Pressable, Text, View } from 'react-native';
+import { isOriginal, Look } from '../domain/photoLook.ts';
 import { cleanPhoto } from '../lib/cleanPhoto';
+import { applyPhotoLook } from '../lib/photoLook';
 import { photoErrorText } from '../lib/photoErrors';
 import { MAX_PHOTOS, photoUrl } from '../lib/photos';
 import { s } from './kit';
+import { PhotoAdjuster } from './PhotoAdjuster';
 import { colors, font } from './theme';
 
 interface Props {
@@ -15,9 +18,12 @@ interface Props {
 }
 
 // Bis zu 6 Fotos im 4:5-Format. Antippen macht ein Foto zum Hauptfoto, das Kreuz entfernt es.
+// Nach dem Auswählen kann man Helligkeit, Kontrast und Wärme nachstellen; ohne Änderung geht das Original hoch.
 export function PhotoEditor({ photos, onUpload, onChange }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  // Bereinigtes Foto, das gerade im Anpassen-Schritt liegt.
+  const [pending, setPending] = useState<string>();
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
     setError(undefined);
@@ -33,8 +39,16 @@ export function PhotoEditor({ photos, onUpload, onChange }: Props) {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 0.7 });
     if (result.canceled || !result.assets[0]) return;
     const photo = await cleanPhoto(result.assets[0].uri, result.assets[0].width);
-    const path = await onUpload(photo.uri, photo.mimeType);
-    await onChange([...photos, path]);
+    setPending(photo.uri);
+  });
+  const use = (look: Look) => run(async () => {
+    try {
+      const uri = isOriginal(look) ? pending! : await applyPhotoLook(pending!, look);
+      const path = await onUpload(uri, 'image/jpeg');
+      await onChange([...photos, path]);
+    } finally {
+      setPending(undefined);
+    }
   });
   const tile = { width: '31%', aspectRatio: 4 / 5, borderRadius: 14, overflow: 'hidden' } as const;
 
@@ -62,6 +76,9 @@ export function PhotoEditor({ photos, onUpload, onChange }: Props) {
         )}
       </View>
       {error && <Text style={s.error}>{error}</Text>}
+      <Modal visible={!!pending} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => !busy && setPending(undefined)}>
+        {pending && <PhotoAdjuster uri={pending} busy={busy} onDone={use} onCancel={() => setPending(undefined)} />}
+      </Modal>
     </View>
   );
 }

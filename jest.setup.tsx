@@ -30,3 +30,13 @@ jest.mock('expo-audio', () => {
     setAudioModeAsync: jest.fn(async () => {}),
   };
 });
+
+// Skia (Foto-Regler) braucht eine Grafikkarte: Vorschau und Umrechnen als Attrappen.
+jest.mock('./src/lib/photoLook', () => ({
+  photoBrightness: jest.fn(async () => 0.5),
+  applyPhotoLook: jest.fn(async () => 'file:///angepasst.jpg'),
+}));
+jest.mock('./src/ui/LookPreview', () => {
+  const { View } = require('react-native');
+  return { LookPreview: () => <View testID="look-preview" /> };
+});

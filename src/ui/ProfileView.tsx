@@ -109,7 +109,7 @@ export function ProfileView({ profile, onSaveBio, onSaveContent, onUploadPhoto, 
             <Button title="Abbrechen" variant="ghost" onPress={() => setEditing(false)} />
           </View>
         ) : (
-          <Button title="Fragen, Ziel, Interessen und Song ändern" icon="edit-3" variant="ghost" onPress={() => setEditing(true)} />
+          <Button title="Fragen, Ziel, Interessen und Songs ändern" icon="edit-3" variant="ghost" onPress={() => setEditing(true)} />
         )}
       </View>
 
