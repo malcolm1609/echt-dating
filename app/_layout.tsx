@@ -3,19 +3,17 @@ import { HankenGrotesk_500Medium } from '@expo-google-fonts/hanken-grotesk/500Me
 import { HankenGrotesk_600SemiBold } from '@expo-google-fonts/hanken-grotesk/600SemiBold';
 import { HankenGrotesk_700Bold } from '@expo-google-fonts/hanken-grotesk/700Bold';
 import { useFonts } from 'expo-font';
-import { enableAppSwitcherProtectionAsync, preventScreenCaptureAsync } from 'expo-screen-capture';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
+import { screenProtection } from '../src/lib/screenProtection';
 import { colors } from '../src/ui/theme';
 
 export default function Layout() {
   // Keine Screenshots und Bildschirmaufnahmen von Profilen, Chats und Fotos (im Browser nicht möglich).
   useEffect(() => {
-    if (Platform.OS === 'web') return;
-    preventScreenCaptureAsync().catch(() => {});
-    if (Platform.OS === 'ios') enableAppSwitcherProtectionAsync(0.6).catch(() => {});
+    screenProtection.init();
   }, []);
   const [loaded, error] = useFonts({
     HankenGrotesk_400Regular,

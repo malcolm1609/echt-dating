@@ -79,6 +79,28 @@ export function SettingsView({ profile, onSavePreferences, onTogglePause }: Prop
   );
 }
 
+/** Nur in der Beta: Screenshot-Sperre zum Testen abschalten. Die Wahl bleibt auf diesem Gerät. */
+export function BetaSettings({ protect, onToggleProtect }: { protect: boolean; onToggleProtect: (on: boolean) => void }) {
+  return (
+    <Group title="Beta">
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[font.body, { fontFamily: fontFamily.semibold }]}>Screenshot-Schutz</Text>
+          <Text style={font.small}>{protect ? 'An: Screenshots und Bildschirmaufnahmen sind gesperrt.' : 'Aus: Screenshots und Bildschirmaufnahmen sind erlaubt.'}</Text>
+        </View>
+        <Switch
+          accessibilityLabel="Screenshot-Schutz"
+          value={protect}
+          onValueChange={onToggleProtect}
+          trackColor={{ false: colors.raised, true: colors.accent }}
+          thumbColor="#FFFFFF"
+        />
+      </View>
+      <Text style={font.small}>Gilt nur auf diesem Gerät. Zum Start der App ist der Schutz für alle fest an.</Text>
+    </Group>
+  );
+}
+
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={{ gap: 8 }}>
