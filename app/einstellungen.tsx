@@ -1,18 +1,19 @@
 import Feather from '@expo/vector-icons/Feather';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { backend } from '../src/lib/backend';
 import { PLUS_PRICE } from '../src/domain/plus.ts';
 import { campusStore, useCampus } from '../src/lib/campus';
 import { eventStore } from '../src/lib/events';
 import { matchStore } from '../src/lib/matches';
 import { plusStore, usePlus } from '../src/lib/plus';
+import { screenProtection, useScreenProtection } from '../src/lib/screenProtection';
 import { CampusVerify } from '../src/ui/CampusVerify';
 import { Button, Screen, s } from '../src/ui/kit';
 import type { MyProfile } from '../src/ui/ProfileView';
 import { LockableScrollView } from '../src/ui/ScrollLock';
-import { SettingsView } from '../src/ui/SettingsView';
+import { BetaSettings, SettingsView } from '../src/ui/SettingsView';
 import { colors, font } from '../src/ui/theme';
 
 export default function Settings() {
@@ -20,6 +21,7 @@ export default function Settings() {
   const [error, setError] = useState<string>();
   const plus = usePlus();
   const campus = useCampus();
+  const protect = useScreenProtection();
   const load = useCallback(() => {
     setError(undefined);
     backend.myProfile().then(setProfile, () => setError('Deine Einstellungen konnten nicht geladen werden.'));
@@ -101,6 +103,8 @@ export default function Settings() {
             }}
           />
         )}
+        {/* Im Browser lassen sich Screenshots nicht sperren, dort gibt es den Schalter nicht. */}
+        {(backend.beta || backend.demo) && Platform.OS !== 'web' && <BetaSettings protect={protect} onToggleProtect={screenProtection.setOn} />}
         {profile && <CampusVerify uni={campus.uni} onVerify={campusStore.verify} />}
         <Button title={plus.active ? 'Echt Plus ist aktiv' : `Echt Plus · ${PLUS_PRICE}`} variant="ghost" icon="star" onPress={() => router.push('/plus')} />
         {backend.demo && <Button title="Demo neu starten" variant="ghost" onPress={restartDemo} />}
